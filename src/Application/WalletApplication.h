@@ -79,6 +79,12 @@ private:
   void prepareToQuit();
   void newLogString(const QString& _string);
 
+  Q_SLOT void toggleHidden();
+  Q_SLOT void showNormalIfMinimized(bool fToggleHidden = false);
+
+  bool isObscured(const QWidget *w);
+  bool checkPoint(const QPoint &p, const QWidget *w);
+
 #ifdef Q_OS_MAC
 private:
   void installDockHandler();

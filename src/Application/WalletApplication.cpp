@@ -370,6 +370,8 @@ void WalletApplication::initSystemTrayIcon() {
 
   connect(m_systemTrayIcon, &QSystemTrayIcon::activated, this, &WalletApplication::trayActivated);
   m_systemTrayIcon->setIcon(Settings::instance().getCurrentStyle().getSystemTrayIcon());
+  QString toolTip = QString("Karbo Wallet v. %1").arg(Settings::instance().getVersion());
+  m_systemTrayIcon->setToolTip(toolTip);
   m_systemTrayIcon->show();
 #endif
 }
@@ -398,11 +400,16 @@ void WalletApplication::trayActivated(QSystemTrayIcon::ActivationReason _reason)
   if (m_splash != nullptr && !m_splash->isVisible()) {
     m_splash->show();
   } else if (m_mainWindow != nullptr) {
-    Qt::WindowStates state = m_mainWindow->window()->windowState();
-    m_mainWindow->window()->setWindowState(state & ~Qt::WindowMinimized);
-    m_mainWindow->window()->show();
-    m_mainWindow->raise();
-    m_mainWindow->activateWindow();
+    //Qt::WindowStates state = m_mainWindow->window()->windowState();
+    //m_mainWindow->window()->setWindowState(state & ~Qt::WindowMinimized);
+    //m_mainWindow->window()->show();
+    //m_mainWindow->raise();
+    //m_mainWindow->activateWindow();
+    if(_reason == QSystemTrayIcon::Trigger)
+    {
+        // Click on system tray icon triggers show/hide of the main window
+        toggleHidden();
+    }
   }
 }
 
@@ -432,6 +439,48 @@ void WalletApplication::newLogString(const QString& _string) {
       m_splash->showMessage(message, Qt::AlignLeft | Qt::AlignBottom, Qt::white);
     }
   }
+}
+
+void WalletApplication::showNormalIfMinimized(bool fToggleHidden)
+{
+    if (m_mainWindow->isHidden() || m_mainWindow->isMinimized())
+    {
+        m_mainWindow->showNormal();
+        m_mainWindow->activateWindow();
+    }
+    else if (isObscured(m_mainWindow))
+    {
+        m_mainWindow->raise();
+        m_mainWindow->activateWindow();
+    }
+    else if (fToggleHidden) {
+        m_mainWindow->hide();
+    }
+    else {
+        m_mainWindow->showNormal();
+        m_mainWindow->activateWindow();
+    }
+}
+
+void WalletApplication::toggleHidden()
+{
+    showNormalIfMinimized(true);
+}
+
+bool WalletApplication::checkPoint(const QPoint &p, const QWidget *w)
+{
+    QWidget *atW = QApplication::widgetAt(w->mapToGlobal(p));
+    if (!atW) return false;
+    return atW->topLevelWidget() == w;
+}
+
+bool WalletApplication::isObscured(const QWidget *w)
+{
+    return !(checkPoint(QPoint(0, 0), w)
+        && checkPoint(QPoint(w->width() - 1, 0), w)
+        && checkPoint(QPoint(0, w->height() - 1), w)
+        && checkPoint(QPoint(w->width() - 1, w->height() - 1), w)
+        && checkPoint(QPoint(w->width() / 2, w->height() / 2), w));
 }
 
 }
