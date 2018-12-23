@@ -23,8 +23,14 @@
 #include <fstream>
 
 #include "crypto/crypto.h"
+#include "CryptoNote.h"
+#include "Common/Base58.h"
 #include "Common/StringTools.h"
+#include "ITransfersContainer.h"
+#include "CryptoNoteCore/CryptoNoteTools.h"
 #include "CryptoNoteCore/CryptoNoteBasic.h"
+#include "CryptoNoteCore/CryptoNoteFormatUtils.h"
+#include "Rpc/CoreRpcServerCommandsDefinitions.h"
 #include "WalletGreenWorker.h"
 #include "GuardExecutor.h"
 #include "WalletLogger/WalletLogger.h"
@@ -248,9 +254,9 @@ IWalletAdapter::WalletInitStatus WalletGreenWorker::createWithKeys(const QString
     try {
       m_wallet->initializeWithViewKey(std::string(_walletPath.toLocal8Bit().data()), "", _accountKeys.viewKeys.secretKey);
       if (std::memcmp(&_accountKeys.spendKeys.secretKey, &CryptoNote::NULL_SECRET_KEY, sizeof(Crypto::SecretKey)) == 0) {
-        m_wallet->createAddress(_accountKeys.spendKeys.publicKey);
+  m_wallet->createAddress(_accountKeys.spendKeys.publicKey);
       } else {
-        m_wallet->createAddress(_accountKeys.spendKeys.secretKey);
+  m_wallet->createAddress(_accountKeys.spendKeys.secretKey);
       }
     } catch (const std::system_error& _error) {
       WalletLogger::critical(tr("[Wallet] Import keys error: %1").arg(_error.code().message().data()));
@@ -287,9 +293,9 @@ IWalletAdapter::WalletInitStatus WalletGreenWorker::createWithKeysAndTimestamp(c
     try {
       m_wallet->initializeWithViewKeyAndTimestamp(std::string(_walletPath.toLocal8Bit().data()), "", _accountKeys.viewKeys.secretKey, _creationTimestamp);
       if (std::memcmp(&_accountKeys.spendKeys.secretKey, &CryptoNote::NULL_SECRET_KEY, sizeof(Crypto::SecretKey)) == 0) {
-        m_wallet->createAddress(_accountKeys.spendKeys.publicKey);
+  m_wallet->createAddress(_accountKeys.spendKeys.publicKey);
       } else {
-        m_wallet->createAddressWithTimestamp(_accountKeys.spendKeys.secretKey, _creationTimestamp);
+  m_wallet->createAddressWithTimestamp(_accountKeys.spendKeys.secretKey, _creationTimestamp);
       }
     } catch (const std::system_error& _error) {
       WalletLogger::critical(tr("[Wallet] Import keys error: %1").arg(_error.code().message().data()));
@@ -330,12 +336,12 @@ IWalletAdapter::WalletSaveStatus WalletGreenWorker::save(CryptoNote::WalletSaveL
     try {
       if (_saveUserData && !m_userData.isEmpty()) {
 #if QT_VERSION < 0x050400
-        m_wallet->save(_saveLevel, std::string(m_userData.data(), m_userData.size()));
+  m_wallet->save(_saveLevel, std::string(m_userData.data(), m_userData.size()));
 #else
-        m_wallet->save(_saveLevel, m_userData.toStdString());
+  m_wallet->save(_saveLevel, m_userData.toStdString());
 #endif
       } else {
-        m_wallet->save(_saveLevel, std::string());
+  m_wallet->save(_saveLevel, std::string());
       }
     } catch (const std::system_error& _error) {
       WalletLogger::critical(tr("[Wallet] Save error: %1").arg(_error.code().message().data()));
@@ -586,9 +592,9 @@ Crypto::SecretKey WalletGreenWorker::getTransactionSecretKey(quintptr _transacti
     try {
       _transaction = m_wallet->getTransaction(_transactionIndex);
       if (_transaction.secretKey) {
-        txKey = _transaction.secretKey.get();
+  txKey = _transaction.secretKey.get();
       } else {
-        txKey = CryptoNote::NULL_SECRET_KEY;
+  txKey = CryptoNote::NULL_SECRET_KEY;
       }
       // txKey = _transaction.secretKey;
     } catch (const std::exception& _error) {
@@ -612,7 +618,7 @@ bool WalletGreenWorker::getFullTransactionInfo(quintptr _transactionIndex, FullT
       _transactionInfo.isFusionTransaction = m_wallet->isFusionTransaction(_transactionIndex);
       quintptr transferCount = m_wallet->getTransactionTransferCount(_transactionIndex);
       for (quintptr transferIndex = 0; transferIndex < transferCount; ++transferIndex) {
-        _transactionInfo.transfers.append(m_wallet->getTransactionTransfer(_transactionIndex, transferIndex));
+  _transactionInfo.transfers.append(m_wallet->getTransactionTransfer(_transactionIndex, transferIndex));
       }
     } catch (const std::exception& _error) {
       WalletLogger::critical(tr("[Wallet] Get full transaction info error: %1").arg(_error.what()));
@@ -634,15 +640,15 @@ bool WalletGreenWorker::getAllTransactions(QHash<quintptr, FullTransactionInfo>&
     _transactionInfos.reserve(transactionCount);
     try {
       for (quintptr transactionIndex = 0; transactionIndex < transactionCount; ++transactionIndex) {
-        FullTransactionInfo transactionInfo;
-        transactionInfo.walletTransaction = m_wallet->getTransaction(transactionIndex);
-        transactionInfo.isFusionTransaction = m_wallet->isFusionTransaction(transactionIndex);
-        quintptr transferCount = m_wallet->getTransactionTransferCount(transactionIndex);
-        for (quintptr transferIndex = 0; transferIndex < transferCount; ++transferIndex) {
-          transactionInfo.transfers.append(m_wallet->getTransactionTransfer(transactionIndex, transferIndex));
-        }
+  FullTransactionInfo transactionInfo;
+  transactionInfo.walletTransaction = m_wallet->getTransaction(transactionIndex);
+  transactionInfo.isFusionTransaction = m_wallet->isFusionTransaction(transactionIndex);
+  quintptr transferCount = m_wallet->getTransactionTransferCount(transactionIndex);
+  for (quintptr transferIndex = 0; transferIndex < transferCount; ++transferIndex) {
+    transactionInfo.transfers.append(m_wallet->getTransactionTransfer(transactionIndex, transferIndex));
+  }
 
-        _transactionInfos.insert(transactionIndex, transactionInfo);
+  _transactionInfos.insert(transactionIndex, transactionInfo);
       }
     } catch (const std::exception& _error) {
       WalletLogger::critical(tr("[Wallet] Get full transaction info range error: %1").arg(_error.what()));
@@ -767,6 +773,133 @@ void WalletGreenWorker::setUserData(const QByteArray& _userData) {
   m_userData = _userData;
 }
 
+bool compareTransactionOutputInformationByAmount(const CryptoNote::TransactionOutputInformation &a, const CryptoNote::TransactionOutputInformation &b) {
+  return a.amount < b.amount;
+}
+
+QString WalletGreenWorker::getBalanceProof(quint64& _amount, QString& _message) const {
+  AccountKeys accountKeys = getAccountKeys(0);
+  CryptoNote::AccountKeys keys;
+  keys.spendSecretKey = *(struct Crypto::SecretKey *) &accountKeys.spendKeys.secretKey;
+  keys.viewSecretKey = *(struct Crypto::SecretKey *) &accountKeys.viewKeys.secretKey;
+  Crypto::secret_key_to_public_key(keys.spendSecretKey, keys.address.spendPublicKey);
+  Crypto::secret_key_to_public_key(keys.viewSecretKey, keys.address.viewPublicKey);
+
+  Crypto::SecretKey viewSecretKey = accountKeys.viewKeys.secretKey;
+
+  if (accountKeys.spendKeys.secretKey == CryptoNote::NULL_SECRET_KEY) {
+    throw std::runtime_error("Reserve proof can only be generated by a full wallet");
+  }
+
+  if (getActualBalance() == 0) {
+    throw std::runtime_error("Zero balance");
+  }
+
+  if (getActualBalance() < _amount) {
+    throw std::runtime_error("Not enough balance for the requested minimum reserve amount");
+  }
+
+  // determine which outputs to include in the proof
+  std::vector<CryptoNote::TransactionOutputInformation> selected_transfers = m_wallet->getTransfers(0, CryptoNote::ITransfersContainer::IncludeAllUnlocked);
+
+  // minimize the number of outputs included in the proof, by only picking the N largest outputs that can cover the requested reserve amount
+  std::sort(selected_transfers.begin(), selected_transfers.end(), compareTransactionOutputInformationByAmount);
+  while (selected_transfers.size() >= 2 && selected_transfers[1].amount >= _amount) {
+         selected_transfers.erase(selected_transfers.begin());
+  }
+  size_t sz = 0;
+  uint64_t total = 0;
+  while (total < _amount) {
+         total += selected_transfers[sz].amount;
+         ++sz;
+  }
+  selected_transfers.resize(sz);
+
+  // compute signature prefix hash
+  std::string prefix_data = _message.toStdString();
+  prefix_data.append((const char*)&keys.address, sizeof(CryptoNote::AccountPublicAddress));
+
+  std::vector<Crypto::KeyImage> kimages;
+  CryptoNote::KeyPair ephemeral;
+
+  // have to repeat this loop to get key image as we don't store m_key_image
+  for (size_t i = 0; i < selected_transfers.size(); ++i) {
+    const CryptoNote::TransactionOutputInformation &td = selected_transfers[i];
+
+    // derive ephemeral secret key
+    Crypto::KeyImage ki;
+    const bool r = CryptoNote::generate_key_image_helper(keys, td.transactionPublicKey, td.outputInTransaction, ephemeral, ki);
+    if (!r) {
+      throw std::runtime_error("Failed to generate key image");
+    }
+    // now we can insert key image
+    prefix_data.append((const char*)&ki, sizeof(Crypto::PublicKey));
+    kimages.push_back(ki);
+  }
+
+  Crypto::Hash prefix_hash;
+  Crypto::cn_fast_hash(prefix_data.data(), prefix_data.size(), prefix_hash);
+
+  // generate proof entries
+  std::vector<CryptoNote::reserve_proof_entry> proofs(selected_transfers.size());
+
+  for (size_t i = 0; i < selected_transfers.size(); ++i) {
+    const CryptoNote::TransactionOutputInformation &td = selected_transfers[i];
+    CryptoNote::reserve_proof_entry& proof = proofs[i];
+    proof.key_image = kimages[i];
+    proof.txid = td.transactionHash;
+    proof.index_in_tx = td.outputInTransaction;
+
+    auto txPubKey = td.transactionPublicKey;
+
+    for (int i = 0; i < 2; ++i)	{
+      Crypto::KeyImage sk = Crypto::scalarmultKey(*reinterpret_cast<const Crypto::KeyImage*>(&txPubKey), *reinterpret_cast<const Crypto::KeyImage*>(&keys.viewSecretKey));
+      proof.shared_secret = *reinterpret_cast<const Crypto::PublicKey *>(&sk);
+
+      Crypto::KeyDerivation derivation;
+      if (!Crypto::generate_key_derivation(proof.shared_secret, keys.viewSecretKey, derivation)) {
+        throw std::runtime_error("Failed to generate key derivation");
+      }
+    }
+
+    // generate signature for shared secret
+    Crypto::generate_tx_proof(prefix_hash, keys.address.viewPublicKey, txPubKey, proof.shared_secret, keys.viewSecretKey, proof.shared_secret_sig);
+
+    // derive ephemeral secret key
+    Crypto::KeyImage ki;
+    CryptoNote::KeyPair ephemeral;
+
+    const bool r = CryptoNote::generate_key_image_helper(keys, td.transactionPublicKey, td.outputInTransaction, ephemeral, ki);
+    if (!r) {
+      throw std::runtime_error("Failed to generate key image");
+    }
+
+      if (ephemeral.publicKey != td.outputKey) {
+    throw std::runtime_error("Derived public key doesn't agree with the stored one");
+      }
+
+      // generate signature for key image
+      const std::vector<const Crypto::PublicKey *>& pubs = { &ephemeral.publicKey };
+
+      Crypto::generate_ring_signature(prefix_hash, proof.key_image, &pubs[0], 1, ephemeral.secretKey, 0, &proof.key_image_sig);
+  }
+  // generate signature for the spend key that received those outputs
+  Crypto::Signature signature;
+  Crypto::generate_signature(prefix_hash, keys.address.spendPublicKey, keys.spendSecretKey, signature);
+
+  // serialize & encode
+  CryptoNote::reserve_proof p;
+  p.proofs.assign(proofs.begin(), proofs.end());
+  memcpy(&p.signature, &signature, sizeof(signature));
+
+  CryptoNote::BinaryArray ba = CryptoNote::toBinaryArray(p);
+  std::string ret = Common::toHex(ba);
+
+  ret = "ReserveProofV1" + Tools::Base58::encode(ret);
+
+  return QString::fromStdString(ret);
+}
+
 void WalletGreenWorker::addObserver(IWalletAdapterObserver* _observer) {
   QObject* observerObject = dynamic_cast<QObject*>(_observer);
   m_observerConnections[_observer] << connect(this, SIGNAL(walletOpenedSignal()), observerObject, SLOT(walletOpened()), Qt::QueuedConnection);
@@ -872,8 +1005,8 @@ void WalletGreenWorker::processEvent(const CryptoNote::WalletEvent& _event) {
       WalletLogger::debug(tr("[Wallet] Event: Transaction created. Tranaction index=%1.").arg(_event.transactionCreated.transactionIndex));
       FullTransactionInfo transaction;
       if (getSyncFullTransactionInfo(_event.transactionCreated.transactionIndex, transaction)) {
-        Q_EMIT externalTransactionCreatedSignal(_event.transactionCreated.transactionIndex, transaction);
-        Q_EMIT balanceUpdatedSignal(m_wallet->getActualBalance(), m_wallet->getPendingBalance());
+  Q_EMIT externalTransactionCreatedSignal(_event.transactionCreated.transactionIndex, transaction);
+  Q_EMIT balanceUpdatedSignal(m_wallet->getActualBalance(), m_wallet->getPendingBalance());
       }
 
       break;
