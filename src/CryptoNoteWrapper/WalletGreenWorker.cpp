@@ -1,4 +1,6 @@
 // Copyright (c) 2015-2017, The Bytecoin developers
+// Copyright (c) 2014-2017, The Monero project
+// Copyright (c) 2017-2018, The Karbo developers
 //
 // This file is part of Bytecoin.
 //
@@ -874,14 +876,14 @@ QString WalletGreenWorker::getBalanceProof(quint64& _amount, QString& _message) 
       throw std::runtime_error("Failed to generate key image");
     }
 
-      if (ephemeral.publicKey != td.outputKey) {
-    throw std::runtime_error("Derived public key doesn't agree with the stored one");
-      }
+    if (ephemeral.publicKey != td.outputKey) {
+      throw std::runtime_error("Derived public key doesn't agree with the stored one");
+    }
 
-      // generate signature for key image
-      const std::vector<const Crypto::PublicKey *>& pubs = { &ephemeral.publicKey };
+    // generate signature for key image
+    const std::vector<const Crypto::PublicKey *>& pubs = { &ephemeral.publicKey };
 
-      Crypto::generate_ring_signature(prefix_hash, proof.key_image, &pubs[0], 1, ephemeral.secretKey, 0, &proof.key_image_sig);
+    Crypto::generate_ring_signature(prefix_hash, proof.key_image, &pubs[0], 1, ephemeral.secretKey, 0, &proof.key_image_sig);
   }
   // generate signature for the spend key that received those outputs
   Crypto::Signature signature;
