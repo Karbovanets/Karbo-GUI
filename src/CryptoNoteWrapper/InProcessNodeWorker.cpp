@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2017, The Bytecoin developers
-// Copyright (c) 2017-2019, The Karbo developers
+// Copyright (c) 2017-2020, The Karbo developers
 //
 // This file is part of Karbo.
 //
@@ -25,6 +25,7 @@
 #include <boost/any.hpp>
 
 #include <functional>
+#include <thread>
 
 #include "INode.h"
 #include "BlockchainExplorer/BlockchainExplorer.h"
@@ -34,12 +35,17 @@
 #include "WalletLogger/WalletLogger.h"
 #include "BlockChainExplorerAdapter.h"
 #include "WalletGreenAdapter.h"
-
+#include "Checkpoints/Checkpoints.h"
 #include "Checkpoints/CheckpointsData.h"
 #include "CryptoNoteCore/Core.h"
 #include "CryptoNoteCore/ICore.h"
 #include "CryptoNoteCore/CryptoNoteTools.h"
+#include "CryptoNoteCore/DatabaseBlockchainCache.h"
+#include "CryptoNoteCore/DatabaseBlockchainCacheFactory.h"
+#include "CryptoNoteCore/DataBaseErrors.h"
+#include "CryptoNoteCore/RocksDBWrapper.h"
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandler.h"
+#include "Common/Util.h"
 #include "InProcessNode/InProcessNode.h"
 #include "Logging/LoggerManager.h"
 #include "P2p/NetNode.h"
@@ -264,6 +270,7 @@ void InProcessNodeWorker::initImpl() {
     m_protocolHandler.reset();
     m_core.reset();
     m_dispatcher.reset();
+    m_database.reset();
   });
 
   InitStatus status = initCore();
@@ -274,7 +281,7 @@ void InProcessNodeWorker::initImpl() {
 
   status = initNodeServer();
   if (status != INIT_SUCCESS) {
-    //m_core->save();
+    m_core->save();
     Q_EMIT initCompletedSignal(status);
     return;
   }
@@ -282,13 +289,13 @@ void InProcessNodeWorker::initImpl() {
   status = initInProcessNode();
   if (status != INIT_SUCCESS) {
     m_nodeServer->deinit();
-    //m_core->save();
+    m_core->save();
     Q_EMIT initCompletedSignal(status);
     return;
   }
 
   if (Settings::instance().isBlockchainExplorerEnabled()) {
-    BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, nullptr);
+    BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, *m_database, nullptr);
     blockchainExplorerAdapter->moveToThread(qApp->thread());
     m_blockchainExplorerAdapter = blockchainExplorerAdapter;
   }
@@ -303,7 +310,8 @@ void InProcessNodeWorker::initImpl() {
 
   m_dispatcher->yield();
   m_nodeServer->deinit();
-  m_core->deinit();
+  m_core->save();
+  m_database->shutdown();
   m_node->shutdown();
   m_dispatcher->yield();
   Q_EMIT deinitCompletedSignal();
@@ -326,26 +334,62 @@ INodeAdapter::InitStatus InProcessNodeWorker::initCore() {
 
     if (!Settings::instance().isTestnet()) {
       for (const CryptoNote::CheckpointData& checkpoint : CryptoNote::CHECKPOINTS) {
-        checkpoints.add_checkpoint(checkpoint.height, checkpoint.blockId);
+        checkpoints.addCheckpoint(checkpoint.index, checkpoint.blockId);
       }
-      checkpoints.load_checkpoints_from_dns();
+      checkpoints.loadCheckpointsFromDns();
     }
 
-    m_core.reset(new CryptoNote::Core(m_currency, nullptr, m_loggerManager, *m_dispatcher, true));
+    CryptoNote::DataBaseConfig dbConfig;
+    //TODO: move to settings?
+    dbConfig.setConfigFolderDefaulted(true);
+    dbConfig.setDataDir(std::string(Settings::instance().getDataDir().absolutePath().toLocal8Bit().data()));
+    dbConfig.setMaxOpenFiles(100);
+    dbConfig.setReadCacheSize(128 * 1024 * 1024);
+    dbConfig.setWriteBufferSize(128 * 1024 * 1024);
+    dbConfig.setTestnet(false);
+    dbConfig.setBackgroundThreadsCount(4);
+
+    if (dbConfig.isConfigFolderDefaulted()) {
+      if (!Tools::create_directories_if_necessary(dbConfig.getDataDir())) {
+        throw std::runtime_error("Can't create directory: " + dbConfig.getDataDir());
+      }
+    }
+    else {
+      if (!Tools::directoryExists(dbConfig.getDataDir())) {
+        throw std::runtime_error("Directory does not exist: " + dbConfig.getDataDir());
+      }
+    }
+
+    m_database.reset(new CryptoNote::RocksDBWrapper(m_loggerManager, dbConfig));
+    try {
+      m_database->init();
+      if (!CryptoNote::DatabaseBlockchainCache::checkDBSchemeVersion(*m_database, m_loggerManager))
+      {
+        m_database->shutdown();
+        m_database->destroy();
+        m_database->init();
+      }
+    } catch (const std::system_error& _error) {
+      m_database.reset();
+      m_dispatcher.reset();
+      if (_error.code().value() == static_cast<int>(CryptoNote::error::DataBaseErrorCodes::IO_ERROR)) {
+        return INIT_DB_IN_USAGE;
+      }
+
+      return INIT_DB_FAILED;
+    } catch (const std::exception& _error) {
+      m_database.reset();
+      m_dispatcher.reset();
+      return INIT_DB_FAILED;
+    }
+
+    m_core.reset(new CryptoNote::Core(m_currency, m_loggerManager, std::move(checkpoints), *m_dispatcher,
+      std::unique_ptr<CryptoNote::IBlockchainCacheFactory>(new CryptoNote::DatabaseBlockchainCacheFactory(*m_database, m_loggerManager)),
+      std::thread::hardware_concurrency()));
+    m_core->load();
     m_protocolHandler.reset(new CryptoNote::CryptoNoteProtocolHandler(m_currency, *m_dispatcher, *m_core, nullptr, m_loggerManager));
-
-    if (!Settings::instance().isTestnet()) {
-      m_core->set_checkpoints(std::move(checkpoints));
-    }
-
-    m_core->set_cryptonote_protocol(m_protocolHandler.data());
-
-    CryptoNote::CoreConfig coreConfig = makeCoreConfig();
-
-    m_core->init(coreConfig, CryptoNote::MinerConfig(), true);
-
     m_nodeServer.reset(new CryptoNote::NodeServer(*m_dispatcher, *m_protocolHandler, m_loggerManager));
-    m_node.reset(new CryptoNote::InProcessNode(*m_core, *m_protocolHandler));
+	m_node.reset(new CryptoNote::InProcessNode(*m_core, *m_protocolHandler, *m_dispatcher));
     m_protocolHandler->set_p2p_endpoint(m_nodeServer.data());
   } catch (const std::runtime_error& _error) {
     WalletLogger::critical(tr("Core init error: %1").arg(_error.what()));
@@ -396,15 +440,6 @@ INodeAdapter::InitStatus InProcessNodeWorker::initInProcessNode() {
   }
 
   return INIT_SUCCESS;
-}
-
-CryptoNote::CoreConfig InProcessNodeWorker::makeCoreConfig() const {
-  CryptoNote::CoreConfig config;
-  boost::program_options::variables_map options;
-  boost::any dataDir = std::string(Settings::instance().getDataDir().absolutePath().toLocal8Bit().data());
-  options.insert(std::make_pair("data-dir", boost::program_options::variable_value(dataDir, false)));
-  config.init(options);
-  return config;
 }
 
 }

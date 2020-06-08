@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2017, The Bytecoin developers
-// Copyright (c) 2017-2019, The Karbo developers
+// Copyright (c) 2017-2020, The Karbo developers
 //
 // This file is part of Karbo.
 //
@@ -22,7 +22,6 @@
 #include <QMap>
 #include <QMetaObject>
 
-#include "CryptoNoteCore/CoreConfig.h"
 #include "INodeAdapter.h"
 #include "INode.h"
 
@@ -36,9 +35,9 @@ namespace System {
 }
 
 namespace CryptoNote {
+  class RocksDBWrapper;
   class Currency;
   class Core;
-  class core;
   class CryptoNoteProtocolHandler;
   class NodeServer;
   class InProcessNode;
@@ -84,6 +83,7 @@ public:
 private:
   const CryptoNote::Currency& m_currency;
   Logging::ILogger& m_loggerManager;
+  QScopedPointer<CryptoNote::RocksDBWrapper> m_database;
   QScopedPointer<CryptoNote::Core> m_core;
   Logging::ILogger& m_walletLogger;
   QScopedPointer<System::Dispatcher> m_dispatcher;
@@ -92,7 +92,6 @@ private:
   QScopedPointer<CryptoNote::InProcessNode> m_node;
   IBlockChainExplorerAdapter* m_blockchainExplorerAdapter;
   QMap<INodeAdapterObserver*, QList<QMetaObject::Connection>> m_observerConnections;
-  CryptoNote::CoreConfig makeCoreConfig() const;
 
   Q_INVOKABLE void initImpl();
   Q_INVOKABLE void deinitImpl();

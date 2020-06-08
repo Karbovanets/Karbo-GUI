@@ -60,5 +60,5 @@ if(GIT_FOUND)
     set(PROJECT_VERSION_REV ${PROJECT_GIT_COMMIT_COUNT})
   endif()
 
-  configure_file("cryptonote/src/version.h.in" "version.h")
+  configure_file("cryptonote/src/cnVersion.h.in" "cnVersion.h")
 endif()

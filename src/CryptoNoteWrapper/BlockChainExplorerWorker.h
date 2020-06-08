@@ -26,7 +26,7 @@
 #include <QSemaphore>
 
 #include "IBlockChainExplorerAdapter.h"
-
+#include "IDataBase.h"
 #include "BlockchainExplorer/BlockchainExplorer.h"
 
 namespace Logging {
@@ -47,7 +47,7 @@ class BlockChainExplorerWorker : public QObject, public IBlockChainExplorerAdapt
   Q_DISABLE_COPY(BlockChainExplorerWorker)
 
 public:
-  BlockChainExplorerWorker(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, QObject* _parent);
+  BlockChainExplorerWorker(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, CryptoNote::IDataBase& _database, QObject* _parent);
   virtual ~BlockChainExplorerWorker();
 
   // IBlockChainExplorerAdapter

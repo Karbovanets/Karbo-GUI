@@ -26,10 +26,17 @@ add_definitions (-DWALLET_VERSION="${WALLET_VERSION}")
 
 set(CRYPTONOTE_LIB cryptonote)
 
+add_definitions(-DUPNP_STATIC -DMINIUPNP_STATICLIB -DUPNPC_BUILD_STATIC)
+
 include_directories(${CMAKE_BINARY_DIR}
   src
   include
   cryptonote/external
+  cryptonote/external/rocksdb/include
+  cryptonote/external/zstd/lib
+  cryptonote/external/zstd/lib/common
+  cryptonote/external/zstd/lib/compress
+  cryptonote/external/zstd/lib/decompress
   cryptonote/include
   cryptonote/src
   libqrencode
@@ -39,6 +46,8 @@ find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Network REQUIRED)
 find_package(Qt5DBus REQUIRED)
+
+include_directories(${Qt5DBus_INCLUDE_DIRS} cryptonote/external/rocksdb/include/ include src external "${CMAKE_CURRENT_BINARY_DIR}/version")
 
 set(Boost_NO_BOOST_CMAKE ON)
 set(Boost_USE_STATIC_LIBS ON)
@@ -62,19 +71,15 @@ file(GLOB_RECURSE CRYPTONOTE_SOURCES
   cryptonote/external/miniupnpc/connecthostport.c
   cryptonote/external/miniupnpc/igd_desc_parse.c
   cryptonote/external/miniupnpc/minisoap.c
-  cryptonote/external/miniupnpc/minissdpc.c
   cryptonote/external/miniupnpc/miniupnpc.c
   cryptonote/external/miniupnpc/miniwget.c
   cryptonote/external/miniupnpc/minixml.c
   cryptonote/external/miniupnpc/portlistingparse.c
   cryptonote/external/miniupnpc/receivedata.c
   cryptonote/external/miniupnpc/upnpcommands.c
-  cryptonote/external/miniupnpc/upnpdev.c
-  cryptonote/external/miniupnpc/upnperrors.c
   cryptonote/external/miniupnpc/upnpreplyparse.c
   cryptonote/src/BlockchainExplorer/BlockchainExplorer.cpp
   cryptonote/src/BlockchainExplorer/BlockchainExplorerErrors.cpp
-  cryptonote/src/BlockchainExplorer/BlockchainExplorerDataBuilder.cpp
   cryptonote/src/Serialization/BlockchainExplorerDataSerialization.cpp
   cryptonote/src/Checkpoints/Checkpoints.cpp
   cryptonote/src/Common/Base58.cpp
@@ -119,7 +124,6 @@ file(GLOB_RECURSE CRYPTONOTE_SOURCES
   cryptonote/src/crypto/tree-hash.c
   cryptonote/src/CryptoNoteCore/*.cpp
   cryptonote/src/CryptoNoteProtocol/*.cpp
-  cryptonote/src/Daemon/*.cpp
   cryptonote/src/HTTP/*.cpp
   cryptonote/src/InProcessNode/InProcessNode.cpp
   cryptonote/src/InProcessNode/InProcessNodeErrors.cpp
@@ -151,9 +155,8 @@ file(GLOB_RECURSE CRYPTONOTE_SOURCES
   cryptonote/src/System/Ipv4Address.cpp
   cryptonote/src/System/TcpStream.cpp
   cryptonote/src/JsonRpcServer/*.cpp
-  cryptonote/src/PaymentGate/*.cpp
-  cryptonote/src/PaymentGateService/*.cpp
-)
+  cryptonote/src/BlockchainExplorer/*.cpp
+  )
 
 file(GLOB_RECURSE Mnemonics cryptonote/src/Mnemonics/*)
 
@@ -182,6 +185,19 @@ set(QRC src/resources.qrc)
 qt5_wrap_ui(UIS ${FORMS})
 qt5_add_resources(RCC ${QRC})
 
+option(WITH_ZSTD ON "Build RocksDB with ZSTD")
+option(ZSTD_USE_STATIC_RUNTIME "LINK TO STATIC RUN-TIME LIBRARIES" OFF)
+option(WITH_MD_LIBRARY "Build RocksDB with MD" ON)
+set(PORTABLE ON CACHE BOOL "Buid portable RockDB")
+set(WITH_GFLAGS OFF CACHE BOOL "No gflags")
+set(WITH_TESTS OFF CACHE BOOL "No tests")
+set(WITH_TOOLS OFF CACHE BOOL "No tools")
+
+add_subdirectory(cryptonote/external/miniupnpc EXCLUDE_FROM_ALL)
+
+add_subdirectory(cryptonote/external/zstd EXCLUDE_FROM_ALL)
+set_property(TARGET zstd PROPERTY FOLDER "external")
+
 if (WIN32)
   if (NOT MSVC)
     message(FATAL_ERROR "Only MSVC is supported on this platform")
@@ -190,15 +206,34 @@ if (WIN32)
   set(STATIC ${MSVC} CACHE BOOL "Link libraries statically")
 
   add_definitions(/D_CRT_SECURE_NO_WARNINGS /D_WIN32_WINNT=0x0600 /DSTATICLIB)
+  
+  add_subdirectory(cryptonote/external/rocksdb EXCLUDE_FROM_ALL)
+  set_property(TARGET rocksdb PROPERTY FOLDER "external")
+  
   include_directories(cryptonote/src/Platform/msc)
 
-  set( CMAKE_CXX_FLAGS "-bigobj -EHsc")
+  set(CMAKE_CXX_FLAGS "-bigobj -EHsc")
   set(PLATFORM_DIR Windows)
   set(BUILD_PLATFORM WIN32)
   set(BUILD_RESOURCES src/karbowanecwallet.rc)
   set(QTMAIN Qt5::WinMain)
 
 elseif (UNIX)
+
+  execute_process(
+        COMMAND ${CMAKE_COMMAND} ${CMAKE_CURRENT_SOURCE_DIR}/cryptonote/external/rocksdb -DARCH=${ARCH} -DWITH_ZSTD=${WITH_ZSTD} -DWITH_GFLAGS=0 -DCMAKE_BUILD_TYPE=MinSizeRel -DWITH_TESTS=OFF -DWITH_TOOLS=OFF -DPORTABLE=ON -B${PROJECT_BINARY_DIR}/rocksdb
+      )
+  set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${PROJECT_BINARY_DIR}/rocksdb/librocksdb.a")
+
+  set_property(TARGET upnpc-static zstd PROPERTY FOLDER "external")
+  add_custom_target(
+         rocksdb
+         COMMAND $(MAKE) rocksdb
+         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/rocksdb
+  )
+  add_library(rocksdblib STATIC IMPORTED GLOBAL)
+  set_target_properties(rocksdblib PROPERTIES IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/rocksdb/librocksdb.a)
+  add_dependencies(rocksdblib rocksdb)
 
   set(CRYPTONOTE_SOURCES ${CRYPTONOTE_SOURCES} cryptonote/external/miniupnpc/minissdpc.c)
 
@@ -243,20 +278,14 @@ include_directories(cryptonote/src/Platform/${PLATFORM_DIR})
 file(GLOB PLATFORM_SOURCES cryptonote/src/Platform/${PLATFORM_DIR}/System/*)
 set(CRYPTONOTE_SOURCES ${CRYPTONOTE_SOURCES} ${PLATFORM_SOURCES} ${CRYPTONOTE_PLATFORM})
 
-add_definitions(-DUPNP_STATIC -DMINIUPNP_STATICLIB -DUPNPC_BUILD_STATIC)
-
-if(MSVC)
-#else(MSVC)
-#  add_subdirectory(cryptonote/external)
-endif(MSVC)
-
 add_library(${CRYPTONOTE_LIB} STATIC ${CRYPTONOTE_SOURCES})
 add_library(Mnemonics ${Mnemonics})
 set_target_properties(${CRYPTONOTE_LIB} PROPERTIES COMPILE_DEFINITIONS _GNU_SOURCE)
+
 if (APPLE OR ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  target_link_libraries(${CRYPTONOTE_LIB} ${Boost_LIBRARIES} ${Qt5DBus_LIBRARIES} -lresolv)
+  target_link_libraries(${CRYPTONOTE_LIB} rocksdblib zstd ${Boost_LIBRARIES} ${Qt5DBus_LIBRARIES} -lresolv)
 else ()
-  target_link_libraries(${CRYPTONOTE_LIB} ${Boost_LIBRARIES} ${Qt5DBus_LIBRARIES})
+  target_link_libraries(${CRYPTONOTE_LIB} rocksdb zstd ${Boost_LIBRARIES} ${Qt5DBus_LIBRARIES})
 endif ()
 set_target_properties(Mnemonics PROPERTIES COMPILE_DEFINITIONS _GNU_SOURCE)
 target_link_libraries(Mnemonics ${Boost_LIBRARIES})

@@ -275,7 +275,7 @@ QVariant BlockchainModel::data(const QModelIndex &_index, int _role) const {
   case ROLE_BLOCK_DIFFICULTY:
     return static_cast<quint64>(block -> difficulty);
   case ROLE_BLOCK_IS_ORPHANED:
-    return block->isOrphaned;
+    return block->isAlternative;
   case ROLE_BLOCK_TRANSACTION_COUNT:
     return static_cast<quint64>(block -> transactions.size());
   case ROLE_BLOCK_TRANSACTIONS_SIZE:
@@ -324,7 +324,7 @@ QVariant BlockchainModel::data(const QModelIndex &_index, int _role) const {
   case ROLE_TRANSACTION_BLOCK_HASH:
     return QByteArray(reinterpret_cast<char*>(&tx.blockHash), sizeof(tx.blockHash));
   case ROLE_TRANSACTION_BLOCK_HEIGHT:
-    return static_cast<quint32>(tx.blockHeight);
+    return static_cast<quint32>(tx.blockIndex);
   default:
     break;
   }
