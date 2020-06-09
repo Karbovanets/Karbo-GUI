@@ -44,6 +44,10 @@ int Style::viewItemHeight() const {
   return 46;
 }
 
+QString Style::fontColorGeneral() const {
+  return "#000000";
+}
+
 QString Style::fontColorGray() const {
   return "#888888";
 }
@@ -66,6 +70,14 @@ QString Style::fontColorBlueHover() const {
 
 QString Style::fontColorBluePressed() const {
   return "#0580e8";
+}
+
+QString Style::backgroundColor() const {
+  return "#ffffff";
+}
+
+QString Style::backgroundColorAlt() const {
+  return "#eff3fa";
 }
 
 QString Style::backgroundColorGray() const {
@@ -116,6 +128,10 @@ QString Style::backgroundColorAlternate() const {
   return "#f3f4f6";
 }
 
+QString Style::backgroundColorDeep() const {
+  return "#ffffff";
+}
+
 QString Style::borderColor() const {
   return "#dddddd";
 }
@@ -155,13 +171,17 @@ QString Style::makeStyleSheet(const QString& _styleSheetTemplate) const {
     replace("%fontSizeLarge%", QString("%1px").arg(static_cast<quint8>(FontSize::FONT_LARGE))).
     replace("%fontSizeExtraLarge%", QString("%1px").arg(static_cast<quint8>(FontSize::FONT_EXTRA_LARGE))).
     replace("%fontSizeHuge%", QString("%1px").arg(static_cast<quint8>(FontSize::FONT_HUGE))).
+    replace("%fontColorGeneral%", fontColorGeneral()).
     replace("%fontColorGray%", fontColorGray()).
     replace("%fontColorGreen%", fontColorGreen()).
     replace("%fontColorRed%", fontColorRed()).
     replace("%fontColorBlueNormal%", fontColorBlueNormal()).
     replace("%fontColorBlueHover%", fontColorBlueHover()).
     replace("%fontColorBluePressed%", fontColorBluePressed()).
+    replace("%backgroundColor%", backgroundColor()).
+    replace("%backgroundColorAlt%", backgroundColorAlt()).
     replace("%backgroundColorGray%", backgroundColorGray()).
+    replace("%backgroundColorDeep%", backgroundColorDeep()).
     replace("%backgroundButtonColorGrayHover%", backgroundButtonColorGrayHover()).
     replace("%backgroundColorBlueNormal%", backgroundColorBlueNormal()).
     replace("%backgroundColorBlueHover%", backgroundColorBlueHover()).

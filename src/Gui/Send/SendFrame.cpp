@@ -49,7 +49,7 @@ namespace {
 
 const char SEND_FRAME_STYLE_SHEET[] =
   "WalletGui--SendFrame {"
-    "background-color: #ffffff;"
+    "background-color: %backgroundColor%;"
     "border: none;"
   "}"
 
@@ -65,7 +65,7 @@ const char SEND_FRAME_STYLE_SHEET[] =
   "}"
 
   "WalletGui--SendFrame #scrollAreaWidgetContents {"
-    "background-color: #ffffff;"
+    "background-color: %backgroundColor%;"
     "border: none;"
   "}"
 

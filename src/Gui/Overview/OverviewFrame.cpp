@@ -44,7 +44,7 @@ const char OVERVIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--OverviewFrame {"
-    "background-color: #ffffff;"
+    "background-color: %backgroundColor%;"
     "border: none;"
   "}"
 
@@ -125,6 +125,10 @@ void OverviewFrame::setNodeStateModel(QAbstractItemModel* _model) {
 
 void OverviewFrame::setWalletStateModel(QAbstractItemModel* _model) {
   m_ui->m_overviewHeaderFrame->setWalletStateModel(_model);
+}
+
+void OverviewFrame::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(OVERVIEW_STYLE_SHEET_TEMPLATE));
 }
 
 void OverviewFrame::settingsUpdated() {

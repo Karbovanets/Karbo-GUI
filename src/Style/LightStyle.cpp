@@ -24,12 +24,36 @@ LightStyle::LightStyle() : Style("light", "Light") {
 
 }
 
+QString LightStyle::fontColorGeneral() const {
+  return "#000000";
+}
+
+QString LightStyle::backgroundColor() const {
+  return "#ffffff";
+}
+
+QString LightStyle::backgroundColorAlt() const {
+  return "#eff3fa";
+}
+
+QString LightStyle::backgroundColorAlternate() const {
+  return "#f3f4f6";
+}
+
+QString LightStyle::backgroundColorDeep() const {
+  return "#ffffff";
+}
+
+QString LightStyle::backgroundColorGray() const {
+  return "#f4f4f4";
+}
+
 QString LightStyle::statusBarBackgroundColor() const {
-  return "#CADEF7";
+  return "#cadef7";
 }
 
 QString LightStyle::statusBarFontColor() const {
-  return "#2A4268";
+  return "#2a4268";
 }
 
 QString LightStyle::headerBackgroundColor() const {
@@ -41,31 +65,31 @@ QString LightStyle::headerBorderColor() const {
 }
 
 QString LightStyle::addressFontColor() const {
-  return "#2A4268";
+  return "#2a4268";
 }
 
 QString LightStyle::balanceFontColor() const {
-  return "#2A4268";
+  return "#2a4268";
 }
 
 QString LightStyle::toolButtonBackgroundColorNormal() const {
-  return "#DFECFC";
+  return "#dfecfc";
 }
 
 QString LightStyle::toolButtonBackgroundColorHover() const {
-  return "#C1D5ED";
+  return "#c1d5ed";
 }
 
 QString LightStyle::toolButtonBackgroundColorPressed() const {
-  return "#00A0E3";
+  return "#00a0e3";
 }
 
 QString LightStyle::toolButtonFontColorNormal() const {
-  return "#2E4469";
+  return "#2e4469";
 }
 
 QString LightStyle::toolButtonFontColorDisabled() const {
-  return "#8C949E";
+  return "#8c949e";
 }
 
 QString LightStyle::toolBarBorderColor() const {

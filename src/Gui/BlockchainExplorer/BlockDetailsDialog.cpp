@@ -80,7 +80,7 @@ const char BLOCK_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
 "}"
 
 "#m_generalTab {"
-  "background-color: #ffffff;"
+  "background-color: %backgroundColor%;"
   "border: none;"
 "}"
 
@@ -100,7 +100,7 @@ const char BLOCK_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
 "}"
 
 "#m_generalTab, #m_transactionsTab {"
-  "background-color: #ffffff;"
+  "background-color: %backgroundColor%;"
 "}"
 
 "#m_generalTab > #m_heightTextLabel,"

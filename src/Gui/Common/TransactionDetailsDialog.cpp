@@ -117,7 +117,7 @@ const char TRANSACTION_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
 
   "WalletGui--TransactionDetailsDialog #m_transactionTab,"
   "WalletGui--TransactionDetailsDialog #m_transfersTab {"
-    "background-color: #ffffff;"
+    "background-color: %backgroundColor%;"
     "border: none;"
   "}"
 

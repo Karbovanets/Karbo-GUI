@@ -26,6 +26,12 @@ class LightStyle : public Style {
 public:
   LightStyle();
 
+  virtual QString fontColorGeneral() const override;
+  virtual QString backgroundColor() const;
+  virtual QString backgroundColorAlt() const;
+  virtual QString backgroundColorAlternate() const override;
+  virtual QString backgroundColorDeep() const override;
+  virtual QString backgroundColorGray() const override;
   virtual QString statusBarBackgroundColor() const override;
   virtual QString statusBarFontColor() const override;
   virtual QString headerBackgroundColor() const override;

@@ -36,7 +36,7 @@ const char POOL_TRANSACTION_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--PoolTransactionDetailsDialog {"
-    "background-color: #ffffff;"
+    "background-color: %backgroundColor%;"
   "}"
 
   "WalletGui--PoolTransactionDetailsDialog WalletGui--WalletNormalGrayTextLabel, "

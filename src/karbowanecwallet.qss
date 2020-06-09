@@ -9,6 +9,8 @@ QDialog {
 QTextEdit {
   border-radius: 2px;
   border: 1px solid %borderColorDark%;
+  background-color: %backgroundColorDeep%;
+  color: %fontColorGeneral%;
 }
 
 QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox, QPushButton, QDateTimeEdit, QRadioButton, QCheckBox {
@@ -17,6 +19,8 @@ QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox, QPushButton, QDateTimeEdit, QRad
   min-height: 30px;
   max-height: 30px;
   border: 1px solid %borderColorDark%;
+  background-color: transparent;
+  color: %fontColorGeneral%;
 }
 
 QRadioButton, QCheckBox {
@@ -31,7 +35,7 @@ QDateTimeEdit {
   font-size: %fontSizeNormal%;
   padding-left: 10px;
   selection-background-color: %borderColor%;
-  selection-color: #000000;
+  selection-color: %fontColorGeneral%;
 }
 
 
@@ -58,7 +62,7 @@ QComboBox {
   font-size: %fontSizeNormal%;
   padding-left: 10px;
   selection-background-color: %selectionColor%;
-  selection-color: #ffffff;
+  selection-color: %backgroundColor%;
 }
 
 QComboBox::drop-down {
@@ -111,9 +115,9 @@ QScrollBar::handle:vertical {
 QCalendarWidget QMenu {
   border: 1px solid %borderColorDark%;
   border-radius: 2px;
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
   selection-background-color: %selectionColor%;
-  selection-color: #ffffff;
+  selection-color: %backgroundColor%;
 }
 
 QScrollBar::sub-line, QScrollBar::add-line {
@@ -159,7 +163,7 @@ QCalendarWidget #qt_calendar_navigationbar {
 }
 QCalendarWidget QAbstractItemView {
   selection-background-color: #5f9cc7;
-  selection-color: #ffffff;
+  selection-color: %backgroundColor%;
 }
 
 QCalendarWidget {
@@ -190,9 +194,9 @@ QCalendarWidget QSpinBox {
 QCalendarWidget QMenu {
   border: 1px solid %borderColorDark%;
   border-radius: 2px;
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
   selection-background-color: %selectionColor%;
-  selection-color: #ffffff;
+  selection-color: %backgroundColor%;
 }
 
 
@@ -364,22 +368,22 @@ QCalendarWidget QMenu {
 #m_overviewNodeFrame,
 #m_overviewPoolFrame
 {
-  background-color: #EFF3FA;
+  background-color: %backgroundColorAlt%;
   border: none;
 }
 
 #m_receiveFrame {
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
   border: none;
 }
 
 #m_receiveFrame > #m_createRequestFrame {
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
   border: none;
 }
 
 #m_receiveFrame > #m_receiveFrameButtons {
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
   border: none;
   border-top: 1px solid %borderColor%;
 }
@@ -439,13 +443,13 @@ QCalendarWidget QMenu {
 }
 
 #m_blockchainTab, #m_transactionPoolTab {
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
   border: none;
 }
 
 
 #m_addressBookFrame {
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
   border: none;
 }
 
@@ -471,17 +475,17 @@ QCalendarWidget QMenu {
 #m_addressBookMenu {
   border: 1px solid %borderColorDark%;
   border-radius: 2px;
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
   selection-background-color: %selectionColor%;
-  selection-color: #ffffff;
+  selection-color: %backgroundColor%;
 }
 
 #AddressBookDialog {
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
 }
 
 #m_noWalletFrame {
-  background-color: #ffffff;
+  background-color: %backgroundColor%;
 }
 
 
@@ -494,7 +498,7 @@ QCalendarWidget QMenu {
 
 #m_passwordFrame > #m_walletNameLabel {
   font-weight: bold;
-  color: #000000;
+  color: %fontColorGeneral%;
 }
 
 

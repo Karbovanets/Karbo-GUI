@@ -46,6 +46,7 @@ public:
   virtual void setTransactionPoolModel(QAbstractItemModel *_model) override;
   virtual void setNodeStateModel(QAbstractItemModel* _model) override;
   virtual void setWalletStateModel(QAbstractItemModel* _model) override;
+  virtual void updateStyle() override;
 
   // ISettingsObserver
   virtual void settingsUpdated() override;

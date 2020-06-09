@@ -40,8 +40,9 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--WalletTableView {"
     "border: none;"
     "font-size: %fontSizeNormal%;"
-    "background-color: #ffffff;"
+    "background-color: %backgroundColor%;"
     "border-bottom: 1px solid transparent;"
+    "color: %fontColorGeneral%;"
   "}"
 
   "WalletGui--WalletTableView[showBottomBorder=\"true\"] {"
@@ -50,7 +51,7 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--WalletTableView > QHeaderView {"
-    "background-color: #ffffff;"
+    "background-color: %backgroundColor%;"
     "border: none;"
     "border-bottom: 1px solid %borderColor%;"
   "}"
@@ -59,7 +60,7 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
     "height: 20px;"
     "font-size: %fontSizeSmall%;"
     "color: %fontColorGray%;"
-    "background-color: #ffffff;"
+    "background-color: %backgroundColor%;"
     "border: none;"
     "border-left: 23px solid transparent;"
     "border-right: 20px solid transparent;"
@@ -73,7 +74,7 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--WalletTableView::item:alternate {"
-    "background: #ffffff;"
+    "background: %backgroundColor%;"
   "}"
 
   "WalletGui--WalletTableView::item:selected {"
@@ -82,8 +83,8 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--WalletTableView[hoverIsVisible=\"true\"]::item:hover {"
-    "background: #e9eaec;"
-    "alternate-background-color: #e9eaec;"
+    "background: %backgroundColorAlternate%;"
+    "alternate-background-color: %backgroundColorAlternate%;"
   "}";
 
 }

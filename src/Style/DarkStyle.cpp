@@ -24,6 +24,30 @@ DarkStyle::DarkStyle() : Style("dark", "Dark") {
 
 }
 
+QString DarkStyle::fontColorGeneral() const {
+  return "#ffffff";
+}
+
+QString DarkStyle::backgroundColor() const {
+  return "#1D3254";
+}
+
+QString DarkStyle::backgroundColorAlt() const {
+  return "#233758";
+}
+
+QString DarkStyle::backgroundColorAlternate() const {
+  return "#455E87";
+}
+
+QString DarkStyle::backgroundColorDeep() const {
+  return "#13233E";
+}
+
+QString DarkStyle::backgroundColorGray() const {
+  return "#263A5B";
+}
+
 QString DarkStyle::statusBarBackgroundColor() const {
   return "#2E466C";
 }

@@ -22,10 +22,16 @@
 #include "Settings/Settings.h"
 #include "ICryptoNoteAdapter.h"
 #include "INodeAdapter.h"
+#include "Style/Style.h"
 
 #include "ui_NoWalletFrame.h"
 
 namespace WalletGui {
+
+const char NOWALLET_STYLE_SHEET_TEMPLATE[] =
+  "* {"
+     "font-family: %fontFamily%;"
+  "}";
 
 NoWalletFrame::NoWalletFrame(QWidget* _parent) : QFrame(_parent), m_ui(new Ui::NoWalletFrame),
   m_walletFile(), m_legacyKeysFile() {
@@ -80,6 +86,10 @@ void NoWalletFrame::setMainWindow(QWidget* _mainWindow) {
       connect(m_ui->m_openWalletButton, &WalletLargeBlueButton::clicked, action, &QAction::trigger, Qt::UniqueConnection);
     }
   }
+}
+
+void NoWalletFrame::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(NOWALLET_STYLE_SHEET_TEMPLATE));
 }
 
 void NoWalletFrame::walletOpened() {

@@ -34,12 +34,16 @@ public:
 
   virtual QString fontFamily() const;
   virtual int viewItemHeight() const;
+  virtual QString fontColorGeneral() const;
   virtual QString fontColorGray() const;
   virtual QString fontColorGreen() const;
   virtual QString fontColorRed() const;
   virtual QString fontColorBlueNormal() const;
   virtual QString fontColorBlueHover() const;
   virtual QString fontColorBluePressed() const;
+  virtual QString backgroundColor() const;
+  virtual QString backgroundColorAlt() const;
+  virtual QString backgroundColorDeep() const;
   virtual QString backgroundColorGray() const;
   virtual QString backgroundButtonColorGrayHover() const;
   virtual QString backgroundColorBlueNormal() const;

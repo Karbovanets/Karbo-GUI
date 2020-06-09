@@ -43,6 +43,7 @@ public:
   // IWalletUiItem
   virtual void setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter) override;
   virtual void setMainWindow(QWidget *_mainWindow) override;
+  virtual void updateStyle() override;
 
   // IWalletAdapterObserver
   Q_SLOT virtual void walletOpened() override;
