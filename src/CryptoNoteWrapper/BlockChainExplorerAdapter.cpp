@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2017, The Bytecoin developers
-// Copyright (c) 2017-2018, The Karbo developers
+// Copyright (c) 2017-2020, The Karbo developers
 //
 // This file is part of Karbo.
 //
@@ -24,8 +24,8 @@
 
 namespace WalletGui {
 
-BlockChainExplorerAdapter::BlockChainExplorerAdapter(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, CryptoNote::IDataBase& _database, QObject* _parent) : QObject(_parent), m_workerThread(new QThread(this)),
-  m_worker(new BlockChainExplorerWorker(_node, _loggerManager, _database, nullptr)) {
+BlockChainExplorerAdapter::BlockChainExplorerAdapter(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, /*CryptoNote::IDataBase& _database,*/ QObject* _parent) : QObject(_parent), m_workerThread(new QThread(this)),
+  m_worker(new BlockChainExplorerWorker(_node, _loggerManager, /*_database,*/ nullptr)) {
   QObject* worker = dynamic_cast<QObject*>(m_worker);
   Q_ASSERT(worker != nullptr);
   worker->moveToThread(m_workerThread);

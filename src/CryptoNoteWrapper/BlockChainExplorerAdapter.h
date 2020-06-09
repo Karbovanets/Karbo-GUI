@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2017, The Bytecoin developers
-// Copyright (c) 2017-2018, The Karbo developers
+// Copyright (c) 2017-2020, The Karbo developers
 //
 // This file is part of Karbo.
 //
@@ -21,14 +21,14 @@
 #include <QObject>
 
 #include "IBlockChainExplorerAdapter.h"
-#include "IDataBase.h"
+//#include "IDataBase.h"
 
 namespace Logging {
   class ILogger;
 }
 
 namespace CryptoNote {
-  class IDataBase;
+//  class IDataBase;
   class INode;
 }
 
@@ -39,7 +39,7 @@ class BlockChainExplorerAdapter : public QObject, public IBlockChainExplorerAdap
   Q_DISABLE_COPY(BlockChainExplorerAdapter)
 
 public:
-  BlockChainExplorerAdapter(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, CryptoNote::IDataBase& _database, QObject* _parent);
+  BlockChainExplorerAdapter(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, /*CryptoNote::IDataBase& _database,*/ QObject* _parent);
   virtual ~BlockChainExplorerAdapter();
 
   // IBlockChainExplorerAdapter

@@ -173,15 +173,16 @@ void ProxyRpcNodeWorker::initImpl() {
   WalletLogger::debug(tr("[RPC node] NodeRpcProxy initializing..."));
   m_node->init([this](std::error_code _errorCode) {
     Q_ASSERT(_errorCode.value() == 0);
+
+    BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, /*dummyDatabase,*/ nullptr);
+    blockchainExplorerAdapter->moveToThread(qApp->thread());
+    m_blockchainExplorerAdapter = blockchainExplorerAdapter;
+
     if (_errorCode.value() == 0) {
       Q_EMIT initCompletedSignal(INodeAdapter::INIT_SUCCESS);
     } else {
       WalletLogger::critical(tr("[RPC node] NodeRpcProxy init error: %1").arg(_errorCode.message().data()));
     }
-
-    //BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, nullptr, nullptr);
-    //blockchainExplorerAdapter->moveToThread(qApp->thread());
-    //m_blockchainExplorerAdapter = blockchainExplorerAdapter;
 
     WalletLogger::debug(tr("[RPC node] NodeRpcProxy init result: %1").arg(_errorCode.value()));
   });

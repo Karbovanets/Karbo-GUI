@@ -37,8 +37,8 @@ const quint32 INVALID_BLOCK_HEIGHT = std::numeric_limits<quint32>::max();
 
 }
 
-BlockChainExplorerWorker::BlockChainExplorerWorker(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, CryptoNote::IDataBase& _database, QObject* _parent) : QObject(_parent),
-  m_blockChainExplorer(_node, _loggerManager, _database), m_preloadSemaphore(1) {
+BlockChainExplorerWorker::BlockChainExplorerWorker(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, /*CryptoNote::IDataBase& _database,*/ QObject* _parent) : QObject(_parent),
+  m_blockChainExplorer(_node, _loggerManager/*, _database*/), m_preloadSemaphore(1) {
   qRegisterMetaType<QVector<CryptoNote::BlockDetails>>("QVector<CryptoNote::BlockDetails>");
   qRegisterMetaType<QVector<CryptoNote::TransactionDetails>>("QVector<CryptoNote::TransactionDetails>");
   qRegisterMetaType<QVector<Crypto::Hash>>("QVector<Crypto::Hash>");
