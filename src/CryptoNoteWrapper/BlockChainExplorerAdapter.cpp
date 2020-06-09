@@ -24,8 +24,8 @@
 
 namespace WalletGui {
 
-BlockChainExplorerAdapter::BlockChainExplorerAdapter(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, /*CryptoNote::IDataBase& _database,*/ QObject* _parent) : QObject(_parent), m_workerThread(new QThread(this)),
-  m_worker(new BlockChainExplorerWorker(_node, _loggerManager, /*_database,*/ nullptr)) {
+BlockChainExplorerAdapter::BlockChainExplorerAdapter(CryptoNote::INode& _node, Logging::ILogger& _loggerManager, QObject* _parent) : QObject(_parent), m_workerThread(new QThread(this)),
+  m_worker(new BlockChainExplorerWorker(_node, _loggerManager, nullptr)) {
   QObject* worker = dynamic_cast<QObject*>(m_worker);
   Q_ASSERT(worker != nullptr);
   worker->moveToThread(m_workerThread);

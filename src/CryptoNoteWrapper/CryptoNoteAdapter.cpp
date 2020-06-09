@@ -276,6 +276,7 @@ void CryptoNoteAdapter::removeObserver(ICryptoNoteAdapterObserver* _observer) {
 }
 
 void CryptoNoteAdapter::initCompleted(int _status) {
+  WalletLogger::info(tr("[CryptoNote wrapper] Node init completed..."));
   if (_status == INodeAdapter::INIT_SUCCESS && m_nodeAdapter->getBlockChainExplorerAdapter() != nullptr) {
     WalletLogger::info(tr("[CryptoNote wrapper] Initializing blockchain explorer..."));
     m_nodeAdapter->getBlockChainExplorerAdapter()->init();
@@ -364,7 +365,7 @@ void CryptoNoteAdapter::initNode() {
 }
 
 void CryptoNoteAdapter::initAutoConnection() {
-  WalletLogger::debug(tr("[CryptoNote wrapper] Searching local daemon: 127.0.0.1:%1").arg(CryptoNote::RPC_DEFAULT_PORT));
+  WalletLogger::info(tr("[CryptoNote wrapper] Searching local daemon: 127.0.0.1:%1").arg(CryptoNote::RPC_DEFAULT_PORT));
   m_nodeAdapter = new ProxyRpcNodeAdapter(m_currency, m_coreLogger, m_walletLogger, "127.0.0.1", CryptoNote::RPC_DEFAULT_PORT, this);
   m_nodeAdapter->addObserver(this);
   m_autoConnectionTimerId = startTimer(AUTO_CONNECTION_INTERVAL);

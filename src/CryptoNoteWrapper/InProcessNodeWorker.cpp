@@ -293,12 +293,11 @@ void InProcessNodeWorker::initImpl() {
     Q_EMIT initCompletedSignal(status);
     return;
   }
-  else {
-    if (Settings::instance().isBlockchainExplorerEnabled()) {
-      BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, nullptr);
-      blockchainExplorerAdapter->moveToThread(qApp->thread());
-      m_blockchainExplorerAdapter = blockchainExplorerAdapter;
-    }
+
+  if (Settings::instance().isBlockchainExplorerEnabled()) {
+    BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, nullptr);
+    blockchainExplorerAdapter->moveToThread(qApp->thread());
+    m_blockchainExplorerAdapter = blockchainExplorerAdapter;
   }
 
   Q_EMIT initCompletedSignal(INIT_SUCCESS);

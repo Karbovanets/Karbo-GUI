@@ -18,6 +18,7 @@
 
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QTimer>
 
 #include "ProxyRpcNodeWorker.h"
 #include "WalletLogger/WalletLogger.h"
@@ -194,7 +195,7 @@ void ProxyRpcNodeWorker::initImpl() {
   WalletLogger::info(tr("[RPC node] Waiting..."));
   waitLoop.exec();
   if (initResult) {
-
+    WalletLogger::critical(tr("[RPC node] NodeRpcProxy init failed..."));
   } else {
 
   }
