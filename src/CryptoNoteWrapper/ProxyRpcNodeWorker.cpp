@@ -23,7 +23,7 @@
 #include "WalletLogger/WalletLogger.h"
 #include "BlockChainExplorerAdapter.h"
 #include "WalletGreenAdapter.h"
-
+#include "Settings/Settings.h"
 #include "NodeRpcProxy/NodeRpcProxy.h"
 
 namespace WalletGui {
@@ -174,11 +174,13 @@ void ProxyRpcNodeWorker::initImpl() {
   m_node->init([this](std::error_code _errorCode) {
     Q_ASSERT(_errorCode.value() == 0);
 
-    BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, /*dummyDatabase,*/ nullptr);
-    blockchainExplorerAdapter->moveToThread(qApp->thread());
-    m_blockchainExplorerAdapter = blockchainExplorerAdapter;
-
     if (_errorCode.value() == 0) {
+      if (Settings::instance().isBlockchainExplorerEnabled()) {
+        BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, /*dummyDatabase,*/ nullptr);
+        blockchainExplorerAdapter->moveToThread(qApp->thread());
+        m_blockchainExplorerAdapter = blockchainExplorerAdapter;
+      }
+
       Q_EMIT initCompletedSignal(INodeAdapter::INIT_SUCCESS);
     } else {
       WalletLogger::critical(tr("[RPC node] NodeRpcProxy init error: %1").arg(_errorCode.message().data()));

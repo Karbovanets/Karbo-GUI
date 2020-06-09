@@ -28,6 +28,7 @@
 #include "Settings/Settings.h"
 #include "WalletLogger/WalletLogger.h"
 #include "SemaphoreUtils.h"
+#include "BlockchainExplorer/BlockchainExplorerErrors.h"
 
 namespace WalletGui {
 
