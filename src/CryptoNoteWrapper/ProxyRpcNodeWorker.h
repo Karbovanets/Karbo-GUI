@@ -90,6 +90,7 @@ private:
 
 Q_SIGNALS:
   void initCompletedSignal(int _status);
+  void nodeInitCompletedSignal(int _status);
   void deinitCompletedSignal();
   void peerCountUpdatedSignal(quintptr _count);
   void localBlockchainUpdatedSignal(CryptoNote::BlockHeaderInfo _lastLocalBlockInfo);
