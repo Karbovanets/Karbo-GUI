@@ -59,7 +59,7 @@ namespace WalletGui {
 namespace {
 
 const char URI_SCHEME_NAME[] = "karbowanec";
-const QRegularExpression LOG_SPLASH_REG_EXP("\\[Blockchain\\] Height");
+const QRegularExpression LOG_SPLASH_REG_EXP("\\] ");
 
 quint16 findPort() {
   QTcpServer srv;
@@ -428,7 +428,7 @@ void WalletApplication::prepareToQuit() {
 void WalletApplication::newLogString(const QString& _string) {
   QRegularExpressionMatch match = LOG_SPLASH_REG_EXP.match(_string);
   if (match.hasMatch()) {
-    QString message = _string.mid(match.capturedEnd()).prepend(tr("Rebuilding"));
+    QString message = _string.mid(match.capturedEnd());
     if (m_splash != nullptr) {
       m_splash->showMessage(message, Qt::AlignLeft | Qt::AlignBottom, Qt::white);
     }
