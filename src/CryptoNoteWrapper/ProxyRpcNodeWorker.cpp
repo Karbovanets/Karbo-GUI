@@ -170,7 +170,7 @@ void ProxyRpcNodeWorker::initImpl() {
   Q_ASSERT(m_node.isNull());
 
   QEventLoop waitLoop;
-  connect(this, &ProxyRpcNodeWorker::nodeInitCompletedSignal, &waitLoop, &QEventLoop::exit, Qt::QueuedConnection);
+  connect(this, &ProxyRpcNodeWorker::initCompletedSignal, &waitLoop, &QEventLoop::exit, Qt::QueuedConnection);
   std::error_code initResult;
   m_node.reset(new CryptoNote::NodeRpcProxy(m_nodeHost.toStdString(), m_nodePort, m_loggerManager));
   m_node->addObserver(static_cast<CryptoNote::INodeObserver*>(this));
@@ -180,7 +180,13 @@ void ProxyRpcNodeWorker::initImpl() {
     Q_ASSERT(_errorCode.value() == 0);
     initResult = _errorCode;
     if (_errorCode.value() == 0) {
-      Q_EMIT nodeInitCompletedSignal(INodeAdapter::INIT_SUCCESS);
+      if (m_blockchainExplorerAdapter == nullptr && Settings::instance().isBlockchainExplorerEnabled() && !m_node.isNull()) {
+        WalletLogger::info(tr("[RPC node] Creating blockchain explorer..."));
+        BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, nullptr);
+        blockchainExplorerAdapter->moveToThread(qApp->thread());
+        m_blockchainExplorerAdapter = blockchainExplorerAdapter;
+      }
+      Q_EMIT initCompletedSignal(INodeAdapter::INIT_SUCCESS);
     } else {
       WalletLogger::critical(tr("[RPC node] NodeRpcProxy init error: %1").arg(_errorCode.message().data()));
     }
@@ -191,19 +197,7 @@ void ProxyRpcNodeWorker::initImpl() {
   if (initResult) {
     WalletLogger::critical(tr("[RPC node] NodeRpcProxy init failed..."));
   } else {
-    QTimer::singleShot(100, this, [this] () {
-      if (Settings::instance().isBlockchainExplorerEnabled() && !m_node.isNull() && m_node->isConnected()) {
-        WalletLogger::info(tr("[RPC node] Creating blockchain explorer..."));
-        BlockChainExplorerAdapter* blockchainExplorerAdapter = new BlockChainExplorerAdapter(*m_node, m_loggerManager, nullptr);
-        blockchainExplorerAdapter->moveToThread(qApp->thread());
-        m_blockchainExplorerAdapter = blockchainExplorerAdapter;
-        if (m_blockchainExplorerAdapter != nullptr) {
-          WalletLogger::info(tr("[RPC node] Initializing blockchain explorer..."));
-          getBlockChainExplorerAdapter()->init();
-          Q_EMIT initCompletedSignal(INodeAdapter::INIT_SUCCESS);
-        }
-      }
-    });
+
   }
 }
 

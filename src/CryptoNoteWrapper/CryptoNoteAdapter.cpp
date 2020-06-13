@@ -277,7 +277,7 @@ void CryptoNoteAdapter::removeObserver(ICryptoNoteAdapterObserver* _observer) {
 
 void CryptoNoteAdapter::initCompleted(int _status) {
   WalletLogger::info(tr("[CryptoNote wrapper] Node init completed..."));
-  if (_status == INodeAdapter::INIT_SUCCESS && m_nodeAdapter->getBlockChainExplorerAdapter() != nullptr && m_nodeAdapter->getNodeType() == NodeType::IN_PROCESS) {
+  if (_status == INodeAdapter::INIT_SUCCESS && m_nodeAdapter->getBlockChainExplorerAdapter() != nullptr) {
     WalletLogger::info(tr("[CryptoNote wrapper] Initializing blockchain explorer..."));
     m_nodeAdapter->getBlockChainExplorerAdapter()->init();
   }
