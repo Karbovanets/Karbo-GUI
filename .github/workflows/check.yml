@@ -11,16 +11,17 @@ on:
 jobs:
   build-windows:
     name: Windows
-    runs-on: windows-latest
+    runs-on: windows-2019
     env:
       BOOST_ROOT: C:\thirdparties\boost-1.72.0
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: ${{ github.ref }}
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: Install Boost
         shell: cmd
@@ -33,12 +34,11 @@ jobs:
         run: choco install openssl
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v3
         with:
-          version: '5.15.1'
+          version: '5.15.2'
           host: 'windows'
           target: 'desktop'
-          modules: 'qttools5'
           install-deps: 'true'
 
       - name: Build
@@ -54,15 +54,18 @@ jobs:
           set CMAKE_PREFIX_PATH="$($qt5_cmake)"
           $qt5_cmake = "${{ env.Qt5_Dir }}/lib/cmake" -replace '[/]', '\\'
           Remove-Item cryptonote -Recurse -ErrorAction Ignore
-          git clone https://github.com/seredat/karbowanec.git cryptonote --quiet
+          git clone -n https://github.com/seredat/karbowanec.git cryptonote --quiet
+          cd cryptonote
+          git checkout aa2ec2ecedeb992a138f5ed22991cf0ec0778802
+          cd ..
           mkdir "$build_folder"
           cd "$build_folder"
           Start-Process cmake -ArgumentList "-DBOOST_ROOT=""$env:BOOST_ROOT"" -DBOOST_INCLUDE_DIRS=""$env:BOOST_ROOT/include"" -G ""Visual Studio 16 2019"" -A x64",".." -NoNewWindow -Wait
           Start-Process msbuild -ArgumentList "Karbo-GUI.sln","/p:Configuration=Release" -NoNewWindow -Wait
           $build_path = "./$build_folder"
-          echo "::set-output name=build_path::${build_path}"
-          echo "::set-output name=release_name::${release_name}"
-          echo "::set-output name=krb_ver::${krb_ver}"
+          echo "build_path=${build_path}" >> $env:GITHUB_OUTPUT
+          echo "release_name=${release_name}" >> $env:GITHUB_OUTPUT
+          echo "krb_ver=${krb_ver}" >> $env:GITHUB_OUTPUT
   
       - name: Pack
         shell: powershell
@@ -79,16 +82,15 @@ jobs:
           cd "$release_folder"
           cp Karbo-GUI.exe "$release_name/"
           cp "../../LICENSE" "$release_name/LICENSE.txt"
-          cp "C:/Program Files/OpenSSL-Win64/bin/libssl*.dll" "$release_name/"
-          cp "C:/Program Files/OpenSSL-Win64/bin/libcrypto*.dll" "$release_name/"
+          cp "C:/Program Files/OpenSSL/bin/libssl*.dll" "$release_name/"
+          cp "C:/Program Files/OpenSSL/bin/libcrypto*.dll" "$release_name/"
           windeployqt --release Karbo-GUI.exe --dir "$release_name/"
           Compress-Archive -Path "$release_name/" -DestinationPath "$release_name.zip"
           $sha256 = (Get-FileHash "$release_name.zip").Hash
           $asset_path = "./$build_folder/$release_folder/$release_name.zip"
-          echo "::set-output name=sha256::${sha256}"
-          echo "::set-output name=release_name::${release_name}.zip"
-          echo "::set-output name=asset_path::${asset_path}"
-          echo "::set-output name=krb_ver::${krb_ver}"
+          echo "sha256a=${sha256a}" >> $env:GITHUB_OUTPUT
+          echo "release_name=${release_name}.zip" >> $env:GITHUB_OUTPUT
+          echo "asset_path=${asset_path}" >> $env:GITHUB_OUTPUT
 
       - name: Create Archive Artifact
         uses: actions/upload-artifact@v1.0.0
@@ -100,17 +102,17 @@ jobs:
 
   build-macos:
     name: macOS
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: ${{ github.ref }}
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v3
         with:
           version: '5.15.2'
-          modules: 'qttools5'
           install-deps: 'true'
 
       - name: Setup Xcode
@@ -123,24 +125,18 @@ jobs:
           brew install gcc boost openssl
           brew link boost --force
 
-      - name: Find Tag
-        id: tagger
-        uses: jimschubert/query-tag-action@v1
-        with:
-          include: 'v*'
-          exclude: '*-rc*'
-          commit-ish: 'HEAD~'
-          skip-unshallow: 'true'
-
       - name: Build
         id: build
         run: |
           build_folder="build/release"
-          krb_ver="${{steps.tagger.outputs.tag}}"
+          krb_ver=$(git describe --tags --abbrev=0)
           release_name="Karbo-GUI-macOS-$krb_ver"
           app_name="Karbo-GUI.app"
           rm -rf cryptonote
-          git clone https://github.com/seredat/karbowanec.git cryptonote
+          git clone -n https://github.com/seredat/karbowanec.git cryptonote
+          cd cryptonote
+          git checkout aa2ec2ecedeb992a138f5ed22991cf0ec0778802
+          cd ..
           mkdir -p "$build_folder"
           cd "$build_folder"
           cmake -D ARCH=default -D CMAKE_C_FLAGS="-mmacosx-version-min=10.12" -D CMAKE_CXX_FLAGS="-mmacosx-version-min=10.12" -D CMAKE_BUILD_TYPE=Release ../..
@@ -150,10 +146,10 @@ jobs:
           mv *.dmg "$release_name".dmg
           sha256=$(shasum -a 256 "$release_name".dmg | awk '{ print toupper($1) }')
           asset_path="./$build_folder/$release_name.dmg"
-          echo "::set-output name=sha256::${sha256}"
-          echo "::set-output name=release_name::${release_name}.zip"
-          echo "::set-output name=asset_path::${asset_path}"
-          echo "::set-output name=krb_ver::${krb_ver}"
+          echo "sha256=${sha256}" >> $GITHUB_OUTPUT
+          echo "release_name=${release_name}.zip" >> $GITHUB_OUTPUT
+          echo "asset_path=${asset_path}" >> $GITHUB_OUTPUT
+          echo "krb_ver=${krb_ver}" >> $GITHUB_OUTPUT
         env:
           MACOSX_DEPLOYMENT_TARGET: '10.12'
 
@@ -169,30 +165,25 @@ jobs:
     name: Ubuntu 20.04
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: Find Tag
-        id: tagger
-        uses: jimschubert/query-tag-action@v1
-        with:
-          include: 'v*'
-          exclude: '*-rc*'
-          commit-ish: 'HEAD~'
-          skip-unshallow: 'true'
+          ref: ${{ github.ref }}
 
       - name: Build
         id: build
         run: |
           sudo apt update -y
-          sudo apt install -y qt5-default qttools5-dev qttools5-dev-tools libboost-all-dev
+          sudo apt install -y qtbase5-dev qttools5-dev qttools5-dev-tools libboost-all-dev
           build_folder="build/release"
-          krb_ver="${{steps.tagger.outputs.tag}}"
+          krb_ver=$(git describe --tags --abbrev=0)
           release_name=Karbo-GUI-ubuntu-20.04-"$krb_ver"
           app_name="Karbo-GUI"
           rm -rf cryptonote
-          git clone https://github.com/seredat/karbowanec.git cryptonote
+          git clone -n https://github.com/seredat/karbowanec.git cryptonote
+          cd cryptonote
+          git checkout aa2ec2ecedeb992a138f5ed22991cf0ec0778802
+          cd ..
           mkdir -p "$build_folder"
           cd "$build_folder"
           cmake -D ARCH=default -D CMAKE_BUILD_TYPE=Release -D CMAKE_POSITION_INDEPENDENT_CODE:BOOL=true -D BOOST_IGNORE_SYSTEM_PATHS_DEFAULT=ON -D BOOST_ROOT=/usr ../..
@@ -200,10 +191,10 @@ jobs:
           tar -czf "$release_name".tar.gz "$app_name"
           sha256=$(shasum -a 256 "$release_name".tar.gz | awk '{print toupper($1)}')
           asset_path="./$build_folder/$release_name".tar.gz
-          echo "::set-output name=sha256::${sha256}"
-          echo "::set-output name=release_name::${release_name}.tar.gz"
-          echo "::set-output name=asset_path::${asset_path}"
-          echo "::set-output name=krb_ver::${krb_ver}"
+          echo "sha256=${sha256}" >> $GITHUB_OUTPUT
+          echo "release_name=${release_name}.tar.gz" >> $GITHUB_OUTPUT
+          echo "asset_path=${asset_path}" >> $GITHUB_OUTPUT
+          echo "krb_ver=${krb_ver}" >> $GITHUB_OUTPUT
 
       - name: Create Artifact
         uses: actions/upload-artifact@v1.0.0
@@ -214,34 +205,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-ubuntu18:
-    name: Ubuntu 18.04
-    runs-on: ubuntu-18.04
+    name: Ubuntu 22.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: Find Tag
-        id: tagger
-        uses: jimschubert/query-tag-action@v1
-        with:
-          include: 'v*'
-          exclude: '*-rc*'
-          commit-ish: 'HEAD~'
-          skip-unshallow: 'true'
+          ref: ${{ github.ref }}
 
       - name: Build
         id: build
         run: |
           sudo apt-get purge '*boost*'
           sudo apt update -y
-          sudo apt install -y qt5-default qttools5-dev qttools5-dev-tools libboost-all-dev
+          sudo apt install -y qtbase5-dev qttools5-dev qttools5-dev-tools libboost-all-dev
           build_folder="build/release"
-          krb_ver="${{steps.tagger.outputs.tag}}"
-          release_name=Karbo-GUI-ubuntu-18.04-"$krb_ver"
+          krb_ver=$(git describe --tags --abbrev=0)
+          release_name=Karbo-GUI-ubuntu-22.04-"$krb_ver"
           app_name="Karbo-GUI"
           rm -rf cryptonote
-          git clone https://github.com/seredat/karbowanec.git cryptonote
+          git clone -n https://github.com/seredat/karbowanec.git cryptonote
+          cd cryptonote
+          git checkout aa2ec2ecedeb992a138f5ed22991cf0ec0778802
+          cd ..
           mkdir -p "$build_folder"
           cd "$build_folder"
           cmake -D ARCH=default -D CMAKE_BUILD_TYPE=Release -D CMAKE_POSITION_INDEPENDENT_CODE:BOOL=true -D BOOST_IGNORE_SYSTEM_PATHS_DEFAULT=ON -D BOOST_ROOT=/usr ../..
@@ -249,10 +235,10 @@ jobs:
           tar -czf "$release_name".tar.gz "$app_name"
           sha256=$(shasum -a 256 "$release_name".tar.gz | awk '{print toupper($1)}')
           asset_path="./$build_folder/$release_name".tar.gz
-          echo "::set-output name=sha256::${sha256}"
-          echo "::set-output name=release_name::${release_name}.tar.gz"
-          echo "::set-output name=asset_path::${asset_path}"
-          echo "::set-output name=krb_ver::${krb_ver}"
+          echo "sha256=${sha256}" >> $GITHUB_OUTPUT
+          echo "release_name=${release_name}.tar.gz" >> $GITHUB_OUTPUT
+          echo "asset_path=${asset_path}" >> $GITHUB_OUTPUT
+          echo "krb_ver=${krb_ver}" >> $GITHUB_OUTPUT
 
       - name: Create Artifact
         uses: actions/upload-artifact@v1.0.0
