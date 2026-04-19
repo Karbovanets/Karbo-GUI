@@ -40,7 +40,7 @@ const int SYNC_TIMER_INTERVAL = 1000;
 }
 
 enum class TransactionType : quint8 {
-  MINED, INPUT, OUTPUT, FUSION, DONATION
+  MINED, INPUT, OUTPUT, DONATION
 };
 
 namespace {
@@ -48,8 +48,6 @@ namespace {
 TransactionType getTransactionType(const FullTransactionInfo &_transaction) {
   if (_transaction.walletTransaction.isBase) {
     return TransactionType::MINED;
-  } else if (_transaction.isFusionTransaction) {
-    return TransactionType::FUSION;
   } else if (_transaction.walletTransaction.totalAmount < 0) {
     return TransactionType::OUTPUT;
   }
@@ -65,8 +63,6 @@ QString getIconPrefix(TransactionType _type) {
     return "out_";
   case TransactionType::MINED:
     return "mined_";
-  case TransactionType::FUSION:
-    return "opt_";
   case TransactionType::DONATION:
     return "donation_";
   }
@@ -76,7 +72,7 @@ QString getIconPrefix(TransactionType _type) {
 
 }
 
-TransactionsModel::TransactionsModel(ICryptoNoteAdapter* _cryptoNoteAdapter, IOptimizationManager* _optimizationManager, QAbstractItemModel* _nodeStateModel, QObject* _parent) :
+TransactionsModel::TransactionsModel(ICryptoNoteAdapter* _cryptoNoteAdapter, QAbstractItemModel* _nodeStateModel, QObject* _parent) :
   QAbstractItemModel(_parent), m_cryptoNoteAdapter(_cryptoNoteAdapter), m_nodeStateModel(_nodeStateModel),
   m_columnCount(TransactionsModel::staticMetaObject.enumerator(TransactionsModel::staticMetaObject.indexOfEnumerator("Columns")).keyCount()),
   m_syncTimerId(-1), m_lastVisibleTransactionIndex(CryptoNote::WALLET_INVALID_TRANSACTION_ID), m_isSynchronized(false) {
@@ -84,7 +80,6 @@ TransactionsModel::TransactionsModel(ICryptoNoteAdapter* _cryptoNoteAdapter, IOp
   INodeAdapter* nodeAdapter = m_cryptoNoteAdapter->getNodeAdapter();
   IWalletAdapter* walletAdapter = nodeAdapter->getWalletAdapter();
   walletAdapter->addObserver(this);
-  _optimizationManager->addObserver(this);
   connect(m_nodeStateModel, &QAbstractItemModel::dataChanged, this, &TransactionsModel::nodeStateChanged);
 }
 
@@ -219,11 +214,6 @@ void TransactionsModel::walletOpened() {
     m_transactions = std::move(transactionInfos);
     m_showTransfers.resize(m_transactions.size());
     m_showTransfers.fill(false, 0, m_transactions.size());
-    for (quintptr i = 0; i < m_transactions.size(); ++i) {
-      if (m_transactions[i].isFusionTransaction) {
-        m_fusionTransactions.insert(i);
-      }
-    }
 
     m_lastVisibleTransactionIndex = m_transactions.size() - 1;
     endInsertRows();
@@ -240,7 +230,6 @@ void TransactionsModel::walletClosed() {
   m_lastVisibleTransactionIndex = CryptoNote::WALLET_INVALID_TRANSACTION_ID;
   m_isSynchronized = false;
   m_transactions.clear();
-  m_fusionTransactions.clear();
   m_showTransfers.clear();
   endResetModel();
 }
@@ -274,9 +263,6 @@ void TransactionsModel::externalTransactionCreated(quintptr _transactionIndex, c
   }
 
   m_transactions.insert(_transactionIndex, std::move(_transaction));
-  if (_transaction.isFusionTransaction) {
-    m_fusionTransactions.insert(_transactionIndex);
-  }
 
   if (m_isSynchronized) {
     showAllCachedTransactions();
@@ -302,14 +288,6 @@ void TransactionsModel::cryptoNoteAdapterInitCompleted(int _status) {
 
 void TransactionsModel::cryptoNoteAdapterDeinitCompleted() {
   // Do nothing
-}
-
-void TransactionsModel::fusionTransactionsVisibilityChanged(bool _isVisible) {
-  if (rowCount() > 0) {
-    for (quintptr transactionIndex : m_fusionTransactions) {
-      Q_EMIT dataChanged(index(transactionIndex, 0), index(transactionIndex, 0), QVector<int>() << ROLE_IS_FUSION_TRANSACTION);
-    }
-  }
 }
 
 QByteArray TransactionsModel::toCsv() const {
@@ -431,8 +409,6 @@ QVariant TransactionsModel::getDecorationRoleData(const QModelIndex &_index) con
     QString file;
     if (transactionState == CryptoNote::WalletTransactionState::FAILED) {
       file = ":icons/out_failed";
-    } else if (transactionType == TransactionType::FUSION) {
-      file = QString(":icons/%1confirmed").arg(iconPrefix);
     } else {
       if (transactionConfirmationCount == 0) {
         file = QString(":icons/%1unconfirmed").arg(iconPrefix);
@@ -452,7 +428,7 @@ QVariant TransactionsModel::getDecorationRoleData(const QModelIndex &_index) con
     }
 
     QPixmap pixmap;
-    if (!QPixmapCache::find(file, pixmap)) {
+    if (!QPixmapCache::find(file, &pixmap)) {
       pixmap.load(file);
       QPixmapCache::insert(file, pixmap);
     }
@@ -464,10 +440,6 @@ QVariant TransactionsModel::getDecorationRoleData(const QModelIndex &_index) con
 }
 
 QVariant TransactionsModel::getToolTipRole(const QModelIndex& _index) const {
-  if (_index.column() == COLUMN_AMOUNT && _index.data(ROLE_IS_FUSION_TRANSACTION).toBool()) {
-    return tr("Fusion transaction helps you to optimize your wallet.");
-  }
-
   return QVariant();
 }
 
@@ -476,7 +448,7 @@ QVariant TransactionsModel::getUserRolesData(const QModelIndex &_index, int _rol
 
   switch (_role) {
     case ROLE_TIME:
-      return (transaction.walletTransaction.timestamp > 0 ? QDateTime::fromTime_t(transaction.walletTransaction.timestamp) : QDateTime());
+      return (transaction.walletTransaction.timestamp > 0 ? QDateTime::fromSecsSinceEpoch(transaction.walletTransaction.timestamp) : QDateTime());
     case ROLE_RAW_TIME:
       return static_cast<quint64>(transaction.walletTransaction.timestamp);
     case ROLE_TYPE: {
@@ -509,8 +481,6 @@ QVariant TransactionsModel::getUserRolesData(const QModelIndex &_index, int _rol
       return _index.row();
     case ROLE_STATE:
       return static_cast<quint8>(transaction.walletTransaction.state);
-    case ROLE_IS_FUSION_TRANSACTION:
-      return transaction.isFusionTransaction;
     case ROLE_SHOW_TRANSFERS:
       return m_showTransfers.at(_index.row());
     case ROLE_TRANSFERS:
@@ -573,10 +543,6 @@ void TransactionsModel::updateTransaction(quintptr _transactionIndex, const Full
   if (oldTransactionInfo.transfers.size() != _transaction.transfers.size()) {
     Q_EMIT dataChanged(index(_transactionIndex, COLUMN_TRANSFERS), index(_transactionIndex, COLUMN_SHOW_TRANSFERS),
       QVector<int>() << ROLE_TRANSFERS);
-  }
-
-  if (oldTransactionInfo.isFusionTransaction != _transaction.isFusionTransaction) {
-    Q_EMIT dataChanged(index(_transactionIndex, 0), index(_transactionIndex, 0), QVector<int>() << ROLE_IS_FUSION_TRANSACTION);
   }
 }
 

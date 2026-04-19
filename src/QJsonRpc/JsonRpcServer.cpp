@@ -58,7 +58,7 @@ void JsonRpcServer::onNewConnection() {
   while (socket != nullptr) {
     qDebug("[JsonRpcServer] New connection from %s", qPrintable(socket->peerAddress().toString()));
     connect(socket, &QTcpSocket::disconnected, this, &JsonRpcServer::onSocketDisconneced);
-    connect(socket, static_cast<void(QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),
+    connect(socket, &QTcpSocket::errorOccurred,
       this, &JsonRpcServer::onSocketError);
     connect(socket, &QTcpSocket::readyRead, this, &JsonRpcServer::onSocketReadyRead);
     socket = nextPendingConnection();
@@ -152,7 +152,7 @@ QJsonValue JsonRpcServer::processJsonValue(const QJsonValue& _request) {
 
 void JsonRpcServer::sendError(QTcpSocket* _socket, int _errorCode, const QString& _errorMessage, const QString& _errorData) {
   JsonRpcResponse errorResponse;
-  errorResponse.setId(QString::null);
+  errorResponse.setId(QString());
   errorResponse.setError(_errorCode, _errorMessage, _errorData);
   sendObject(_socket, errorResponse);
 }
@@ -161,7 +161,7 @@ void JsonRpcServer::sendObject(QTcpSocket* _socket, const JsonRpcObject& _object
   Q_ASSERT(_object.isValid());
   Q_ASSERT(_socket != nullptr);
   QTextStream writeStream(_socket);
-  writeStream << _object.toString() << endl;
+  writeStream << _object.toString() << Qt::endl;
 }
 
 void JsonRpcServer::sendJson(QTcpSocket* _socket, const QJsonValue& _jsonValue) {
@@ -174,7 +174,7 @@ void JsonRpcServer::sendJson(QTcpSocket* _socket, const QJsonValue& _jsonValue) 
   }
 
   QTextStream writeStream(_socket);
-  writeStream << data << endl;
+  writeStream << data << Qt::endl;
 }
 
 }

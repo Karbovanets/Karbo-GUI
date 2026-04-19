@@ -24,14 +24,11 @@ void Updater::checkForUpdate()
 {
     WalletLogger::info(tr("[Update] Checking for an update..."));
     manager = new QNetworkAccessManager(this);
-    if(manager->networkAccessible() == QNetworkAccessManager::Accessible)
-    {
-        connect(manager, SIGNAL(finished(QNetworkReply*)),
-                this, SLOT(replyFinished(QNetworkReply*)));
-        QNetworkRequest request((QUrl(KARBO_UPDATE_URL)));
-        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        manager->get(request);
-    }
+    connect(manager, SIGNAL(finished(QNetworkReply*)),
+            this, SLOT(replyFinished(QNetworkReply*)));
+    QNetworkRequest request((QUrl(KARBO_UPDATE_URL)));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    manager->get(request);
 }
 
 void Updater::replyFinished (QNetworkReply *reply)

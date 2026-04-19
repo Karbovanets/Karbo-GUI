@@ -39,7 +39,7 @@ ApplicationEventHandler::ApplicationEventHandler(QObject* _parent) : QLocalServe
 ApplicationEventHandler::~ApplicationEventHandler() {
 }
 
-bool ApplicationEventHandler::nativeEventFilter(const QByteArray& _eventType, void* _message, long* _result) {
+bool ApplicationEventHandler::nativeEventFilter(const QByteArray& _eventType, void* _message, qintptr* _result) {
   MSG* message = static_cast<MSG*>(_message);
   if (message != nullptr && message->message == WM_WTSSESSION_CHANGE) {
     if (message->wParam == WTS_SESSION_LOCK) {

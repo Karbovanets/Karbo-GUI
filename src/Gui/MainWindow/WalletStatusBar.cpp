@@ -48,7 +48,7 @@ const char STATUS_BAR_STYLE_SHEET_TEMPLATE[] =
   "}";
 
 QString formatTimeDiff(quint64 _timeDiff) {
-  QDateTime dateTime = QDateTime::fromTime_t(_timeDiff).toUTC();
+  QDateTime dateTime = QDateTime::fromSecsSinceEpoch(_timeDiff).toUTC();
   QString firstPart;
   QString secondPart;
   quint64 year = dateTime.date().year() - EPOCH_DATE_TIME.date().year();
@@ -264,7 +264,7 @@ void WalletStatusBar::updateStatusDescription() {
   }
 
   quint32 localBlockCount = m_nodeStateModel->index(0, NodeStateModel::COLUMN_LOCAL_BLOCK_COUNT).data(NodeStateModel::ROLE_LOCAL_BLOCK_COUNT).value<quint32>();
-  QDateTime lastLocalBlockTimestamp = QDateTime::fromTime_t(m_nodeStateModel->index(0, NodeStateModel::COLUMN_LAST_LOCAL_BLOCK_TIMESTAMP).data(NodeStateModel::ROLE_LAST_LOCAL_BLOCK_TIMESTAMP).value<quint64>()).toUTC();
+  QDateTime lastLocalBlockTimestamp = QDateTime::fromSecsSinceEpoch(m_nodeStateModel->index(0, NodeStateModel::COLUMN_LAST_LOCAL_BLOCK_TIMESTAMP).data(NodeStateModel::ROLE_LAST_LOCAL_BLOCK_TIMESTAMP).value<quint64>()).toUTC();
   quintptr peerCount = m_nodeStateModel->index(0, NodeStateModel::COLUMN_PEER_COUNT).data(NodeStateModel::ROLE_PEER_COUNT).value<quintptr>();
   QDateTime currentDateTime = QDateTime::currentDateTimeUtc();
   quint64 timeDiff = lastLocalBlockTimestamp.msecsTo(currentDateTime);

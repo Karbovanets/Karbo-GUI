@@ -6,6 +6,7 @@
 
 #include <QApplication>
 #include <QFileDialog>
+#include <QRegularExpression>
 #include "RestoreFromMnemonicSeedDialog.h"
 #include "ui_RestoreFromMnemonicSeedDialog.h"
 
@@ -23,8 +24,8 @@ QString RestoreFromMnemonicSeedDialog::getSeedString() const {
 }
 
 void RestoreFromMnemonicSeedDialog::onTextChanged() {
-  wordCount = m_ui->m_seedEdit->toPlainText().split(QRegExp("(\\s|\\n|\\r)+")
-                                                  , QString::SkipEmptyParts).count();
+  wordCount = m_ui->m_seedEdit->toPlainText().split(QRegularExpression("(\\s|\\n|\\r)+")
+                                                  , Qt::SkipEmptyParts).count();
   if(wordCount != 25) {
     m_ui->m_okButton->setEnabled(false);
     m_ui->m_errorLabel->setText(QString::number(wordCount));

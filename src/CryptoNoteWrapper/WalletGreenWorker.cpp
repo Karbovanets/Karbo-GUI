@@ -635,7 +635,6 @@ bool WalletGreenWorker::getFullTransactionInfo(quintptr _transactionIndex, FullT
     SemaphoreUnlocker unlocker(m_walletSemaphore);
     try {
       _transactionInfo.walletTransaction = m_wallet->getTransaction(_transactionIndex);
-      _transactionInfo.isFusionTransaction = m_wallet->isFusionTransaction(_transactionIndex);
       quintptr transferCount = m_wallet->getTransactionTransferCount(_transactionIndex);
       for (quintptr transferIndex = 0; transferIndex < transferCount; ++transferIndex) {
         _transactionInfo.transfers.append(m_wallet->getTransactionTransfer(_transactionIndex, transferIndex));
@@ -662,7 +661,6 @@ bool WalletGreenWorker::getAllTransactions(QHash<quintptr, FullTransactionInfo>&
       for (quintptr transactionIndex = 0; transactionIndex < transactionCount; ++transactionIndex) {
         FullTransactionInfo transactionInfo;
         transactionInfo.walletTransaction = m_wallet->getTransaction(transactionIndex);
-        transactionInfo.isFusionTransaction = m_wallet->isFusionTransaction(transactionIndex);
         quintptr transferCount = m_wallet->getTransactionTransferCount(transactionIndex);
         for (quintptr transferIndex = 0; transferIndex < transferCount; ++transferIndex) {
           transactionInfo.transfers.append(m_wallet->getTransactionTransfer(transactionIndex, transferIndex));
@@ -691,24 +689,6 @@ bool WalletGreenWorker::getTransactionTransfer(quintptr _transactionIndex, quint
       _transfer = m_wallet->getTransactionTransfer(_transactionIndex, _transferIndex);
     } catch (const std::exception& _error) {
       WalletLogger::critical(tr("[Wallet] Get transaction transfer error: %1").arg(_error.what()));
-      result = false;
-    }
-  });
-
-  locker.wait();
-  return result;
-}
-
-bool WalletGreenWorker::isFusionTransaction(quintptr _transactionIndex) const {
-  Q_ASSERT(!m_wallet.isNull());
-  SemaphoreLocker locker(m_walletSemaphore);
-  bool result = false;
-  m_dispatcher->remoteSpawn([this, _transactionIndex, &result]() {
-    SemaphoreUnlocker unlocker(m_walletSemaphore);
-    try {
-      result = m_wallet->isFusionTransaction(_transactionIndex);
-    } catch (const std::exception& _error) {
-      WalletLogger::critical(tr("[Wallet] Is fusion transaction error: %1").arg(_error.what()));
       result = false;
     }
   });
@@ -746,46 +726,6 @@ IWalletAdapter::SendTransactionStatus WalletGreenWorker::sendTransaction(const C
   WalletLogger::info(tr("[Wallet] Transaction send result: %1. New tranaction index %2, secret key %3.").arg(errorCode).arg(newTransactionId).arg(QString::fromStdString(Common::podToHex(newTransactionKey))));
 
   return getSendStatus(errorCode);
-}
-
-bool WalletGreenWorker::createFusionTransaction(quint64 _threshold, quint64 _mixin, const QString& _destinationAddress) {
-  Q_ASSERT(!m_wallet.isNull());
-  SemaphoreLocker locker(m_walletSemaphore);
-  bool result = true;
-  WalletLogger::debug(tr("[Wallet] Creating fusion tranaction..."));
-  m_dispatcher->remoteSpawn([this, _threshold, _mixin, &_destinationAddress, &result]() {
-    SemaphoreUnlocker unlocker(m_walletSemaphore);
-    try {
-      m_wallet->createFusionTransaction(_threshold, _mixin, std::vector<std::string>(), _destinationAddress.toStdString());
-    } catch (const std::system_error& _error) {
-      WalletLogger::critical(tr("[Wallet] Create fusion transaction error: %1").arg(_error.code().message().data()));
-      result = false;
-    } catch (const std::exception& _error) {
-      WalletLogger::critical(tr("[Wallet] Create fusion transaction runtime error: %1").arg(_error.what()));
-      result = false;
-    }
-  });
-
-  locker.wait();
-  return result;
-}
-
-quintptr WalletGreenWorker::getOutputsToOptimizeCount(quint64 _threshold) const {
-  Q_ASSERT(!m_wallet.isNull());
-  SemaphoreLocker locker(m_walletSemaphore);
-  CryptoNote::IFusionManager::EstimateResult result;
-  m_dispatcher->remoteSpawn([this, _threshold, &result]() {
-    SemaphoreUnlocker unlocker(m_walletSemaphore);
-    try {
-      result = m_wallet->estimate(_threshold);
-    } catch (const std::exception& _error) {
-      WalletLogger::critical(tr("[Wallet] Get optimization estimate error: %1").arg(_error.what()));
-      result = {0, 0};
-    }
-  });
-
-  locker.wait();
-  return result.fusionReadyCount;
 }
 
 void WalletGreenWorker::setUserData(const QByteArray& _userData) {
@@ -987,7 +927,6 @@ void WalletGreenWorker::processEvent(const CryptoNote::WalletEvent& _event) {
 bool WalletGreenWorker::getSyncFullTransactionInfo(quintptr _transactionIndex, FullTransactionInfo& _transactionInfo) const {
   try {
     _transactionInfo.walletTransaction = m_wallet->getTransaction(_transactionIndex);
-    _transactionInfo.isFusionTransaction = m_wallet->isFusionTransaction(_transactionIndex);
     quintptr transferCount = m_wallet->getTransactionTransferCount(_transactionIndex);
     for (quintptr transferIndex = 0; transferIndex < transferCount; ++transferIndex) {
       _transactionInfo.transfers.append(m_wallet->getTransactionTransfer(_transactionIndex, transferIndex));

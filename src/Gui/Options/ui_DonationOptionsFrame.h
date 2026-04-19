@@ -10,7 +10,7 @@
 #define UI_DONATIONOPTIONSFRAME_H
 
 #include <QtCore/QVariant>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QCheckBox>

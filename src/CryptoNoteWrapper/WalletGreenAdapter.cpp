@@ -168,11 +168,6 @@ bool WalletGreenAdapter::getTransactionTransfer(quintptr _transactionIndex, quin
   return m_worker->getTransactionTransfer(_transactionIndex, _transferIndex, _transfer);
 }
 
-bool WalletGreenAdapter::isFusionTransaction(quintptr _transactionIndex) const {
-  Q_ASSERT(m_worker != nullptr);
-  return m_worker->isFusionTransaction(_transactionIndex);
-}
-
 QByteArray WalletGreenAdapter::getUserData() const {
   Q_ASSERT(m_worker != nullptr);
   return m_worker->getUserData();
@@ -211,16 +206,6 @@ bool WalletGreenAdapter::verifyMessage(const QString &data, const QString &addre
 IWalletAdapter::SendTransactionStatus WalletGreenAdapter::sendTransaction(const CryptoNote::TransactionParameters& _transactionParameters) {
   Q_ASSERT(m_worker != nullptr);
   return m_worker->sendTransaction(_transactionParameters);
-}
-
-bool WalletGreenAdapter::createFusionTransaction(quint64 _threshold, quint64 _mixin, const QString& _destinationAddress) {
-  Q_ASSERT(m_worker != nullptr);
-  return m_worker->createFusionTransaction(_threshold, _mixin, _destinationAddress);
-}
-
-quintptr WalletGreenAdapter::getOutputsToOptimizeCount(quint64 _threshold) const {
-  Q_ASSERT(m_worker != nullptr);
-  return m_worker->getOutputsToOptimizeCount(_threshold);
 }
 
 void WalletGreenAdapter::setUserData(const QByteArray& _userData) {

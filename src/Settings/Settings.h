@@ -72,14 +72,6 @@ public:
   QUrl getRemoteRpcUrl() const;
   ConnectionMethod getConnectionMethod() const;
 
-  bool isOptimizationEnabled() const;
-  bool isFusionTransactionsVisible() const;
-  bool isOptimizationTimeSetManually() const;
-  QTime getOptimizationStartTime() const;
-  QTime getOptimizationStopTime() const;
-  quint64 getOptimizationInterval() const;
-  quint64 getOptimizationThreshold() const;
-  quint64 getOptimizationMixin() const;
   quint64 getAddressPrefix() const;
 
   bool isNewsEnabled() const;
@@ -103,14 +95,6 @@ public:
   void setRecentWalletList(const QStringList& _recentWalletList);
   void setStartOnLoginEnabled(bool _enable);
 
-  void setOptimizationEnabled(bool _enable);
-  void setFusionTransactionsVisible(bool _visible);
-  void setOptimizationTimeSetManually(bool _enable);
-  void setOptimizationStartTime(const QTime& _startTime);
-  void setOptimizationStopTime(const QTime& _stopTime);
-  void setOptimizationInterval(quint64 _interval);
-  void setOptimizationThreshold(quint64 _threshold);
-  void setOptimizationMixin(quint64 _mixin);
   void setNewsEnabled(bool _enable);
   void setMinimizeToTrayEnabled(bool _enable);
   void setCloseToTrayEnabled(bool _enable);

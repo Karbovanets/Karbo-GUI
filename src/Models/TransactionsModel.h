@@ -26,7 +26,6 @@
 
 #include "ICryptoNoteAdapter.h"
 #include "INodeAdapter.h"
-#include "IOptimizationManager.h"
 #include "IWalletAdapter.h"
 
 namespace WalletGui {
@@ -34,7 +33,7 @@ namespace WalletGui {
 typedef QPair<quintptr, quintptr> TransactionTransferPair;
 
 class TransactionsModel : public QAbstractItemModel, public IWalletAdapterObserver,
-  public ICryptoNoteAdapterObserver, public IOptimizationManagerObserver {
+  public ICryptoNoteAdapterObserver {
   Q_OBJECT
   Q_DISABLE_COPY(TransactionsModel)
   Q_ENUMS(Columns)
@@ -49,10 +48,10 @@ public:
   enum Roles {
     ROLE_TIME = Qt::UserRole, ROLE_RAW_TIME, ROLE_TYPE, ROLE_HASH, ROLE_TRANSFER_COUNT, ROLE_AMOUNT, ROLE_PAYMENT_ID,
     ROLE_TRANSACTION_ID, ROLE_HEIGHT, ROLE_FEE, ROLE_NUMBER_OF_CONFIRMATIONS, ROLE_COLUMN, ROLE_ROW, ROLE_STATE,
-    ROLE_IS_FUSION_TRANSACTION, ROLE_SHOW_TRANSFERS, ROLE_TRANSFERS
+    ROLE_SHOW_TRANSFERS, ROLE_TRANSFERS
   };
 
-  TransactionsModel(ICryptoNoteAdapter* _cryptoNoteAdapter, IOptimizationManager* _optimizationManager,
+  TransactionsModel(ICryptoNoteAdapter* _cryptoNoteAdapter,
     QAbstractItemModel* _nodeStateModel, QObject* _parent);
   ~TransactionsModel();
 
@@ -81,9 +80,6 @@ public:
   Q_SLOT virtual void cryptoNoteAdapterInitCompleted(int _status) override;
   Q_SLOT virtual void cryptoNoteAdapterDeinitCompleted() override;
 
-  // IOptimizationManagerObserver
-  Q_SLOT virtual void fusionTransactionsVisibilityChanged(bool _isVisible) override;
-
   QByteArray toCsv() const;
   static int findProxyColumn(QAbstractItemModel* _proxyModel, int _originColumn);
 
@@ -96,7 +92,6 @@ private:
   const int m_columnCount;
   QBitArray m_showTransfers;
   QHash<quintptr, FullTransactionInfo> m_transactions;
-  QSet<quintptr> m_fusionTransactions;
   int m_syncTimerId;
   quintptr m_lastVisibleTransactionIndex;
   bool m_isSynchronized;

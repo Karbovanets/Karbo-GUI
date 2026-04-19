@@ -283,7 +283,7 @@ QVariant TransactionPoolModel::getUserRole(const QModelIndex& _index, int _role)
       return QDateTime();
     }
 
-    return QDateTime::fromTime_t(transaction.timestamp, Qt::UTC);
+    return QDateTime::fromSecsSinceEpoch(transaction.timestamp, Qt::UTC);
   case ROLE_AMOUNT:
     return static_cast<quint64>(transaction.totalOutputsAmount);
   case ROLE_FEE:

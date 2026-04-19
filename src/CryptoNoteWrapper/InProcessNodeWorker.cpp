@@ -332,7 +332,7 @@ INodeAdapter::InitStatus InProcessNodeWorker::initCore() {
       checkpoints.load_checkpoints_from_dns();
     }
 
-    m_core.reset(new CryptoNote::Core(m_currency, nullptr, m_loggerManager, *m_dispatcher, true));
+    m_core.reset(new CryptoNote::Core(m_currency, nullptr, m_loggerManager, *m_dispatcher, 0, false));
     m_protocolHandler.reset(new CryptoNote::CryptoNoteProtocolHandler(m_currency, *m_dispatcher, *m_core, nullptr, m_loggerManager));
 
     if (!Settings::instance().isTestnet()) {

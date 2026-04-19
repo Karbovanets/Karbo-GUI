@@ -10,7 +10,7 @@
 #define UI_SIGNMESSAGEDIALOG_H
 
 #include <QtCore/QVariant>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QDialog>
@@ -196,7 +196,7 @@ public:
         QFont font;
         font.setPointSize(12);
         font.setBold(true);
-        font.setWeight(75);
+        font.setWeight(QFont::Bold);
         m_verificationResult->setFont(font);
 
         verticalLayout_4->addWidget(m_verificationResult);

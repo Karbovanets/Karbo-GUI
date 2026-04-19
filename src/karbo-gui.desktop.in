@@ -1,0 +1,23 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Karbo GUI
+GenericName=Karbo Wallet
+Name[uk]=Карбованeць
+Name[ru]=Карбованeц
+Name[de]=Karbo
+Name[es]=Karbo
+Name[fr]=Karbo
+Comment=Karbo wallet
+Comment[uk]=Гаманець Карбованця
+Comment[ru]=Кошелек Карбованца
+Comment[de]=Karbo Brieftasche
+Comment[es]=Karbo Monedero
+Comment[fr]=Portefeuille Karbo
+Exec=@WALLET_NAME@ %U
+Terminal=false
+Type=Application
+Icon=karbowanec
+MimeType=x-scheme-handler/karbowanec;
+Categories=Office;Finance;
+Version=1.0
+X-AppImage-Version=@WALLET_VERSION@

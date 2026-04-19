@@ -19,6 +19,7 @@
 #include <cstring>
 
 #include <QGuiApplication>
+#include <QActionGroup>
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QDataWidgetMapper>
@@ -52,7 +53,6 @@
 #include "IWalletAdapter.h"
 #include "Models/AddressBookModel.h"
 #include "Models/BlockchainModel.h"
-#include "Models/FusionTransactionsFilterModel.h"
 #include "Models/NodeStateModel.h"
 #include "Models/SortedAddressBookModel.h"
 #include "Models/SortedTransactionsModel.h"
@@ -117,11 +117,11 @@ bool isDonationUrl(const QUrl& _url) {
 }
 
 MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManager* _addressBookManager,
-  IDonationManager* _donationManager, IOptimizationManager* _optimizationManager,
+  IDonationManager* _donationManager,
   IApplicationEventHandler* _applicationEventHandler, const QString& _styleSheetTemplate, QWidget* _parent) :
   QMainWindow(_parent), m_ui(new Ui::MainWindow), m_cryptoNoteAdapter(_cryptoNoteAdapter),
   m_addressBookManager(_addressBookManager), m_donationManager(_donationManager),
-  m_optimizationManager(_optimizationManager), m_applicationEventHandler(_applicationEventHandler),
+  m_applicationEventHandler(_applicationEventHandler),
   m_blockChainModel(nullptr), m_transactionPoolModel(nullptr), m_recentWalletsMenu(new QMenu(this)),
   m_addRecipientAction(new QAction(this)), m_styleSheetTemplate(_styleSheetTemplate), m_walletStateMapper(new QDataWidgetMapper(this)),
   m_syncMovie(new QMovie(Settings::instance().getCurrentStyle().getWalletSyncGifFile(), QByteArray(), this)) {
@@ -135,9 +135,8 @@ MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManag
 
   m_nodeStateModel = new NodeStateModel(m_cryptoNoteAdapter, this);
   m_walletStateModel = new WalletStateModel(m_cryptoNoteAdapter, this);
-  m_transactionsModel = new TransactionsModel(m_cryptoNoteAdapter, m_optimizationManager, m_nodeStateModel, this);
+  m_transactionsModel = new TransactionsModel(m_cryptoNoteAdapter, m_nodeStateModel, this);
   m_sortedTranactionsModel = new SortedTransactionsModel(m_transactionsModel, this);
-  m_fusionTranactionsFilterModel = new FusionTransactionsFilterModel(m_sortedTranactionsModel, m_optimizationManager, this);
   m_addressBookModel = new AddressBookModel(m_addressBookManager, this);
   m_sortedAddressBookModel = new SortedAddressBookModel(m_addressBookModel, this);
   m_blockChainModel = new BlockchainModel(m_cryptoNoteAdapter, m_nodeStateModel, this);
@@ -155,7 +154,7 @@ MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManag
     uiItem->setNodeStateModel(m_nodeStateModel);
     uiItem->setWalletStateModel(m_walletStateModel);
     uiItem->setTransactionsModel(m_transactionsModel);
-    uiItem->setSortedTransactionsModel(m_fusionTranactionsFilterModel);
+    uiItem->setSortedTransactionsModel(m_sortedTranactionsModel);
     uiItem->setAddressBookModel(m_addressBookModel);
     uiItem->setSortedAddressBookModel(m_sortedAddressBookModel);
     uiItem->setBlockChainModel(m_blockChainModel);
@@ -345,7 +344,7 @@ void MainWindow::urlReceived(const QUrl& _url) {
     QString label = urlQuery.queryItemValue(DONATION_URL_LABEL_TAG);
     m_addressBookManager->addAddress(label, address, paymentid, true);
 
-    OptionsDialog dlg(m_cryptoNoteAdapter, m_donationManager, m_optimizationManager, m_addressBookModel, this);
+    OptionsDialog dlg(m_cryptoNoteAdapter, m_donationManager, m_addressBookModel, this);
     dlg.setDonationAddress(label, address);
     dlg.exec();
   } else if (_url.isValid()) {
@@ -1011,7 +1010,7 @@ void MainWindow::setBlockchainExplorerEnabled(bool _enable) {
 }
 
 void MainWindow::showPreferences() {
-  OptionsDialog dlg(m_cryptoNoteAdapter, m_donationManager, m_optimizationManager, m_addressBookModel, this);
+  OptionsDialog dlg(m_cryptoNoteAdapter, m_donationManager, m_addressBookModel, this);
   ConnectionMethod currentConnectionMethod = Settings::instance().getConnectionMethod();
   quint16 currentLocalRpcPort = Settings::instance().getLocalRpcPort();
   QUrl currentRemoteRpcUrl = Settings::instance().getRemoteRpcUrl();

@@ -10,7 +10,7 @@
 #define UI_MNEMONICDIALOG_H
 
 #include <QtCore/QVariant>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QComboBox>
@@ -67,7 +67,7 @@ public:
         m_textLabel->setMinimumSize(QSize(0, 100));
         QFont font;
         font.setBold(true);
-        font.setWeight(75);
+        font.setWeight(QFont::Bold);
         m_textLabel->setFont(font);
         m_textLabel->setFrameShape(QFrame::Box);
         m_textLabel->setFrameShadow(QFrame::Sunken);

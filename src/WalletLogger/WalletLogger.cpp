@@ -140,7 +140,7 @@ void WalletLogger::messageHandler(QtMsgType _type, const QMessageLogContext &_co
   QString logString = QString("%1 [%2] %3").arg(timeString).arg(typeString).arg(_msg);
   if (m_logFile->isOpen()) {
     QTextStream logStream(m_logFile);
-    logStream << logString << endl;
+    logStream << logString << Qt::endl;
   }
 
   if (QLoggingCategory::defaultCategory()->isEnabled(QtDebugMsg)) {

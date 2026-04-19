@@ -10,7 +10,7 @@
 #define UI_OPTIONSDIALOG_H
 
 #include <QtCore/QVariant>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QDialog>
@@ -25,7 +25,6 @@
 #include "Gui/Common/WalletOkButton.h"
 #include "Gui/Options/ConnectionOptionsFrame.h"
 #include "Gui/Options/DonationOptionsFrame.h"
-#include "Gui/Options/OptimizationOptionsFrame.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -35,7 +34,6 @@ public:
     QVBoxLayout *verticalLayout;
     QTabWidget *m_optionsTabWidget;
     WalletGui::ConnectionOptionsFrame *m_connectionTab;
-    WalletGui::OptimizationOptionsFrame *m_optimizationTab;
     WalletGui::DonationOptionsFrame *m_donationTab;
     QFrame *m_buttonFrame;
     QHBoxLayout *horizontalLayout_2;
@@ -66,9 +64,6 @@ public:
         m_connectionTab = new WalletGui::ConnectionOptionsFrame();
         m_connectionTab->setObjectName(QStringLiteral("m_connectionTab"));
         m_optionsTabWidget->addTab(m_connectionTab, QString());
-        m_optimizationTab = new WalletGui::OptimizationOptionsFrame();
-        m_optimizationTab->setObjectName(QStringLiteral("m_optimizationTab"));
-        m_optionsTabWidget->addTab(m_optimizationTab, QString());
         m_donationTab = new WalletGui::DonationOptionsFrame();
         m_donationTab->setObjectName(QStringLiteral("m_donationTab"));
         m_optionsTabWidget->addTab(m_donationTab, QString());
@@ -125,7 +120,6 @@ public:
     {
         OptionsDialog->setWindowTitle(QApplication::translate("OptionsDialog", "Preferences", 0));
         m_optionsTabWidget->setTabText(m_optionsTabWidget->indexOf(m_connectionTab), QApplication::translate("OptionsDialog", "Connection", 0));
-        m_optionsTabWidget->setTabText(m_optionsTabWidget->indexOf(m_optimizationTab), QApplication::translate("OptionsDialog", "Wallet optimization", 0));
         m_optionsTabWidget->setTabText(m_optionsTabWidget->indexOf(m_donationTab), QApplication::translate("OptionsDialog", "Donations", 0));
         m_warningLabel->setText(QApplication::translate("OptionsDialog", "Attention! Restart application to apply changes.", 0));
         m_cancelButton->setText(QApplication::translate("OptionsDialog", "Cancel", 0));

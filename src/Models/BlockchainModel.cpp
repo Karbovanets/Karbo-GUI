@@ -271,7 +271,7 @@ QVariant BlockchainModel::data(const QModelIndex &_index, int _role) const {
       return QDateTime();
     }
 
-    return QDateTime::fromTime_t(block -> timestamp, Qt::UTC);
+    return QDateTime::fromSecsSinceEpoch(block -> timestamp, Qt::UTC);
   case ROLE_BLOCK_DIFFICULTY:
     return static_cast<quint64>(block -> difficulty);
   case ROLE_BLOCK_IS_ORPHANED:
@@ -314,9 +314,9 @@ QVariant BlockchainModel::data(const QModelIndex &_index, int _role) const {
   case ROLE_TRANSACTION_MIXIN:
     return static_cast<quint64>(tx.mixin);
   case ROLE_TRANSACTION_UNLOCK_TIME:
-    return QDateTime::fromTime_t(tx.unlockTime, Qt::UTC);
+    return QDateTime::fromSecsSinceEpoch(tx.unlockTime, Qt::UTC);
   case ROLE_TRANSACTION_TIME:
-    return QDateTime::fromTime_t(tx.timestamp, Qt::UTC);
+    return QDateTime::fromSecsSinceEpoch(tx.timestamp, Qt::UTC);
   case ROLE_TRANSACTION_PAYMENT_ID:
     return QByteArray(reinterpret_cast<char*>(&tx.paymentId), sizeof(tx.paymentId));
   case ROLE_TRANSACTION_IS_IN_BLOCKCHAIN:

@@ -315,7 +315,7 @@ void AddressBookManager::walletOpened() {
   }
 
   if (!userData.isEmpty()) {
-    QJsonDocument doc = QJsonDocument::fromBinaryData(qUncompress(userData));
+    QJsonDocument doc = QJsonDocument::fromJson(qUncompress(userData));
     if (doc.isNull()) {
       doc = QJsonDocument::fromJson(userData);
       if (!doc.isNull()) {
@@ -389,7 +389,7 @@ void AddressBookManager::cryptoNoteAdapterDeinitCompleted() {
 }
 
 void AddressBookManager::saveAddressBook() {
-  m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->setUserData(qCompress(QJsonDocument(m_addressBookObject).toBinaryData()));
+  m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->setUserData(qCompress(QJsonDocument(m_addressBookObject).toJson(QJsonDocument::Compact)));
 }
 
 void AddressBookManager::buildIndexes() {

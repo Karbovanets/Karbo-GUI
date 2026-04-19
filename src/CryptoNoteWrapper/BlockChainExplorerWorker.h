@@ -97,4 +97,3 @@ Q_SIGNALS:
 
 }
 
-Q_DECLARE_TYPEINFO(CryptoNote::BlockDetails, Q_MOVABLE_TYPE);

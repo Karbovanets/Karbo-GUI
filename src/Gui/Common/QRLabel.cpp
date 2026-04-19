@@ -54,14 +54,15 @@ void QRLabel::showQRCode(const QString& _dataString) {
 
 QImage QRLabel::exportImage()
 {
-    if (!pixmap())
+    QPixmap p = pixmap();
+    if (p.isNull())
         return QImage();
-    return pixmap()->toImage();
+    return p.toImage();
 }
 
 void QRLabel::mousePressEvent(QMouseEvent* event)
 {
-    if (event->button() == Qt::LeftButton && pixmap()) {
+    if (event->button() == Qt::LeftButton && !pixmap().isNull()) {
         event->accept();
         QMimeData* mimeData = new QMimeData;
         mimeData->setImageData(exportImage());

@@ -30,7 +30,6 @@ namespace WalletGui {
 
 class ICryptoNoteAdapter;
 class IDonationManager;
-class IOptimizationManager;
 
 class OptionsDialog : public QDialog {
   Q_OBJECT
@@ -38,7 +37,7 @@ class OptionsDialog : public QDialog {
 
 public:
   OptionsDialog(ICryptoNoteAdapter* _cryptoNoteAdapter, IDonationManager* _donationManager,
-    IOptimizationManager* _optimizationManager, QAbstractItemModel* _addressBookModel, QWidget* _parent);
+    QAbstractItemModel* _addressBookModel, QWidget* _parent);
   ~OptionsDialog();
 
   void setDonationAddress(const QString& _label, const QString& _address);

@@ -17,6 +17,7 @@
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QDesktopServices>
+#include <QRegularExpression>
 #include <QTextDocument>
 #include <QTextOption>
 #include <QUrl>
@@ -200,13 +201,14 @@ QString NewsFrame::getElidedText(const QString& _text, const QString& _timeStrin
     return html;
   }
 
-  for (int i = _text.indexOf(QRegExp("\\s+")); i != -1; i = _text.indexOf(QRegExp("\\s+"), i + 1)) {
+  static const QRegularExpression whitespaceRe("\\s+");
+  for (int i = _text.indexOf(whitespaceRe); i != -1; i = _text.indexOf(whitespaceRe, i + 1)) {
     if (i >= 0) {
       html = htmlTemplate.arg(_timeString).arg(_text.left(i));
       doc.setHtml(html);
       if (_size.height() + 10 < doc.size().height() ) {
-        i = _text.lastIndexOf(QRegExp("\\s+"), std::max(0, i - 1));
-        i = _text.lastIndexOf(QRegExp("\\s+"), std::max(0, i - 1));
+        i = _text.lastIndexOf(whitespaceRe, std::max(0, i - 1));
+        i = _text.lastIndexOf(whitespaceRe, std::max(0, i - 1));
         html = htmlTemplate.arg(_timeString).arg(QString("%1%2").arg(_text.left(i)).arg("..."));
         return html;
       }

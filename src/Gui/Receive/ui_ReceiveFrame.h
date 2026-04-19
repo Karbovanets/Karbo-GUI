@@ -10,7 +10,7 @@
 #define UI_RECEIVEFRAME_H
 
 #include <QtCore/QVariant>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QDoubleSpinBox>
@@ -84,7 +84,7 @@ public:
         m_createRequestFrame->setSizePolicy(sizePolicy);
         QFont font;
         font.setBold(false);
-        font.setWeight(50);
+        font.setWeight(QFont::Normal);
         m_createRequestFrame->setFont(font);
         verticalLayout_5 = new QVBoxLayout(m_createRequestFrame);
         verticalLayout_5->setObjectName(QStringLiteral("verticalLayout_5"));

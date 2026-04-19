@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <QRegExp>
 #include <QUrl>
 
 #include "OptionsDialog.h"
@@ -89,7 +88,7 @@ const char OPTIONS_DIALOG_STYLE_SHEET_TEMPLATE[] =
 }
 
 OptionsDialog::OptionsDialog(ICryptoNoteAdapter* _cryptoNoteAdapter, IDonationManager* _donationManager,
-  IOptimizationManager* _optimizationManager, QAbstractItemModel* _addressBookModel, QWidget* _parent) :
+  QAbstractItemModel* _addressBookModel, QWidget* _parent) :
   QDialog(_parent, static_cast<Qt::WindowFlags>(Qt::WindowCloseButtonHint)), m_ui(new Ui::OptionsDialog), m_needToRestart(false) {
   m_ui->setupUi(this);
   m_ui->m_warningLabel->hide();
@@ -101,7 +100,6 @@ OptionsDialog::OptionsDialog(ICryptoNoteAdapter* _cryptoNoteAdapter, IDonationMa
     connect(pageObject, SIGNAL(showRestartWarningSignal(bool)), this, SLOT(showRestartWarning(bool)));
     uiItem->setCryptoNoteAdapter(_cryptoNoteAdapter);
     uiItem->setDonationManager(_donationManager);
-    uiItem->setOptimizationManager(_optimizationManager);
     uiItem->setAddressBookModel(_addressBookModel);
     page->load();
     m_ui->m_optionsTabWidget->setTabEnabled(i, page->isEnabled());

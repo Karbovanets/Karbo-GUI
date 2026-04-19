@@ -68,7 +68,7 @@ QVariant DrawableTransfersModel::data(const QModelIndex& _proxyIndex, int _role)
       return getDisplayRole(_proxyIndex);
     case Qt::DecorationRole:
       return getDecorationRole(_proxyIndex);
-    case Qt::TextColorRole:
+    case Qt::ForegroundRole:
       return getTextColorRole(_proxyIndex);
 
     default:
@@ -82,7 +82,7 @@ QVariant DrawableTransfersModel::data(const QModelIndex& _proxyIndex, int _role)
       return getAggregatedDisplayRole(_proxyIndex);
     case Qt::TextAlignmentRole:
       return getAggregateTextAlignmentRole(_proxyIndex);
-    case Qt::TextColorRole:
+    case Qt::ForegroundRole:
       return getAggregateTextColorRole(_proxyIndex);
     default:
       break;

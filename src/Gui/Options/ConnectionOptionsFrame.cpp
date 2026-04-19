@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <QRegularExpression>
 #include <QUrl>
 
 #include <CryptoNoteConfig.h>
@@ -49,9 +50,9 @@ const char CONNECTION_OPTIONS_STYLE_SHEET_TEMPLATE[] =
   "}";
 
 bool isIpOrHostName(const QString& _string) {
-  QRegExp ipRegExp("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
-  QRegExp hostNameRegExp("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
-  return !_string.isEmpty() && (ipRegExp.exactMatch(_string) || hostNameRegExp.exactMatch(_string));
+  static const QRegularExpression ipRegExp("\\A(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\z");
+  static const QRegularExpression hostNameRegExp("\\A(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*(?:[A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])\\z");
+  return !_string.isEmpty() && (ipRegExp.match(_string).hasMatch() || hostNameRegExp.match(_string).hasMatch());
 }
 
 }

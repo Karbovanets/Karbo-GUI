@@ -40,7 +40,6 @@ namespace WalletGui {
 
 class IAddressBookManager;
 class IDonationManager;
-class IOptimizationManager;
 class INewsReader;
 
 class MainWindow : public QMainWindow, public IWalletAdapterObserver, public IApplicationEventHandlerObserver,
@@ -50,8 +49,8 @@ class MainWindow : public QMainWindow, public IWalletAdapterObserver, public IAp
 
 public:
   MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManager* _addressBookManager,
-    IDonationManager* _donationManager, IOptimizationManager* _optimizationManager,
-    IApplicationEventHandler* _applicationEventHandler, 
+    IDonationManager* _donationManager,
+    IApplicationEventHandler* _applicationEventHandler,
     const QString& _styleSheetTemplate, QWidget* _parent);
   virtual ~MainWindow();
 
@@ -86,7 +85,6 @@ private:
   ICryptoNoteAdapter* m_cryptoNoteAdapter;
   IAddressBookManager* m_addressBookManager;
   IDonationManager* m_donationManager;
-  IOptimizationManager* m_optimizationManager;
   IApplicationEventHandler* m_applicationEventHandler;
   INewsReader* m_blogReader;
   DeterministicWalletAdapter m_deterministicAdapter;
@@ -94,7 +92,6 @@ private:
   QAbstractItemModel* m_walletStateModel;
   QAbstractItemModel* m_transactionsModel;
   QAbstractItemModel* m_sortedTranactionsModel;
-  QAbstractItemModel* m_fusionTranactionsFilterModel;
   QAbstractItemModel* m_addressBookModel;
   QAbstractItemModel* m_sortedAddressBookModel;
   QAbstractItemModel* m_blockChainModel;

@@ -111,7 +111,7 @@ void ReceiveFrame::saveRequest() {
 void ReceiveFrame::saveQrCode() {
   QString fileName = QFileDialog::getSaveFileName(this, tr("Save QR Code"), QDir::homePath(), "PNG (*.png)");
   if (!fileName.isEmpty()) {
-    QPixmap qrcode = QPixmap::grabWidget(m_ui->m_qrCodeRequestLabel);
+    QPixmap qrcode = m_ui->m_qrCodeRequestLabel->grab();
     QFile f(fileName);
     if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
       QByteArray ba;

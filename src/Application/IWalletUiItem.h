@@ -26,7 +26,6 @@ namespace WalletGui {
 class ICryptoNoteAdapter;
 class IAddressBookManager;
 class IDonationManager;
-class IOptimizationManager;
 class IApplicationEventHandler;
 class INewsReader;
 
@@ -35,7 +34,6 @@ public:
   virtual ~IWalletUiItem() {}
   virtual void setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter) {}
   virtual void setAddressBookManager(IAddressBookManager* _addressBookManager) {}
-  virtual void setOptimizationManager(IOptimizationManager* _optimizationManager) {}
   virtual void setDonationManager(IDonationManager* _donationManager) {}
   virtual void setApplicationEventHandler(IApplicationEventHandler* _applicationEventHandler) {}
   virtual void setMainWindow(QWidget* _mainWindow) {}

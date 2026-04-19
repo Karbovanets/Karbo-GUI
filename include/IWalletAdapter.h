@@ -38,7 +38,6 @@ struct AccountKeys {
 
 struct FullTransactionInfo {
   CryptoNote::WalletTransaction walletTransaction;
-  bool isFusionTransaction;
   QList<CryptoNote::WalletTransfer> transfers;
 };
 
@@ -102,7 +101,6 @@ public:
   virtual bool getFullTransactionInfo(quintptr _transactionIndex, FullTransactionInfo& _transactionInfo) const = 0;
   virtual bool getAllTransactions(QHash<quintptr, FullTransactionInfo>& _transactionInfos) const = 0;
   virtual bool getTransactionTransfer(quintptr _transactionIndex, quintptr _transferIndex, CryptoNote::WalletTransfer& _transfer) const = 0;
-  virtual bool isFusionTransaction(quintptr _transactionIndex) const = 0;
   virtual QByteArray getUserData() const = 0;
   virtual QString getBalanceProof(quint64& _amount, QString& _message) const = 0;
   virtual QString signMessage(const QString &data) const = 0;
@@ -110,8 +108,6 @@ public:
 
 
   virtual SendTransactionStatus sendTransaction(const CryptoNote::TransactionParameters& _transactionParameters) = 0;
-  virtual bool createFusionTransaction(quint64 _threshold, quint64 _mixin, const QString& _destinationAddress) = 0;
-  virtual quintptr getOutputsToOptimizeCount(quint64 _threshold) const = 0;
   virtual void setUserData(const QByteArray& _userData) = 0;
 
   virtual void addObserver(IWalletAdapterObserver* _observer) = 0;

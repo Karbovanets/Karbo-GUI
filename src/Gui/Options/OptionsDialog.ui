@@ -57,11 +57,6 @@
        <string>Connection</string>
       </attribute>
      </widget>
-     <widget class="WalletGui::OptimizationOptionsFrame" name="m_optimizationTab">
-      <attribute name="title">
-       <string>Wallet optimization</string>
-      </attribute>
-     </widget>
      <widget class="WalletGui::DonationOptionsFrame" name="m_donationTab">
       <attribute name="title">
        <string>Donations</string>
@@ -161,12 +156,6 @@
    <class>WalletGui::WalletCancelButton</class>
    <extends>QPushButton</extends>
    <header>Gui/Common/WalletCancelButton.h</header>
-  </customwidget>
-  <customwidget>
-   <class>WalletGui::OptimizationOptionsFrame</class>
-   <extends>QWidget</extends>
-   <header>Gui/Options/OptimizationOptionsFrame.h</header>
-   <container>1</container>
   </customwidget>
   <customwidget>
    <class>WalletGui::ConnectionOptionsFrame</class>

@@ -34,7 +34,7 @@ public:
   explicit ApplicationEventHandler(QObject* _parent);
   ~ApplicationEventHandler();
 
-  virtual bool nativeEventFilter(const QByteArray& _eventType, void* _message, long* _result) override;
+  virtual bool nativeEventFilter(const QByteArray& _eventType, void* _message, qintptr* _result) override;
 
   // IApplicationEventHandler
   virtual void init() override;

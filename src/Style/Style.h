@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <QIcon>
 #include <QPixmap>
 
 namespace WalletGui {

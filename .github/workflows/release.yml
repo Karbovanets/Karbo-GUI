@@ -5,37 +5,41 @@ on:
     tags:
     - '*'
 
+env:
+  CRYPTONOTE_COMMIT: 79620b80bae61c9489cec3ac576fd3b691ab4707
+
 jobs:
   build-windows:
     name: Windows
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
-      BOOST_ROOT: C:\thirdparties\boost-1.72.0
+      BOOST_ROOT: C:\thirdparties\boost-1.83.0
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.ref }}
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
 
       - name: Install Boost
         shell: cmd
         run: |
           choco install wget --no-progress
-          wget -nv -O boost-installer.exe "https://sourceforge.net/projects/boost/files/boost-binaries/1.72.0/boost_1_72_0-msvc-14.2-64.exe/download"
+          wget -nv -O boost-installer.exe "https://sourceforge.net/projects/boost/files/boost-binaries/1.83.0/boost_1_83_0-msvc-14.3-64.exe/download"
           boost-installer.exe /dir=%BOOST_ROOT% /sp- /verysilent /suppressmsgboxes /norestart
 
       - name: Install OpenSSL
         run: choco install openssl
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
-          version: '5.15.2'
+          version: '6.7.3'
           host: 'windows'
           target: 'desktop'
+          arch: 'win64_msvc2022_64'
           install-deps: 'true'
 
       - name: Build
@@ -43,22 +47,19 @@ jobs:
         id: build
         env:
           GIT_REDIRECT_STDERR: '2>&1'
-          VCINSTALLDIR: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\'
         run: |
           $build_folder = "build"
           $krb_ver = "${{ github.ref }}" -replace '[refs/tags/]'
           $release_name = "Karbo-GUI-win64-$krb_ver"
-          set CMAKE_PREFIX_PATH="$($qt5_cmake)"
-          $qt5_cmake = "${{ env.Qt5_Dir }}/lib/cmake" -replace '[/]', '\\'
           Remove-Item cryptonote -Recurse -ErrorAction Ignore
           git clone -n https://github.com/seredat/karbowanec.git cryptonote --quiet
           cd cryptonote
-          git checkout aa2ec2ecedeb992a138f5ed22991cf0ec0778802
+          git checkout $env:CRYPTONOTE_COMMIT
           cd ..
           mkdir "$build_folder"
           cd "$build_folder"
-          Start-Process cmake -ArgumentList "-DBOOST_ROOT=""$env:BOOST_ROOT"" -DBOOST_INCLUDE_DIRS=""$env:BOOST_ROOT/include"" -G ""Visual Studio 16 2019"" -A x64",".." -NoNewWindow -Wait
-          Start-Process msbuild -ArgumentList "Karbo-GUI.sln","/p:Configuration=Release" -NoNewWindow -Wait
+          cmake -DBOOST_ROOT="$env:BOOST_ROOT" -DBOOST_INCLUDE_DIRS="$env:BOOST_ROOT/include" -G "Visual Studio 17 2022" -A x64 ..
+          cmake --build . --config Release
           $build_path = "./$build_folder"
           echo "build_path=${build_path}" >> $env:GITHUB_OUTPUT
           echo "release_name=${release_name}" >> $env:GITHUB_OUTPUT
@@ -67,8 +68,6 @@ jobs:
       - name: Pack
         shell: powershell
         id: pack
-        env:
-          VCINSTALLDIR: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\'
         run: |
           $build_folder = "${{ steps.build.outputs.build_path }}"
           $release_name = "${{ steps.build.outputs.release_name }}"
@@ -85,13 +84,13 @@ jobs:
           Compress-Archive -Path "$release_name/" -DestinationPath "$release_name.zip"
           $sha256 = (Get-FileHash "$release_name.zip").Hash
           $asset_path = "./$build_folder/$release_folder/$release_name.zip"
-          echo "sha256i=${sha256i}" >> $env:GITHUB_OUTPUT
-          echo "release_name=${release_name}-install.zip" >> $env:GITHUB_OUTPUT
+          echo "sha256=${sha256}" >> $env:GITHUB_OUTPUT
+          echo "release_name=${release_name}.zip" >> $env:GITHUB_OUTPUT
           echo "asset_path=${asset_path}" >> $env:GITHUB_OUTPUT
           echo "krb_ver=${krb_ver}" >> $env:GITHUB_OUTPUT
 
       - name: Create Release
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.pack.outputs.asset_path }}
           name: Karbo Spring Wallet ${{ steps.pack.outputs.krb_ver }}
@@ -103,17 +102,17 @@ jobs:
 
   build-macos:
     name: macOS
-    runs-on: macos-11
+    runs-on: macos-14
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.ref }}
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
-          version: '5.15.2'
+          version: '6.7.3'
           install-deps: 'true'
 
       - name: Setup Xcode
@@ -123,7 +122,7 @@ jobs:
 
       - name: Install other deps
         run: |
-          brew install gcc boost openssl
+          brew install boost openssl
           brew link boost --force
 
       - name: Build
@@ -136,71 +135,24 @@ jobs:
           rm -rf cryptonote
           git clone -n https://github.com/seredat/karbowanec.git cryptonote
           cd cryptonote
-          git checkout aa2ec2ecedeb992a138f5ed22991cf0ec0778802
+          git checkout "$CRYPTONOTE_COMMIT"
           cd ..
           mkdir -p "$build_folder"
           cd "$build_folder"
-          cmake -D ARCH=default -D CMAKE_C_FLAGS="-mmacosx-version-min=10.12" -D CMAKE_CXX_FLAGS="-mmacosx-version-min=10.12" -D CMAKE_BUILD_TYPE=Release ../..
-          make
+          cmake -D ARCH=default -D CMAKE_BUILD_TYPE=Release ../..
+          make -j"$(sysctl -n hw.ncpu)"
           macdeployqt "$app_name"
           cpack
           mv *.dmg "$release_name".dmg
           sha256=$(shasum -a 256 "$release_name".dmg | awk '{ print toupper($1) }')
           asset_path="./$build_folder/$release_name.dmg"
           echo "sha256=${sha256}" >> $GITHUB_OUTPUT
-          echo "release_name=${release_name}.zip" >> $GITHUB_OUTPUT
-          echo "asset_path=${asset_path}" >> $GITHUB_OUTPUT
-          echo "krb_ver=${krb_ver}" >> $GITHUB_OUTPUT
-        env:
-          MACOSX_DEPLOYMENT_TARGET: '10.12'
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v0.1.15
-        with:
-          files: ${{ steps.build.outputs.asset_path }}
-          name: Karbo Spring Wallet ${{ steps.build.outputs.krb_ver }}
-          body: |
-            **${{ steps.build.outputs.release_name }}**
-            ${{ steps.build.outputs.sha256 }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  build-ubuntu20:
-    name: Ubuntu 20.04
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Build
-        id: build
-        run: |
-          sudo apt update -y
-          sudo apt install -y qtbase5-dev qttools5-dev qttools5-dev-tools libboost-all-dev
-          build_folder="build/release"
-          krb_ver=$(echo "$GITHUB_REF" | sed 's|refs/tags/||')
-          release_name=Karbo-GUI-ubuntu-20.04-"$krb_ver"
-          app_name="Karbo-GUI"
-          rm -rf cryptonote
-          git clone -n https://github.com/seredat/karbowanec.git cryptonote
-          cd cryptonote
-          git checkout aa2ec2ecedeb992a138f5ed22991cf0ec0778802
-          cd ..
-          mkdir -p "$build_folder"
-          cd "$build_folder"
-          cmake -D ARCH=default -D CMAKE_BUILD_TYPE=Release -D CMAKE_POSITION_INDEPENDENT_CODE:BOOL=true -D BOOST_IGNORE_SYSTEM_PATHS_DEFAULT=ON -D BOOST_ROOT=/usr ../..
-          make
-          tar -czf "$release_name".tar.gz "$app_name"
-          sha256=$(shasum -a 256 "$release_name".tar.gz | awk '{print toupper($1)}')
-          asset_path="./$build_folder/$release_name".tar.gz
-          echo "sha256=${sha256}" >> $GITHUB_OUTPUT
-          echo "release_name=${release_name}.tar.gz" >> $GITHUB_OUTPUT
+          echo "release_name=${release_name}.dmg" >> $GITHUB_OUTPUT
           echo "asset_path=${asset_path}" >> $GITHUB_OUTPUT
           echo "krb_ver=${krb_ver}" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.build.outputs.asset_path }}
           name: Karbo Spring Wallet ${{ steps.build.outputs.krb_ver }}
@@ -214,16 +166,16 @@ jobs:
     name: Ubuntu 22.04
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Build
         id: build
         run: |
-          sudo apt-get purge '*boost*'
+          sudo apt-get purge '*boost*' -y || true
           sudo apt update -y
-          sudo apt install -y qtbase5-dev qttools5-dev qttools5-dev-tools libboost-all-dev
+          sudo apt install -y qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools libqt6svg6-dev qt6-l10n-tools libgl1-mesa-dev libboost-all-dev
           build_folder="build/release"
           krb_ver=$(echo "$GITHUB_REF" | sed 's|refs/tags/||')
           release_name=Karbo-GUI-ubuntu-22.04-"$krb_ver"
@@ -231,12 +183,12 @@ jobs:
           rm -rf cryptonote
           git clone -n https://github.com/seredat/karbowanec.git cryptonote
           cd cryptonote
-          git checkout aa2ec2ecedeb992a138f5ed22991cf0ec0778802
+          git checkout "$CRYPTONOTE_COMMIT"
           cd ..
           mkdir -p "$build_folder"
           cd "$build_folder"
           cmake -D ARCH=default -D CMAKE_BUILD_TYPE=Release -D CMAKE_POSITION_INDEPENDENT_CODE:BOOL=true -D BOOST_IGNORE_SYSTEM_PATHS_DEFAULT=ON -D BOOST_ROOT=/usr ../..
-          make
+          make -j"$(nproc)"
           tar -czf "$release_name".tar.gz "$app_name"
           sha256=$(shasum -a 256 "$release_name".tar.gz | awk '{print toupper($1)}')
           asset_path="./$build_folder/$release_name".tar.gz
@@ -246,7 +198,7 @@ jobs:
           echo "krb_ver=${krb_ver}" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.build.outputs.asset_path }}
           name: Karbo Spring Wallet ${{ steps.build.outputs.krb_ver }}
@@ -256,3 +208,105 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build-ubuntu24:
+    name: Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        id: build
+        run: |
+          sudo apt-get purge '*boost*' -y || true
+          sudo apt update -y
+          sudo apt install -y qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools libqt6svg6-dev qt6-l10n-tools libgl1-mesa-dev libboost-all-dev
+          build_folder="build/release"
+          krb_ver=$(echo "$GITHUB_REF" | sed 's|refs/tags/||')
+          release_name=Karbo-GUI-ubuntu-24.04-"$krb_ver"
+          app_name="Karbo-GUI"
+          rm -rf cryptonote
+          git clone -n https://github.com/seredat/karbowanec.git cryptonote
+          cd cryptonote
+          git checkout "$CRYPTONOTE_COMMIT"
+          cd ..
+          mkdir -p "$build_folder"
+          cd "$build_folder"
+          cmake -D ARCH=default -D CMAKE_BUILD_TYPE=Release -D CMAKE_POSITION_INDEPENDENT_CODE:BOOL=true -D BOOST_IGNORE_SYSTEM_PATHS_DEFAULT=ON -D BOOST_ROOT=/usr ../..
+          make -j"$(nproc)"
+          tar -czf "$release_name".tar.gz "$app_name"
+          sha256=$(shasum -a 256 "$release_name".tar.gz | awk '{print toupper($1)}')
+          asset_path="./$build_folder/$release_name".tar.gz
+          echo "sha256=${sha256}" >> $GITHUB_OUTPUT
+          echo "release_name=${release_name}.tar.gz" >> $GITHUB_OUTPUT
+          echo "asset_path=${asset_path}" >> $GITHUB_OUTPUT
+          echo "krb_ver=${krb_ver}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.build.outputs.asset_path }}
+          name: Karbo Spring Wallet ${{ steps.build.outputs.krb_ver }}
+          body: |
+            **${{ steps.build.outputs.release_name }}**
+            ${{ steps.build.outputs.sha256 }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-appimage:
+    name: AppImage
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.3'
+          host: 'linux'
+          target: 'desktop'
+          install-deps: 'true'
+
+      - name: Install build deps
+        run: |
+          sudo apt update -y
+          sudo apt install -y libboost-all-dev libssl-dev libgl1-mesa-dev libfuse2 wget file
+
+      - name: Build
+        id: build
+        run: |
+          krb_ver=$(echo "$GITHUB_REF" | sed 's|refs/tags/||')
+          release_name=Karbo-GUI-linux-x86_64-"$krb_ver"
+          rm -rf cryptonote
+          git clone -n https://github.com/seredat/karbowanec.git cryptonote
+          cd cryptonote
+          git checkout "$CRYPTONOTE_COMMIT"
+          cd ..
+          mkdir -p build/release
+          cd build/release
+          cmake -D ARCH=default -D CMAKE_BUILD_TYPE=Release -D CMAKE_POSITION_INDEPENDENT_CODE:BOOL=true -D BOOST_IGNORE_SYSTEM_PATHS_DEFAULT=ON -D BOOST_ROOT=/usr ../..
+          make -j"$(nproc)"
+          cd ../../appimage
+          bash create-appimage.sh
+          mv Karbo-GUI-*.AppImage "../$release_name".AppImage || mv *.AppImage "../$release_name".AppImage
+          cd ..
+          sha256=$(shasum -a 256 "$release_name".AppImage | awk '{print toupper($1)}')
+          asset_path="./$release_name".AppImage
+          echo "sha256=${sha256}" >> $GITHUB_OUTPUT
+          echo "release_name=${release_name}.AppImage" >> $GITHUB_OUTPUT
+          echo "asset_path=${asset_path}" >> $GITHUB_OUTPUT
+          echo "krb_ver=${krb_ver}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.build.outputs.asset_path }}
+          name: Karbo Spring Wallet ${{ steps.build.outputs.krb_ver }}
+          body: |
+            **${{ steps.build.outputs.release_name }}**
+            ${{ steps.build.outputs.sha256 }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
