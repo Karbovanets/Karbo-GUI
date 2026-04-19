@@ -23,9 +23,11 @@
 #include <QLocale>
 #include <QLockFile>
 #include <QMessageBox>
+#include <QPalette>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QStyleFactory>
+#include <QStyleHints>
 #include <QTcpServer>
 
 #ifdef Q_OS_WIN
@@ -118,11 +120,11 @@ WalletApplication::~WalletApplication() {
 
 bool WalletApplication::init() {
   qRegisterMetaType<quintptr>("quintptr");
-  setupTheme();
   m_commandLineParser = new CommandLineParser(this);
   Settings::instance().setCommandLineParser(m_commandLineParser);
   bool cmdLineParseResult = m_commandLineParser->process(arguments());
   Settings::instance().init();
+  setupTheme();
 
 #ifdef Q_OS_WIN
   if(!cmdLineParseResult) {
@@ -225,6 +227,62 @@ void WalletApplication::setupTheme() {
   font.setFamily("Open Sans");
   font.setStyleStrategy(QFont::PreferAntialias);
   QApplication::setFont(font);
+
+  const Style& style = Settings::instance().getCurrentStyle();
+  const bool isDark = (style.getStyleId() == "dark");
+
+  QPalette palette;
+  if (isDark) {
+    const QColor base("#1E2A3E");
+    const QColor alt("#25344D");
+    const QColor text("#F0F0F0");
+    const QColor window("#2E466C");
+    palette.setColor(QPalette::Window, window);
+    palette.setColor(QPalette::WindowText, text);
+    palette.setColor(QPalette::Base, base);
+    palette.setColor(QPalette::AlternateBase, alt);
+    palette.setColor(QPalette::Text, text);
+    palette.setColor(QPalette::ToolTipBase, base);
+    palette.setColor(QPalette::ToolTipText, text);
+    palette.setColor(QPalette::Button, window);
+    palette.setColor(QPalette::ButtonText, text);
+    palette.setColor(QPalette::BrightText, Qt::red);
+    palette.setColor(QPalette::Link, QColor("#4197d1"));
+    palette.setColor(QPalette::Highlight, QColor("#4197d1"));
+    palette.setColor(QPalette::HighlightedText, Qt::white);
+    palette.setColor(QPalette::PlaceholderText, QColor("#AAB6C4"));
+    palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#8C949E"));
+    palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#8C949E"));
+    palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#8C949E"));
+  } else {
+    const QColor base(Qt::white);
+    const QColor alt("#F3F4F6");
+    const QColor text("#2A4268");
+    const QColor window("#EDF4FC");
+    palette.setColor(QPalette::Window, window);
+    palette.setColor(QPalette::WindowText, text);
+    palette.setColor(QPalette::Base, base);
+    palette.setColor(QPalette::AlternateBase, alt);
+    palette.setColor(QPalette::Text, text);
+    palette.setColor(QPalette::ToolTipBase, base);
+    palette.setColor(QPalette::ToolTipText, text);
+    palette.setColor(QPalette::Button, window);
+    palette.setColor(QPalette::ButtonText, text);
+    palette.setColor(QPalette::BrightText, Qt::red);
+    palette.setColor(QPalette::Link, QColor("#0580e8"));
+    palette.setColor(QPalette::Highlight, QColor("#5f9cc7"));
+    palette.setColor(QPalette::HighlightedText, Qt::white);
+    palette.setColor(QPalette::PlaceholderText, QColor("#888888"));
+    palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#8C949E"));
+    palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#8C949E"));
+    palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#8C949E"));
+  }
+
+  QApplication::setPalette(palette);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+  QApplication::styleHints()->setColorScheme(isDark ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light);
+#endif
 }
 
 bool WalletApplication::initCryptoNoteAdapter() {

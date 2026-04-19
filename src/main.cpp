@@ -16,11 +16,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <QGuiApplication>
+
 #include "Application/WalletApplication.h"
 
 using namespace WalletGui;
 
 int main(int argc, char* argv[]) {
+  QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::Floor);
   WalletApplication app(argc, argv);
   try {
     if (!app.init()) {
