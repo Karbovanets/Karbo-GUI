@@ -239,7 +239,8 @@ jobs:
           cd appimage
           chmod +x ./create-appimage.sh
           ./create-appimage.sh
-          mv Karbo-GUI-*.AppImage "$appimage_name" || mv *.AppImage "$appimage_name"
+          produced=$(find . -maxdepth 1 -name '*.AppImage' -not -name 'linuxdeploy*' | head -n 1)
+          mv "$produced" "$appimage_name"
           ls -l "$appimage_name"
           cd ..
           asset_path="./appimage/$appimage_name"

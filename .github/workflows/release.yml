@@ -260,7 +260,8 @@ jobs:
           cd appimage
           chmod +x ./create-appimage.sh
           ./create-appimage.sh
-          mv Karbo-GUI-*.AppImage "../$release_name".AppImage || mv *.AppImage "../$release_name".AppImage
+          produced=$(find . -maxdepth 1 -name '*.AppImage' -not -name 'linuxdeploy*' | head -n 1)
+          mv "$produced" "../$release_name".AppImage
           cd ..
           sha256=$(shasum -a 256 "$release_name".AppImage | awk '{print toupper($1)}')
           asset_path="./$release_name".AppImage
