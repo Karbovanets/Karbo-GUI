@@ -54,9 +54,15 @@ public:
   virtual bool isEncrypted() const override;
   virtual bool isTrackingWallet() const override;
   virtual QString getAddress(quintptr _addressIndex) const override;
+  virtual quintptr getAddressCount() const override;
+  virtual QString createAddress() override;
+  virtual QString createAddress(const AccountKeys& _accountKeys) override;
+  virtual void deleteAddress(quintptr _addressIndex) override;
   virtual AccountKeys getAccountKeys(quintptr _addressIndex) const override;
   virtual quint64 getActualBalance() const override;
   virtual quint64 getPendingBalance() const override;
+  virtual quint64 getActualBalance(quintptr _addressIndex) const override;
+  virtual quint64 getPendingBalance(quintptr _addressIndex) const override;
   virtual quintptr getTransactionCount() const override;
   virtual quintptr getTransactionTransferCount(quintptr _transactionIndex) const override;
   virtual bool getTransaction(quintptr _transactionIndex, CryptoNote::WalletTransaction& _transaction) const override;
@@ -86,6 +92,8 @@ public:
   Q_SLOT virtual void balanceUpdated(quint64 _actualBalance, quint64 _pendingBalance) override;
   Q_SLOT virtual void externalTransactionCreated(quintptr _transactionId, const FullTransactionInfo& _transaction) override;
   Q_SLOT virtual void transactionUpdated(quintptr _transactionId, const FullTransactionInfo& _transaction) override;
+  virtual void addressCreated(quintptr _addressIndex, const QString& _address) override;
+  virtual void addressDeleted(quintptr _addressIndex, const QString& _address) override;
 
 private:
   const CryptoNote::Currency& m_currency;
@@ -108,6 +116,8 @@ Q_SIGNALS:
   void balanceUpdatedSignal(quint64 _actualBalance, quint64 _pendingBalance);
   void externalTransactionCreatedSignal(quintptr _transactionId, const FullTransactionInfo& _transaction);
   void transactionUpdatedSignal(quintptr _transactionId, const FullTransactionInfo& _transaction);
+  void addressCreatedSignal(quintptr _addressIndex, const QString& _address);
+  void addressDeletedSignal(quintptr _addressIndex, const QString& _address);
 };
 
 }

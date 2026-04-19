@@ -53,6 +53,8 @@ public:
   virtual void balanceUpdated(quint64 _actualBalance, quint64 _pendingBalance) = 0;
   virtual void externalTransactionCreated(quintptr _transactionId, const FullTransactionInfo& _transaction) = 0;
   virtual void transactionUpdated(quintptr _transactionId, const FullTransactionInfo& _transaction) = 0;
+  virtual void addressCreated(quintptr _addressIndex, const QString& _address) {}
+  virtual void addressDeleted(quintptr _addressIndex, const QString& _address) {}
 };
 
 class IWalletAdapter {
@@ -89,9 +91,15 @@ public:
   virtual bool isEncrypted() const = 0;
   virtual bool isTrackingWallet() const = 0;
   virtual QString getAddress(quintptr _addressIndex) const = 0;
+  virtual quintptr getAddressCount() const = 0;
+  virtual QString createAddress() = 0;
+  virtual QString createAddress(const AccountKeys& _accountKeys) = 0;
+  virtual void deleteAddress(quintptr _addressIndex) = 0;
   virtual AccountKeys getAccountKeys(quintptr _addressIndex) const = 0;
   virtual quint64 getActualBalance() const = 0;
   virtual quint64 getPendingBalance() const = 0;
+  virtual quint64 getActualBalance(quintptr _addressIndex) const = 0;
+  virtual quint64 getPendingBalance(quintptr _addressIndex) const = 0;
   virtual quintptr getTransactionCount() const = 0;
   virtual quintptr getTransactionTransferCount(quintptr _transactionIndex) const = 0;
   virtual bool getTransaction(quintptr _transactionIndex, CryptoNote::WalletTransaction& _transaction) const = 0;
