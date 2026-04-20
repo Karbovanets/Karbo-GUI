@@ -30,6 +30,7 @@ public:
   explicit SendGlassFrame(QWidget* _parent);
   ~SendGlassFrame();
 
+  void updateStyle();
   void updateSynchronizationState(quint32 _current, quint32 _total);
 
 protected:

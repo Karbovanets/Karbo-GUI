@@ -83,7 +83,7 @@ const char OVERVIEW_HEADER_STYLE_SHEET_TEMPLATE[] =
 OverviewHeaderFrame::OverviewHeaderFrame(QWidget* _parent) : QFrame(_parent), m_ui(new Ui::OverviewHeaderFrame),
   m_cryptoNoteAdapter(nullptr), m_nodeStateModel(nullptr),
   m_walletStateModel(nullptr), m_transactionPoolModel(nullptr), m_overViewTransactionPoolModel(nullptr),
-  m_syncMovie(new QMovie(":icons/light/wallet-sync", QByteArray(), this)),
+  m_syncMovie(new QMovie(Settings::instance().getCurrentStyle().getWalletSyncGifFile(), QByteArray(), this)),
   m_balancesGlassFrame(new OverviewHeaderGlassFrame(m_syncMovie, nullptr)),
   m_transactionPoolGlassFrame(new OverviewHeaderGlassFrame(m_syncMovie, nullptr)) {
   m_ui->setupUi(this);
@@ -94,6 +94,22 @@ OverviewHeaderFrame::OverviewHeaderFrame(QWidget* _parent) : QFrame(_parent), m_
 }
 
 OverviewHeaderFrame::~OverviewHeaderFrame() {
+}
+
+void OverviewHeaderFrame::updateStyle() {
+  const bool wasRunning = m_syncMovie->state() == QMovie::Running;
+  if (wasRunning) {
+    m_syncMovie->stop();
+  }
+
+  m_syncMovie->setFileName(Settings::instance().getCurrentStyle().getWalletSyncGifFile());
+  if (wasRunning) {
+    m_syncMovie->start();
+  }
+
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(OVERVIEW_HEADER_STYLE_SHEET_TEMPLATE));
+  m_balancesGlassFrame->updateStyle();
+  m_transactionPoolGlassFrame->updateStyle();
 }
 
 bool OverviewHeaderFrame::eventFilter(QObject* _object, QEvent* _event) {

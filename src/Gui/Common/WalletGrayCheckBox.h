@@ -29,6 +29,7 @@ class WalletGrayCheckBox : public QCheckBox {
 public:
   explicit WalletGrayCheckBox(QWidget *parent);
   ~WalletGrayCheckBox();
+  void updateStyle();
 };
 
 }

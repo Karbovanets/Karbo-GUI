@@ -53,6 +53,16 @@ public:
   virtual QString backgroundColorGreen() const;
   virtual QString backgroundColorGreenHover() const;
   virtual QString backgroundColorAlternate() const;
+  virtual QString panelBackgroundColor() const;
+  virtual QString inputBackgroundColor() const;
+  virtual QString primaryTextColor() const;
+  virtual QString selectionTextColor() const;
+  virtual QString hoverBackgroundColor() const;
+  virtual QString menuBackgroundColor() const;
+  virtual QString tabBackgroundColor() const;
+  virtual QString tabInactiveBackgroundColor() const;
+  virtual QString scrollBarBackgroundColor() const;
+  virtual QString calendarHeaderBackgroundColor() const;
   virtual QString borderColor() const;
   virtual QString borderColorDark() const;
   virtual QString selectionColor() const;

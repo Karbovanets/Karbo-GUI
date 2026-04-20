@@ -35,7 +35,7 @@ namespace {
 
 const char CONNECTION_OPTIONS_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--ConnectionOptionsFrame {"
-    "background: #ffffff;"
+    "background: %panelBackgroundColor%;"
   "}"
 
   "WalletGui--ConnectionOptionsFrame QRadioButton {"

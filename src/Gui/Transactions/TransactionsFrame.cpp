@@ -48,7 +48,7 @@ namespace {
 
 const char TRANSACTIONS_FRAME_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--TransactionsFrame {"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
   "}"
 
@@ -96,6 +96,10 @@ TransactionsFrame::TransactionsFrame(QWidget* _parent) : QFrame(_parent), m_ui(n
 }
 
 TransactionsFrame::~TransactionsFrame() {
+}
+
+void TransactionsFrame::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(TRANSACTIONS_FRAME_STYLE_SHEET_TEMPLATE));
 }
 
 void TransactionsFrame::setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter) {

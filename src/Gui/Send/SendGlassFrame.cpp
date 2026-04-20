@@ -47,6 +47,12 @@ SendGlassFrame::SendGlassFrame(QWidget* _parent) : GlassFrame(_parent), m_curren
 SendGlassFrame::~SendGlassFrame() {
 }
 
+void SendGlassFrame::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(SEND_GLASS_FRAME_STYLE_SHEET_TEMPLATE));
+  paintInBuffer();
+  update();
+}
+
 void SendGlassFrame::paintEvent(QPaintEvent* _event) {
   if (m_lastThemeName.compare(Settings::instance().getCurrentTheme())) {
     paintInBuffer();
@@ -92,7 +98,7 @@ void SendGlassFrame::drawProgressGraph(QPainter &_painter) {
   QPen pen;
   pen.setWidth(10);
 
-  pen.setColor(QColor("#e6e6e6"));
+  pen.setColor(QColor(Settings::instance().getCurrentStyle().borderColor()));
   _painter.setPen(pen);
   _painter.drawArc(rect, 0, 360 * degree);
 
@@ -111,7 +117,7 @@ void SendGlassFrame::drawProgressLabel(QPainter &_painter) {
   messageRect.moveCenter(QPoint(m_pixmapBuffer.width() / 2, 163));
 
   QPen pen;
-  pen.setColor(QColor("#000000"));
+  pen.setColor(QColor(Settings::instance().getCurrentStyle().primaryTextColor()));
   _painter.setPen(pen);
   _painter.setFont(font);
   _painter.setRenderHint(QPainter::TextAntialiasing);
@@ -128,7 +134,7 @@ void SendGlassFrame::drawProgressValue(QPainter &_painter) {
   messageRect.moveCenter(QPoint(m_pixmapBuffer.width() / 2, 198));
 
   QPen pen;
-  pen.setColor(QColor("#888888"));
+  pen.setColor(QColor(Settings::instance().getCurrentStyle().fontColorGray()));
   _painter.setPen(pen);
   _painter.setFont(font);
   _painter.drawText(messageRect, Qt::AlignCenter, msg);

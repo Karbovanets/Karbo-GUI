@@ -15,12 +15,46 @@
 #include <CryptoNoteConfig.h>
 #include <CryptoNoteCore/CryptoNoteBasicImpl.h>
 
+#include "Settings/Settings.h"
+#include "Style/Style.h"
+
 namespace WalletGui {
+
+namespace {
+
+const char SIGN_MESSAGE_DIALOG_STYLE_SHEET_TEMPLATE[] =
+  "* {"
+    "font-family: %fontFamily%;"
+  "}"
+
+  "WalletGui--SignMessageDialog {"
+    "background-color: %backgroundColorGray%;"
+  "}"
+
+  "WalletGui--SignMessageDialog #m_signTab,"
+  "WalletGui--SignMessageDialog #m_verifyTab {"
+    "background-color: %panelBackgroundColor%;"
+  "}"
+
+  "WalletGui--SignMessageDialog QTextEdit,"
+  "WalletGui--SignMessageDialog QLineEdit {"
+    "background-color: %inputBackgroundColor%;"
+    "color: %primaryTextColor%;"
+    "border: 1px solid %borderColorDark%;"
+  "}";
+
+}
 
 SignMessageDialog::SignMessageDialog(ICryptoNoteAdapter* _cryptoNoteAdapter, const AccountKeys& _keys, const QString& _address, QWidget* _parent) :
     QDialog(_parent, static_cast<Qt::WindowFlags>(Qt::WindowCloseButtonHint)), m_ui(new Ui::SignMessageDialog), m_keys(_keys), m_address(_address), m_cryptoNoteAdapter(_cryptoNoteAdapter) {
   m_ui->setupUi(this);
+  m_ui->m_messageEdit->setStyleSheet(QString());
+  m_ui->m_signatureEdit->setStyleSheet(QString());
+  m_ui->m_addressEdit->setStyleSheet(QString());
+  m_ui->m_verifySignatureEdit->setStyleSheet(QString());
+  m_ui->m_verifyMessageEdit->setStyleSheet(QString());
   m_ui->m_verificationResult->setText("");
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(SIGN_MESSAGE_DIALOG_STYLE_SHEET_TEMPLATE));
 }
 
 SignMessageDialog::~SignMessageDialog() {

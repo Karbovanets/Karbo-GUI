@@ -47,6 +47,7 @@ public:
 
   bool init();
   void dockClickHandler();
+  void applyCurrentTheme();
 
   // ISettingsObserver
   virtual void settingsUpdated() override;
@@ -66,7 +67,6 @@ private:
 
   void loadFonts();
   void makeDataDir();
-  void setupTheme();
   bool initCryptoNoteAdapter();
   void deinitCryptoNoteAdapter();
   void reinitCryptoNoteAdapter();

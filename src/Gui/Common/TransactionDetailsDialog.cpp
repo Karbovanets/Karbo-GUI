@@ -48,6 +48,7 @@ const char TRANSACTION_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--TransactionDetailsDialog {"
     "min-height: 430px;"
     "max-height: 430px;"
+    "background-color: %backgroundColorGray%;"
   "}"
 
   "WalletGui--TransactionDetailsDialog WalletGui--WalletNormalGrayTextLabel, "
@@ -105,9 +106,9 @@ const char TRANSACTION_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--TransactionDetailsDialog > #m_transactionDetailsTabBar QTabBar::tab:selected {"
-    "background: #ffffff;"
+    "background: %tabBackgroundColor%;"
     "border: 1px solid %borderColorDark%;"
-    "border-bottom: 1px solid #ffffff;"
+    "border-bottom: 1px solid %tabBackgroundColor%;"
   "}"
 
   "WalletGui--TransactionDetailsDialog > #m_transactionDetailsTabBar QTabBar::tab:!selected {"
@@ -117,7 +118,7 @@ const char TRANSACTION_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
 
   "WalletGui--TransactionDetailsDialog #m_transactionTab,"
   "WalletGui--TransactionDetailsDialog #m_transfersTab {"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
   "}"
 

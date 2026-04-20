@@ -40,7 +40,8 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--WalletTableView {"
     "border: none;"
     "font-size: %fontSizeNormal%;"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
+    "color: %primaryTextColor%;"
     "border-bottom: 1px solid transparent;"
   "}"
 
@@ -50,7 +51,7 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--WalletTableView > QHeaderView {"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
     "border-bottom: 1px solid %borderColor%;"
   "}"
@@ -59,7 +60,7 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
     "height: 20px;"
     "font-size: %fontSizeSmall%;"
     "color: %fontColorGray%;"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
     "border-left: 23px solid transparent;"
     "border-right: 20px solid transparent;"
@@ -73,17 +74,17 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--WalletTableView::item:alternate {"
-    "background: #ffffff;"
+    "background: %panelBackgroundColor%;"
   "}"
 
   "WalletGui--WalletTableView::item:selected {"
-    "color: #ffffff;"
+    "color: %selectionTextColor%;"
     "background: %selectionColor%;"
   "}"
 
   "WalletGui--WalletTableView[hoverIsVisible=\"true\"]::item:hover {"
-    "background: #e9eaec;"
-    "alternate-background-color: #e9eaec;"
+    "background: %hoverBackgroundColor%;"
+    "alternate-background-color: %hoverBackgroundColor%;"
   "}";
 
 }
@@ -100,6 +101,11 @@ WalletTableView::WalletTableView(QWidget* _parent) : QTableView(_parent), m_link
 }
 
 WalletTableView::~WalletTableView() {
+}
+
+void WalletTableView::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(WALLET_VIEW_STYLE_SHEET_TEMPLATE));
+  verticalHeader()->setDefaultSectionSize(Settings::instance().getCurrentStyle().viewItemHeight());
 }
 
 void WalletTableView::setLinkLikeColumnSet(const QSet<int>& _linkLikeColumnSet) {

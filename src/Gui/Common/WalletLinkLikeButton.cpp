@@ -62,6 +62,10 @@ WalletLinkLikeButton::WalletLinkLikeButton(QWidget* _parent) : QPushButton(_pare
 WalletLinkLikeButton::~WalletLinkLikeButton() {
 }
 
+void WalletLinkLikeButton::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(WALLET_LINK_LIKE_BUTTON_STYLE_SHEET_TEMPLATE));
+}
+
 WalletTinyLinkLikeButton::WalletTinyLinkLikeButton(QWidget* _parent) : WalletLinkLikeButton(_parent) {
 }
 

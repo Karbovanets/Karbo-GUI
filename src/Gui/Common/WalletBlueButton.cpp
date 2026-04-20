@@ -31,7 +31,7 @@ const char WALLET_BLUE_BUTTON_STYLE_SHEET_TEMPLATE[] =
 
   "WalletGui--WalletBlueButton {"
     "font-size: %fontSizeNormal%;"
-    "color: #ffffff;"
+    "color: %selectionTextColor%;"
     "background-color: %backgroundColorBlueNormal%;"
     "border: 1px solid %backgroundColorBlueNormal%;"
   "}"
@@ -70,6 +70,10 @@ WalletBlueButton::WalletBlueButton(QWidget* _parent) : QPushButton(_parent) {
 }
 
 WalletBlueButton::~WalletBlueButton() {
+}
+
+void WalletBlueButton::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(WALLET_BLUE_BUTTON_STYLE_SHEET_TEMPLATE));
 }
 
 WalletNormalBlueButton::WalletNormalBlueButton(QWidget* _parent) : WalletBlueButton(_parent) {

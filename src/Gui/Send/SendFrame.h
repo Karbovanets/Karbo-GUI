@@ -57,6 +57,7 @@ public:
   virtual void setMainWindow(QWidget* _mainWindow) override;
   virtual void setWalletStateModel(QAbstractItemModel* _model) override;
   virtual void setAddressBookModel(QAbstractItemModel* _model) override;
+  virtual void updateStyle() override;
 
   // IWalletAdapterObserver
   Q_SLOT virtual void walletOpened() override;

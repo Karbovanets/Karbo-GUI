@@ -29,6 +29,7 @@ class WalletTextLabel : public QLabel {
 public:
   explicit WalletTextLabel(QWidget* _parent);
   ~WalletTextLabel();
+  void updateStyle();
 };
 
 class WalletTinyGrayTextLabel : public WalletTextLabel {

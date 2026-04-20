@@ -22,7 +22,14 @@ const char BALANCE_PROOF_DIALOG_STYLE_SHEET_TEMPLATE[] =
     "font-family: %fontFamily%;"
   "}"
 
-  "WalletGui--BalanceProofDialog #m_keyEdit {"
+  "WalletGui--BalanceProofDialog {"
+    "background-color: %backgroundColorGray%;"
+  "}"
+
+  "WalletGui--BalanceProofDialog #m_messageEdit,"
+  "WalletGui--BalanceProofDialog #m_signatureEdit {"
+    "background-color: %inputBackgroundColor%;"
+    "color: %primaryTextColor%;"
     "font-size: %fontSizeNormal%;"
     "border-radius: 2px;"
     "border: 1px solid %borderColorDark%;"

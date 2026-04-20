@@ -31,7 +31,7 @@ namespace {
 const char BALANCES_GLASS_FRAME_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--OverviewHeaderGlassFrame {"
     "border: none;"
-    "background-color: #c8f4f4f4;"
+    "background-color: %glassColor%;"
     "border-right: 1px solid %borderColor%;"
   "}";
 
@@ -47,6 +47,10 @@ OverviewHeaderGlassFrame::OverviewHeaderGlassFrame(QMovie* _syncMovie, QWidget* 
 }
 
 OverviewHeaderGlassFrame::~OverviewHeaderGlassFrame() {
+}
+
+void OverviewHeaderGlassFrame::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(BALANCES_GLASS_FRAME_STYLE_SHEET_TEMPLATE));
 }
 
 void OverviewHeaderGlassFrame::install(QWidget* _parent) {

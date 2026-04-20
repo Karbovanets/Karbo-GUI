@@ -44,7 +44,7 @@ const char OVERVIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--OverviewFrame {"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
   "}"
 
@@ -73,6 +73,11 @@ OverviewFrame::OverviewFrame(QWidget* _parent) : QFrame(_parent), m_ui(new Ui::O
 
 OverviewFrame::~OverviewFrame() {
   Settings::instance().removeObserver(this);
+}
+
+void OverviewFrame::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(OVERVIEW_STYLE_SHEET_TEMPLATE));
+  m_ui->m_overviewHeaderFrame->updateStyle();
 }
 
 void OverviewFrame::setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter) {

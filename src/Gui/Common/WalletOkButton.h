@@ -29,6 +29,7 @@ class WalletOkButton : public QPushButton {
 public:
   explicit WalletOkButton(QWidget* _parent);
   ~WalletOkButton();
+  void updateStyle();
 };
 
 }

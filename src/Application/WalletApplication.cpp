@@ -124,7 +124,7 @@ bool WalletApplication::init() {
   Settings::instance().setCommandLineParser(m_commandLineParser);
   bool cmdLineParseResult = m_commandLineParser->process(arguments());
   Settings::instance().init();
-  setupTheme();
+  applyCurrentTheme();
 
 #ifdef Q_OS_WIN
   if(!cmdLineParseResult) {
@@ -222,7 +222,7 @@ void WalletApplication::makeDataDir() {
   }
 }
 
-void WalletApplication::setupTheme() {
+void WalletApplication::applyCurrentTheme() {
   QFont font;
   font.setFamily("Open Sans");
   font.setStyleStrategy(QFont::PreferAntialias);
@@ -233,10 +233,10 @@ void WalletApplication::setupTheme() {
 
   QPalette palette;
   if (isDark) {
-    const QColor base("#1E2A3E");
-    const QColor alt("#25344D");
-    const QColor text("#F0F0F0");
-    const QColor window("#2E466C");
+    const QColor base(style.inputBackgroundColor());
+    const QColor alt(style.backgroundColorAlternate());
+    const QColor text(style.primaryTextColor());
+    const QColor window(style.panelBackgroundColor());
     palette.setColor(QPalette::Window, window);
     palette.setColor(QPalette::WindowText, text);
     palette.setColor(QPalette::Base, base);
@@ -246,19 +246,25 @@ void WalletApplication::setupTheme() {
     palette.setColor(QPalette::ToolTipText, text);
     palette.setColor(QPalette::Button, window);
     palette.setColor(QPalette::ButtonText, text);
+    palette.setColor(QPalette::Light, QColor(style.borderColor()));
+    palette.setColor(QPalette::Mid, QColor(style.borderColorDark()));
+    palette.setColor(QPalette::Dark, QColor(style.scrollBarBackgroundColor()));
+    palette.setColor(QPalette::Shadow, QColor("#080D16"));
     palette.setColor(QPalette::BrightText, Qt::red);
-    palette.setColor(QPalette::Link, QColor("#4197d1"));
-    palette.setColor(QPalette::Highlight, QColor("#4197d1"));
-    palette.setColor(QPalette::HighlightedText, Qt::white);
+    palette.setColor(QPalette::Link, QColor(style.fontColorBlueNormal()));
+    palette.setColor(QPalette::Highlight, QColor(style.selectionColor()));
+    palette.setColor(QPalette::HighlightedText, QColor(style.selectionTextColor()));
     palette.setColor(QPalette::PlaceholderText, QColor("#AAB6C4"));
+    palette.setColor(QPalette::Disabled, QPalette::Base, QColor("#162033"));
+    palette.setColor(QPalette::Disabled, QPalette::Button, QColor("#24344D"));
     palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#8C949E"));
     palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#8C949E"));
     palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#8C949E"));
   } else {
-    const QColor base(Qt::white);
-    const QColor alt("#F3F4F6");
+    const QColor base(style.inputBackgroundColor());
+    const QColor alt(style.backgroundColorAlternate());
     const QColor text("#2A4268");
-    const QColor window("#EDF4FC");
+    const QColor window(style.headerBackgroundColor());
     palette.setColor(QPalette::Window, window);
     palette.setColor(QPalette::WindowText, text);
     palette.setColor(QPalette::Base, base);
@@ -268,11 +274,17 @@ void WalletApplication::setupTheme() {
     palette.setColor(QPalette::ToolTipText, text);
     palette.setColor(QPalette::Button, window);
     palette.setColor(QPalette::ButtonText, text);
+    palette.setColor(QPalette::Light, QColor("#ffffff"));
+    palette.setColor(QPalette::Mid, QColor(style.borderColorDark()));
+    palette.setColor(QPalette::Dark, QColor("#9e9e9e"));
+    palette.setColor(QPalette::Shadow, QColor("#777777"));
     palette.setColor(QPalette::BrightText, Qt::red);
-    palette.setColor(QPalette::Link, QColor("#0580e8"));
-    palette.setColor(QPalette::Highlight, QColor("#5f9cc7"));
-    palette.setColor(QPalette::HighlightedText, Qt::white);
+    palette.setColor(QPalette::Link, QColor(style.fontColorBlueNormal()));
+    palette.setColor(QPalette::Highlight, QColor(style.selectionColor()));
+    palette.setColor(QPalette::HighlightedText, QColor(style.selectionTextColor()));
     palette.setColor(QPalette::PlaceholderText, QColor("#888888"));
+    palette.setColor(QPalette::Disabled, QPalette::Base, QColor("#f4f4f4"));
+    palette.setColor(QPalette::Disabled, QPalette::Button, QColor("#edf4fc"));
     palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#8C949E"));
     palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#8C949E"));
     palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#8C949E"));

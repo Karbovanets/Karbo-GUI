@@ -69,6 +69,7 @@ public:
   virtual void setAddressBookManager(IAddressBookManager* _addressBookManager) override;
   virtual void setMainWindow(QWidget* _mainWindow) override;
   virtual void setAddressBookModel(QAbstractItemModel* _model) override;
+  virtual void updateStyle() override;
 
 protected:
   void timerEvent(QTimerEvent* _event) Q_DECL_OVERRIDE;

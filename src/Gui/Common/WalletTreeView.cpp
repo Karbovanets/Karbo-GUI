@@ -39,7 +39,8 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--WalletTreeView {"
     "border: none;"
     "font-size: %fontSizeNormal%;"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
+    "color: %primaryTextColor%;"
     "border-bottom: 1px solid transparent;"
   "}"
 
@@ -51,7 +52,7 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--WalletTreeView > QHeaderView {"
     "min-height: 20px;"
     "max-height: 20px;"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
     "border-bottom: 1px solid %borderColor%;"
   "}"
@@ -59,7 +60,7 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--WalletTreeView > QHeaderView::section {"
     "font-size: %fontSizeSmall%;"
     "color: %fontColorGray%;"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
     "border-left: 23px solid transparent;"
     "border-right: 20px solid transparent;"
@@ -75,17 +76,17 @@ const char WALLET_VIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--WalletTreeView::item:alternate {"
-    "background: #ffffff;"
+    "background: %panelBackgroundColor%;"
   "}"
 
   "WalletGui--WalletTreeView::item:selected {"
-    "color: #ffffff;"
+    "color: %selectionTextColor%;"
     "background: %selectionColor%;"
   "}"
 
   "WalletGui--WalletTreeView::item:hover[hoverIsVisible=\"true\"] {"
-    "background: #e9eaec;"
-    "alternate-background-color: #e9eaec;"
+    "background: %hoverBackgroundColor%;"
+    "alternate-background-color: %hoverBackgroundColor%;"
   "}";
 
 }
@@ -102,6 +103,10 @@ WalletTreeView::WalletTreeView(QWidget* _parent) : QTreeView(_parent), m_linkLik
 }
 
 WalletTreeView::~WalletTreeView() {
+}
+
+void WalletTreeView::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(WALLET_VIEW_STYLE_SHEET_TEMPLATE));
 }
 
 void WalletTreeView::setLinkLikeColumnSet(const QSet<int>& _linkLikeColumnSet) {

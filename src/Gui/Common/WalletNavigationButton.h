@@ -29,6 +29,7 @@ class WalletNavigationButton : public QPushButton {
 public:
   explicit WalletNavigationButton(QWidget* _parent);
   ~WalletNavigationButton();
+  void updateStyle();
 };
 
 }

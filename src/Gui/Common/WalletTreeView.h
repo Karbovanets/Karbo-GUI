@@ -35,6 +35,7 @@ public:
   void setLinkLikeColumnSet(const QSet<int>& _linkLikeColumnSet);
   void setCopyableColumnSet(const QSet<int>& _copyableColumnSet);
   void setHoverIsVisible(bool _hoverIsVisible);
+  void updateStyle();
   void updateRowCount();
   void setAutoUpdateRowCount(bool _autoUpdateRowCount);
 

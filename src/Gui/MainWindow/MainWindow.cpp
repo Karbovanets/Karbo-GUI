@@ -71,6 +71,19 @@ extern "C"
 #include "crypto/crypto-ops.h"
 }
 #include "../include/IDonationManager.h"
+#include "Application/IWalletUiItem.h"
+#include "Application/WalletApplication.h"
+#include "Gui/Common/CopyMagicLabel.h"
+#include "Gui/Common/WalletBlueButton.h"
+#include "Gui/Common/WalletCancelButton.h"
+#include "Gui/Common/WalletDescriptionLabel.h"
+#include "Gui/Common/WalletGrayCheckBox.h"
+#include "Gui/Common/WalletLinkLikeButton.h"
+#include "Gui/Common/WalletNavigationButton.h"
+#include "Gui/Common/WalletOkButton.h"
+#include "Gui/Common/WalletTableView.h"
+#include "Gui/Common/WalletTextLabel.h"
+#include "Gui/Common/WalletTreeView.h"
 #include "ui_MainWindow.h"
 
 namespace WalletGui {
@@ -112,6 +125,14 @@ bool isDonationUrl(const QUrl& _url) {
   }
 
   return (urlQuery.queryItemValue(DONATION_URL_DONATION_TAG).compare("true", Qt::CaseInsensitive) == 0);
+}
+
+template<typename Widget>
+void updateChildrenOfType(QWidget* _root) {
+  const QList<Widget*> children = _root->findChildren<Widget*>();
+  for (Widget* child : children) {
+    child->updateStyle();
+  }
 }
 
 }
@@ -556,6 +577,10 @@ void MainWindow::openRecentWallet() {
 void MainWindow::themeChanged() {
   QAction* styleAction = qobject_cast<QAction*>(sender());
   Settings::instance().setCurrentTheme(styleAction->data().toString());
+  if (WalletApplication* application = qobject_cast<WalletApplication*>(qApp)) {
+    application->applyCurrentTheme();
+  }
+
   qApp->setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(m_styleSheetTemplate));
   m_ui->m_balanceIconLabel->setPixmap(Settings::instance().getCurrentStyle().getBalanceIcon());
   m_syncMovie->stop();
@@ -567,6 +592,22 @@ void MainWindow::themeChanged() {
   for (auto& uiItem : uiItems) {
     uiItem->updateStyle();
   }
+
+  updateThemedWidgets();
+}
+
+void MainWindow::updateThemedWidgets() {
+  updateChildrenOfType<CopyMagicLabel>(this);
+  updateChildrenOfType<WalletBlueButton>(this);
+  updateChildrenOfType<WalletCancelButton>(this);
+  updateChildrenOfType<WalletDescriptionLabel>(this);
+  updateChildrenOfType<WalletGrayCheckBox>(this);
+  updateChildrenOfType<WalletLinkLikeButton>(this);
+  updateChildrenOfType<WalletNavigationButton>(this);
+  updateChildrenOfType<WalletOkButton>(this);
+  updateChildrenOfType<WalletTableView>(this);
+  updateChildrenOfType<WalletTextLabel>(this);
+  updateChildrenOfType<WalletTreeView>(this);
 }
 
 // This is original createWallet() function renamed and used to create nondeterminisctic wallets
