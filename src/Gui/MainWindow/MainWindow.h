@@ -27,10 +27,12 @@
 
 class QActionGroup;
 class QDataWidgetMapper;
+class QLabel;
 class QSplashScreen;
 class QAbstractButton;
 class QAbstractItemModel;
 class QSessionManager;
+class QToolBar;
 
 namespace Ui {
   class MainWindow;
@@ -38,6 +40,8 @@ namespace Ui {
 
 namespace WalletGui {
 
+class AddressSidebar;
+class CurrentAddressState;
 class IAddressBookManager;
 class IDonationManager;
 class INewsReader;
@@ -103,6 +107,29 @@ private:
   QDataWidgetMapper* m_walletStateMapper;
   QMovie* m_syncMovie;
   QString m_address;
+  QAbstractItemModel* m_addressListModel;
+  CurrentAddressState* m_currentAddressState;
+  AddressSidebar* m_addressSidebar;
+  QToolBar* m_mainToolBar;
+  QActionGroup* m_navActionGroup;
+  QAction* m_overviewNavAction;
+  QAction* m_sendNavAction;
+  QAction* m_receiveNavAction;
+  QAction* m_historyNavAction;
+  QAction* m_contactsNavAction;
+  QAction* m_explorerNavAction;
+  QLabel* m_menuBarBalanceLabel;
+
+  void buildTopNavToolBar();
+  void buildAddressSidebar();
+  void installMenuBarBalance();
+  Q_SLOT void createAddressRequested();
+  Q_SLOT void copyAddressFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void showQrFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void showKeysFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void renameAddressFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void sendFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void deleteAddressFromCard(quintptr _index, const QString& _address);
 
   void createRecentWalletMenu();
   void updateRecentWalletActions();
