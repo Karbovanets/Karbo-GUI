@@ -21,6 +21,7 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QActionGroup>
+#include <QInputDialog>
 #include <QPushButton>
 #include <QClipboard>
 #include <QCloseEvent>
@@ -1228,13 +1229,37 @@ void MainWindow::showQrFromCard(quintptr _index, const QString& _address) {
 }
 
 void MainWindow::showKeysFromCard(quintptr _index, const QString& _address) {
-  Q_UNUSED(_index);
   Q_UNUSED(_address);
+  IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
+  if (walletAdapter == nullptr || !walletAdapter->isOpen()) {
+    return;
+  }
+  AccountKeys accountKeys = walletAdapter->getAccountKeys(_index);
+  QByteArray keys = convertAccountKeysToByteArray(accountKeys);
+  KeyDialog dlg(keys, false, this);
+  dlg.exec();
 }
 
 void MainWindow::renameAddressFromCard(quintptr _index, const QString& _address) {
   Q_UNUSED(_index);
-  Q_UNUSED(_address);
+  if (m_addressListModel == nullptr || _address.isEmpty()) {
+    return;
+  }
+  AddressListModel* model = static_cast<AddressListModel*>(m_addressListModel);
+  const int row = static_cast<int>(_index);
+  QString existingLabel;
+  if (row >= 0 && row < model->rowCount()) {
+    existingLabel = model->data(model->index(row, AddressListModel::COLUMN_LABEL),
+                                AddressListModel::ROLE_LABEL).toString();
+  }
+  bool ok = false;
+  const QString newLabel = QInputDialog::getText(this, tr("Rename address"),
+    tr("Label for this address (leave empty to clear):"),
+    QLineEdit::Normal, existingLabel, &ok);
+  if (!ok) {
+    return;
+  }
+  model->setLabelForAddress(_address, newLabel.trimmed());
 }
 
 void MainWindow::sendFromCard(quintptr _index, const QString& _address) {
@@ -1259,6 +1284,9 @@ void MainWindow::deleteAddressFromCard(quintptr _index, const QString& _address)
   IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
   if (walletAdapter != nullptr && walletAdapter->isOpen()) {
     walletAdapter->deleteAddress(_index);
+    if (m_currentAddressState != nullptr && walletAdapter->getAddressCount() > 0) {
+      m_currentAddressState->setCurrent(0, walletAdapter->getAddress(0));
+    }
   }
 }
 
