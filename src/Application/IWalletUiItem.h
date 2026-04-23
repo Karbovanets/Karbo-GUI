@@ -28,6 +28,7 @@ class IAddressBookManager;
 class IDonationManager;
 class IApplicationEventHandler;
 class INewsReader;
+class CurrentAddressState;
 
 class IWalletUiItem {
 public:
@@ -45,6 +46,8 @@ public:
   virtual void setSortedAddressBookModel(QAbstractItemModel* _model) {}
   virtual void setBlockChainModel(QAbstractItemModel* _model) {}
   virtual void setTransactionPoolModel(QAbstractItemModel* _model) {}
+  virtual void setAddressListModel(QAbstractItemModel* _model) {}
+  virtual void setCurrentAddressState(CurrentAddressState* _currentAddressState) {}
   virtual void updateStyle() {}
 };
 

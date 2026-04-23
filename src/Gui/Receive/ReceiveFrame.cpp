@@ -24,6 +24,7 @@
 #include <QUrl>
 #include <crypto/crypto.h>
 #include <Common/StringTools.h>
+#include "Application/CurrentAddressState.h"
 #include "Gui/Common/QRLabel.h"
 #include "Settings/Settings.h"
 
@@ -48,6 +49,34 @@ void ReceiveFrame::setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter) 
 
 void ReceiveFrame::setMainWindow(QWidget* _mainWindow) {
   m_mainWindow = _mainWindow;
+}
+
+void ReceiveFrame::setCurrentAddressState(CurrentAddressState* _currentAddressState) {
+  if (m_currentAddressState == _currentAddressState) {
+    return;
+  }
+  if (!m_currentAddressState.isNull()) {
+    disconnect(m_currentAddressState.data(), nullptr, this, nullptr);
+  }
+  m_currentAddressState = _currentAddressState;
+  if (!m_currentAddressState.isNull()) {
+    connect(m_currentAddressState.data(), &CurrentAddressState::currentAddressChangedSignal,
+            this, &ReceiveFrame::onCurrentAddressChanged);
+    const QString current = m_currentAddressState->currentAddress();
+    if (!current.isEmpty()) {
+      m_address = current;
+      generateRequest();
+    }
+  }
+}
+
+void ReceiveFrame::onCurrentAddressChanged(quintptr _index, const QString& _address) {
+  Q_UNUSED(_index);
+  if (_address.isEmpty()) {
+    return;
+  }
+  m_address = _address;
+  generateRequest();
 }
 
 void ReceiveFrame::cryptoNoteAdapterInitCompleted(int _status) {

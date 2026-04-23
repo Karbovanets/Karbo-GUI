@@ -129,8 +129,8 @@ void AddressCard::buildUi() {
 
   m_addressLabel = new QLabel(this);
   m_addressLabel->setObjectName("m_addressCardAddress");
-  m_addressLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  m_addressLabel->setCursor(Qt::IBeamCursor);
+  m_addressLabel->setTextInteractionFlags(Qt::NoTextInteraction);
+  m_addressLabel->setCursor(Qt::PointingHandCursor);
 
   m_unlockedRow = new QLabel(this);
   m_unlockedRow->setObjectName("m_addressCardUnlocked");

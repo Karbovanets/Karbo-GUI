@@ -183,6 +183,8 @@ MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManag
     uiItem->setSortedAddressBookModel(m_sortedAddressBookModel);
     uiItem->setBlockChainModel(m_blockChainModel);
     uiItem->setTransactionPoolModel(m_transactionPoolModel);
+    uiItem->setAddressListModel(m_addressListModel);
+    uiItem->setCurrentAddressState(m_currentAddressState);
   }
 
   if (!Settings::instance().isSystemTrayAvailable() && QSystemTrayIcon::isSystemTrayAvailable()) {
@@ -297,6 +299,10 @@ void MainWindow::walletOpened() {
   setDevDonation();
 
   m_ui->m_receiveFrame->walletOpened(walletAdapter->getAddress(0));
+
+  if (m_currentAddressState != nullptr && m_currentAddressState->currentAddress().isEmpty()) {
+    m_currentAddressState->setCurrent(0, walletAdapter->getAddress(0));
+  }
 }
 
 void MainWindow::walletOpenError(int _initStatus) {
@@ -307,6 +313,9 @@ void MainWindow::walletOpenError(int _initStatus) {
 
 void MainWindow::walletClosed() {
   setClosedState();
+  if (m_currentAddressState != nullptr) {
+    m_currentAddressState->clear();
+  }
 }
 
 void MainWindow::passwordChanged() {
