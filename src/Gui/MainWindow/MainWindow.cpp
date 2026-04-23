@@ -1238,8 +1238,9 @@ void MainWindow::renameAddressFromCard(quintptr _index, const QString& _address)
 }
 
 void MainWindow::sendFromCard(quintptr _index, const QString& _address) {
-  Q_UNUSED(_index);
-  Q_UNUSED(_address);
+  if (m_currentAddressState != nullptr && !_address.isEmpty()) {
+    m_currentAddressState->setCurrent(_index, _address);
+  }
   if (m_sendNavAction != nullptr) {
     m_sendNavAction->trigger();
   }
