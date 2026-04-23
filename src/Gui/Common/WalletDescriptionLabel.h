@@ -29,6 +29,7 @@ class WalletDescriptionLabel : public QLabel {
 public:
   explicit WalletDescriptionLabel(QWidget* _parent);
   ~WalletDescriptionLabel();
+  void updateStyle();
 };
 
 }

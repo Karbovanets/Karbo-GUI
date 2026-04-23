@@ -17,13 +17,18 @@
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QGuiApplication>
+#include <QtGlobal>
 
 #include "Application/WalletApplication.h"
 
 using namespace WalletGui;
 
 int main(int argc, char* argv[]) {
-  QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::Floor);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+  QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
   WalletApplication app(argc, argv);
   try {
     if (!app.init()) {

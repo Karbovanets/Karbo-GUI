@@ -33,7 +33,7 @@ const char WALLET_CANCEL_BUTTON_STYLE_SHEET_TEMPLATE[] =
     "min-height: 30px;"
     "max-height: 30px;"
     "font-size: %fontSizeNormal%;"
-    "color: #ffffff;"
+    "color: %selectionTextColor%;"
     "background-color: %backgroundColorGrayNormal%;"
     "border: 1px solid %backgroundColorGrayNormal%;"
   "}"
@@ -51,6 +51,10 @@ WalletCancelButton::WalletCancelButton(QWidget* _parent) : QPushButton(_parent) 
 }
 
 WalletCancelButton::~WalletCancelButton() {
+}
+
+void WalletCancelButton::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(WALLET_CANCEL_BUTTON_STYLE_SHEET_TEMPLATE));
 }
 
 }

@@ -29,6 +29,7 @@ class CopyMagicLabel : public MagicLabel {
 public:
   explicit CopyMagicLabel(QWidget* _parent);
   ~CopyMagicLabel();
+  void updateStyle();
 };
 
 }

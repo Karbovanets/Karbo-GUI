@@ -38,6 +38,7 @@ const char BLOCK_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
 "#BlockDetailsDialog {"
   "min-height: 700px;"
   "max-height: 700px;"
+  "background-color: %backgroundColorGray%;"
 "}"
 
 "#BlockDetailsDialog > #m_blockDetailsTabBar {"
@@ -69,9 +70,9 @@ const char BLOCK_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
 "}"
 
 "#BlockDetailsDialog > #m_blockDetailsTabBar QTabBar::tab:selected {"
-  "background: #ffffff;"
+  "background: %tabBackgroundColor%;"
   "border: 1px solid %borderColorDark%;"
-  "border-bottom: 1px solid #ffffff;"
+  "border-bottom: 1px solid %tabBackgroundColor%;"
 "}"
 
 "#BlockDetailsDialog > #m_blockDetailsTabBar QTabBar::tab:!selected {"
@@ -80,7 +81,7 @@ const char BLOCK_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
 "}"
 
 "#m_generalTab {"
-  "background-color: #ffffff;"
+  "background-color: %panelBackgroundColor%;"
   "border: none;"
 "}"
 
@@ -100,7 +101,7 @@ const char BLOCK_DETAILS_DIALOG_STYLE_SHEET_TEMPLATE[] =
 "}"
 
 "#m_generalTab, #m_transactionsTab {"
-  "background-color: #ffffff;"
+  "background-color: %panelBackgroundColor%;"
 "}"
 
 "#m_generalTab > #m_heightTextLabel,"

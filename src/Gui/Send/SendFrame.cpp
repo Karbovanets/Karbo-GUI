@@ -54,7 +54,7 @@ namespace {
 
 const char SEND_FRAME_STYLE_SHEET[] =
   "WalletGui--SendFrame {"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
   "}"
 
@@ -70,7 +70,7 @@ const char SEND_FRAME_STYLE_SHEET[] =
   "}"
 
   "WalletGui--SendFrame #scrollAreaWidgetContents {"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
   "}"
 
@@ -149,6 +149,14 @@ SendFrame::SendFrame(QWidget* _parent) : QFrame(_parent), m_ui(new Ui::SendFrame
 SendFrame::~SendFrame() {
   m_transfers.clear();
   m_glassFrame->deleteLater();
+}
+
+void SendFrame::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(SEND_FRAME_STYLE_SHEET));
+  m_glassFrame->updateStyle();
+  for (TransferFrame* transfer : m_transfers) {
+    transfer->updateStyle();
+  }
 }
 
 void SendFrame::addRecipient(const RecepientPair &_data) {

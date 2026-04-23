@@ -1,14 +1,41 @@
 * {
   font-family: %fontFamily%;
+  color: %primaryTextColor%;
+}
+
+QMainWindow, QWidget#centralwidget {
+  background-color: %backgroundColorGray%;
+}
+
+QMenu, QMenuBar {
+  background-color: %menuBackgroundColor%;
+  color: %primaryTextColor%;
+  border: 1px solid %borderColorDark%;
+}
+
+QMenu::item:selected, QMenuBar::item:selected {
+  background-color: %selectionColor%;
+  color: %selectionTextColor%;
+}
+
+QToolTip {
+  background-color: %menuBackgroundColor%;
+  color: %primaryTextColor%;
+  border: 1px solid %borderColorDark%;
 }
 
 QDialog {
   background-color: %backgroundColorGray%;
+  color: %primaryTextColor%;
 }
 
-QTextEdit {
+QTextEdit, QPlainTextEdit {
+  background-color: %inputBackgroundColor%;
+  color: %primaryTextColor%;
   border-radius: 2px;
   border: 1px solid %borderColorDark%;
+  selection-background-color: %selectionColor%;
+  selection-color: %selectionTextColor%;
 }
 
 QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox, QPushButton, QDateTimeEdit, QRadioButton, QCheckBox {
@@ -17,21 +44,26 @@ QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox, QPushButton, QDateTimeEdit, QRad
   min-height: 30px;
   max-height: 30px;
   border: 1px solid %borderColorDark%;
+  background-color: %inputBackgroundColor%;
+  color: %primaryTextColor%;
+  selection-background-color: %selectionColor%;
+  selection-color: %selectionTextColor%;
 }
 
 QRadioButton, QCheckBox {
   border: none;
+  background-color: transparent;
 }
 
 QDateTimeEdit {
   border: 1px solid %borderColorDark%;
-  background-color: transparent;
+  background-color: %inputBackgroundColor%;
   min-width: 155px;
   max-width: 155px;
   font-size: %fontSizeNormal%;
   padding-left: 10px;
-  selection-background-color: %borderColor%;
-  selection-color: #000000;
+  selection-background-color: %selectionColor%;
+  selection-color: %selectionTextColor%;
 }
 
 
@@ -45,6 +77,7 @@ QDateTimeEdit::drop-down {
 
 QMessageBox QLabel {
   font-size: %fontSizeLarge%;
+  color: %primaryTextColor%;
 }
 
 QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox, QDateTimeEdit {
@@ -54,11 +87,11 @@ QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox, QDateTimeEdit {
 
 QComboBox {
   border: 1px solid %borderColorDark%;
-  background-color: transparent;
+  background-color: %inputBackgroundColor%;
   font-size: %fontSizeNormal%;
   padding-left: 10px;
   selection-background-color: %selectionColor%;
-  selection-color: #ffffff;
+  selection-color: %selectionTextColor%;
 }
 
 QComboBox::drop-down {
@@ -72,6 +105,10 @@ QComboBox::drop-down {
 QComboBox QAbstractItemView {
   border: 1px solid %borderColorDark%;
   border-radius: 2px;
+  background-color: %menuBackgroundColor%;
+  color: %primaryTextColor%;
+  selection-background-color: %selectionColor%;
+  selection-color: %selectionTextColor%;
 }
 
 QDoubleSpinBox::up-button,
@@ -98,7 +135,7 @@ QTimeEdit::down-arrow{
 
 QScrollBar:vertical {
   max-width: 6px;
-  background: #e0e0e0;
+  background: %scrollBarBackgroundColor%;
   margin-top: 20px;
   border-top: 1px solid %borderColor%;
 }
@@ -111,9 +148,9 @@ QScrollBar::handle:vertical {
 QCalendarWidget QMenu {
   border: 1px solid %borderColorDark%;
   border-radius: 2px;
-  background-color: #ffffff;
+  background-color: %menuBackgroundColor%;
   selection-background-color: %selectionColor%;
-  selection-color: #ffffff;
+  selection-color: %selectionTextColor%;
 }
 
 QScrollBar::sub-line, QScrollBar::add-line {
@@ -155,11 +192,13 @@ QSlider::add-page:horizontal {
 
 QCalendarWidget #qt_calendar_navigationbar {
   min-height: 27px;
-  background-color: #d0deed;
+  background-color: %calendarHeaderBackgroundColor%;
 }
 QCalendarWidget QAbstractItemView {
-  selection-background-color: #5f9cc7;
-  selection-color: #ffffff;
+  background-color: %panelBackgroundColor%;
+  color: %primaryTextColor%;
+  selection-background-color: %selectionColor%;
+  selection-color: %selectionTextColor%;
 }
 
 QCalendarWidget {
@@ -176,7 +215,7 @@ QCalendarWidget QToolButton::menu-indicator {
 }
 
 QCalendarWidget QToolButton:hover {
-  background-color: #5f9cc7;
+  background-color: %selectionColor%;
 }
 
 
@@ -190,9 +229,9 @@ QCalendarWidget QSpinBox {
 QCalendarWidget QMenu {
   border: 1px solid %borderColorDark%;
   border-radius: 2px;
-  background-color: #ffffff;
+  background-color: %menuBackgroundColor%;
   selection-background-color: %selectionColor%;
-  selection-color: #ffffff;
+  selection-color: %selectionTextColor%;
 }
 
 
@@ -294,27 +333,27 @@ QCalendarWidget QMenu {
 }
 
 #MainWindow > #centralwidget > #m_toolFrame > #m_overviewButton:checked {
-  color: #ffffff;
+  color: %selectionTextColor%;
 }
 
 #MainWindow > #centralwidget > #m_toolFrame > #m_transactionsButton:checked {
-  color: #ffffff;
+  color: %selectionTextColor%;
 }
 
 #MainWindow > #centralwidget > #m_toolFrame > #m_blockExplorerButton:checked {
-  color: #ffffff;
+  color: %selectionTextColor%;
 }
 
 #MainWindow > #centralwidget > #m_toolFrame > #m_receiveButton:checked {
-  color: #ffffff;
+  color: %selectionTextColor%;
 }
 
 #MainWindow > #centralwidget > #m_toolFrame > #m_addressBookButton:checked {
-  color: #ffffff;
+  color: %selectionTextColor%;
 }
 
 #MainWindow > #centralwidget > #m_toolFrame > #m_sendButton:checked {
-  color: #ffffff;
+  color: %selectionTextColor%;
 }
 
 #MainWindow > #centralwidget > #m_toolFrame > #m_overviewButton:checked:disabled {
@@ -364,22 +403,22 @@ QCalendarWidget QMenu {
 #m_overviewNodeFrame,
 #m_overviewPoolFrame
 {
-  background-color: #EFF3FA;
+  background-color: %backgroundColorAlternate%;
   border: none;
 }
 
 #m_receiveFrame {
-  background-color: #ffffff;
+  background-color: %panelBackgroundColor%;
   border: none;
 }
 
 #m_receiveFrame > #m_createRequestFrame {
-  background-color: #ffffff;
+  background-color: %panelBackgroundColor%;
   border: none;
 }
 
 #m_receiveFrame > #m_receiveFrameButtons {
-  background-color: #ffffff;
+  background-color: %panelBackgroundColor%;
   border: none;
   border-top: 1px solid %borderColor%;
 }
@@ -428,24 +467,24 @@ QCalendarWidget QMenu {
 }
 
 #m_blockExplorerFrame > #m_blockExplorerTabBar QTabBar::tab:selected {
-  background: #ffffff;
+  background: %tabBackgroundColor%;
   border: 1px solid %borderColorDark%;
-  border-bottom: 1px solid #ffffff;
+  border-bottom: 1px solid %tabBackgroundColor%;
 }
 
 #m_blockExplorerFrame > #m_blockExplorerTabBar QTabBar::tab:!selected {
-  background: %backgroundColorGray%;
+  background: %tabInactiveBackgroundColor%;
   border: 1px solid %borderColorDark%;
 }
 
 #m_blockchainTab, #m_transactionPoolTab {
-  background-color: #ffffff;
+  background-color: %panelBackgroundColor%;
   border: none;
 }
 
 
 #m_addressBookFrame {
-  background-color: #ffffff;
+  background-color: %panelBackgroundColor%;
   border: none;
 }
 
@@ -471,17 +510,17 @@ QCalendarWidget QMenu {
 #m_addressBookMenu {
   border: 1px solid %borderColorDark%;
   border-radius: 2px;
-  background-color: #ffffff;
+  background-color: %menuBackgroundColor%;
   selection-background-color: %selectionColor%;
-  selection-color: #ffffff;
+  selection-color: %selectionTextColor%;
 }
 
 #AddressBookDialog {
-  background-color: #ffffff;
+  background-color: %panelBackgroundColor%;
 }
 
 #m_noWalletFrame {
-  background-color: #ffffff;
+  background-color: %panelBackgroundColor%;
 }
 
 
@@ -494,7 +533,7 @@ QCalendarWidget QMenu {
 
 #m_passwordFrame > #m_walletNameLabel {
   font-weight: bold;
-  color: #000000;
+  color: %primaryTextColor%;
 }
 
 
@@ -504,7 +543,7 @@ QMessageBox > QDialogButtonBox > QPushButton {
   min-height: 30px;
   max-height: 30px;
   font-size: %fontSizeNormal%;
-  color: #ffffff;
+  color: %selectionTextColor%;
   background-color: %backgroundColorBlueNormal%;
   border: 1px solid %backgroundColorBlueNormal%;
 }

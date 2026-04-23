@@ -53,6 +53,7 @@ public:
   virtual void setNodeStateModel(QAbstractItemModel* _model) override;
   virtual void setWalletStateModel(QAbstractItemModel* _model) override;
   virtual void setTransactionPoolModel(QAbstractItemModel *_model) override;
+  virtual void updateStyle() override;
 
   // ICryptoNoteAdapterObserver
   Q_SLOT virtual void cryptoNoteAdapterInitCompleted(int _status) override;

@@ -42,7 +42,7 @@ const char WALLET_NAVIGATION_BUTTON_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--WalletNavigationButton:hover {"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "color: %fontColorBlueHover%;"
   "}"
 
@@ -58,6 +58,10 @@ WalletNavigationButton::WalletNavigationButton(QWidget* _parent) : QPushButton(_
 }
 
 WalletNavigationButton::~WalletNavigationButton() {
+}
+
+void WalletNavigationButton::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(WALLET_NAVIGATION_BUTTON_STYLE_SHEET_TEMPLATE));
 }
 
 }

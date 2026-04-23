@@ -135,6 +135,7 @@ private:
   void updateRecentWalletActions();
   void openRecentWallet();
   void themeChanged();
+  void updateThemedWidgets();
   void setOpenedState();
   void setClosedState();
   void addRecipientTriggered();

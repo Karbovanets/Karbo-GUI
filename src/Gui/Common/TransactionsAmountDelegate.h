@@ -33,7 +33,6 @@ public:
 
 private:
   bool m_hideLongAmounts;
-  QLinearGradient m_amountGradient;
 };
 
 }

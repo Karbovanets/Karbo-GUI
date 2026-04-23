@@ -38,7 +38,7 @@ const char OPTIONS_DIALOG_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--OptionsDialog > #m_buttonFrame {"
-    "background: #ffffff;"
+    "background: %panelBackgroundColor%;"
   "}"
 
   "WalletGui--OptionsDialog > #m_buttonFrame > #m_warningLabel {"
@@ -75,9 +75,9 @@ const char OPTIONS_DIALOG_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--OptionsDialog > #m_optionsTabWidget QTabBar::tab:selected {"
-    "background: #ffffff;"
+    "background: %tabBackgroundColor%;"
     "border: 1px solid %borderColorDark%;"
-    "border-bottom: 1px solid #ffffff;"
+    "border-bottom: 1px solid %tabBackgroundColor%;"
   "}"
 
   "WalletGui--OptionsDialog > #m_optionsTabWidget QTabBar::tab:!selected {"

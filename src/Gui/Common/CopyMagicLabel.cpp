@@ -43,4 +43,8 @@ CopyMagicLabel::CopyMagicLabel(QWidget* _parent) : MagicLabel(_parent) {
 CopyMagicLabel::~CopyMagicLabel() {
 }
 
+void CopyMagicLabel::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(COPY_MAGIC_LABEL_STYLE_SHEET_TEMPLATE));
+}
+
 }

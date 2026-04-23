@@ -35,7 +35,7 @@ const char WALLET_OK_BUTTON_STYLE_SHEET_TEMPLATE[] =
     "min-height: 30px;"
     "max-height: 30px;"
     "font-size: %fontSizeNormal%;"
-    "color: #ffffff;"
+    "color: %selectionTextColor%;"
     "background-color: %backgroundColorBlueNormal%;"
     "border: 1px solid %backgroundColorBlueNormal%;"
   "}"
@@ -62,6 +62,10 @@ WalletOkButton::WalletOkButton(QWidget* _parent) : QPushButton(_parent) {
 }
 
 WalletOkButton::~WalletOkButton() {
+}
+
+void WalletOkButton::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(WALLET_OK_BUTTON_STYLE_SHEET_TEMPLATE));
 }
 
 }

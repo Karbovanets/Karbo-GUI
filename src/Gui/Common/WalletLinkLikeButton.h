@@ -29,6 +29,7 @@ class WalletLinkLikeButton : public QPushButton {
 public:
   explicit WalletLinkLikeButton(QWidget* _parent);
   ~WalletLinkLikeButton();
+  void updateStyle();
 };
 
 class WalletTinyLinkLikeButton : public WalletLinkLikeButton {

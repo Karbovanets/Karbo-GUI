@@ -50,7 +50,7 @@ const char WALLET_TEXT_LABEL_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--WalletSmallBlackTextLabel {"
-    "color: #000000;"
+    "color: %primaryTextColor%;"
     "font-size: %fontSizeSmall%;"
   "}"
 
@@ -71,22 +71,22 @@ const char WALLET_TEXT_LABEL_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--WalletNormalBlackTextLabel {"
-    "color: #000000;"
+    "color: %primaryTextColor%;"
     "font-size: %fontSizeNormal%;"
   "}"
 
   "WalletGui--WalletExtraNormalBlackTextLabel {"
-    "color: #000000;"
+    "color: %primaryTextColor%;"
     "font-size: %fontSizeExtraNormal%;"
   "}"
 
   "WalletGui--WalletLargeBlackTextLabel {"
-    "color: #000000;"
+    "color: %primaryTextColor%;"
     "font-size: %fontSizeLarge%;"
   "}"
 
   "WalletGui--WalletExtraLargeBlackTextLabel {"
-    "color: #000000;"
+    "color: %primaryTextColor%;"
     "font-size: %fontSizeExtraLarge%;"
   "}"
 
@@ -103,6 +103,10 @@ WalletTextLabel::WalletTextLabel(QWidget* _parent) : QLabel(_parent) {
 }
 
 WalletTextLabel::~WalletTextLabel() {
+}
+
+void WalletTextLabel::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(WALLET_TEXT_LABEL_STYLE_SHEET_TEMPLATE));
 }
 
 WalletTinyGrayTextLabel::WalletTinyGrayTextLabel(QWidget* _parent) : WalletTextLabel(_parent) {

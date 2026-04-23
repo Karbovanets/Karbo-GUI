@@ -48,6 +48,7 @@ public:
   virtual void setWalletStateModel(QAbstractItemModel* _model) override;
   virtual void setTransactionsModel(QAbstractItemModel* _model) override;
   virtual void setSortedTransactionsModel(QAbstractItemModel* _model) override;
+  virtual void updateStyle() override;
 
 public slots:
   void onCustomContextMenu(const QPoint &point);

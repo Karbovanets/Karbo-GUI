@@ -25,6 +25,8 @@ BalanceProofDialog::BalanceProofDialog(ICryptoNoteAdapter* _cryptoNoteAdapter, Q
     QDialog(_parent, static_cast<Qt::WindowFlags>(Qt::WindowCloseButtonHint)),
     m_ui(new Ui::BalanceProofDialog), m_cryptoNoteAdapter(_cryptoNoteAdapter) {
   m_ui->setupUi(this);
+  m_ui->m_messageEdit->setStyleSheet(QString());
+  m_ui->m_signatureEdit->setStyleSheet(QString());
 
   m_walletStateModel = new WalletStateModel(m_cryptoNoteAdapter, this);
   connect(m_walletStateModel, SIGNAL(balanceUpdatedSignal(quint64, quint64)), this, SLOT(balanceUpdated(quint64, quint64)));

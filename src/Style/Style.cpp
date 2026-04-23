@@ -116,6 +116,46 @@ QString Style::backgroundColorAlternate() const {
   return "#f3f4f6";
 }
 
+QString Style::panelBackgroundColor() const {
+  return "#ffffff";
+}
+
+QString Style::inputBackgroundColor() const {
+  return "#ffffff";
+}
+
+QString Style::primaryTextColor() const {
+  return "#000000";
+}
+
+QString Style::selectionTextColor() const {
+  return "#ffffff";
+}
+
+QString Style::hoverBackgroundColor() const {
+  return "#e9eaec";
+}
+
+QString Style::menuBackgroundColor() const {
+  return panelBackgroundColor();
+}
+
+QString Style::tabBackgroundColor() const {
+  return panelBackgroundColor();
+}
+
+QString Style::tabInactiveBackgroundColor() const {
+  return backgroundColorGray();
+}
+
+QString Style::scrollBarBackgroundColor() const {
+  return "#e0e0e0";
+}
+
+QString Style::calendarHeaderBackgroundColor() const {
+  return "#d0deed";
+}
+
 QString Style::borderColor() const {
   return "#dddddd";
 }
@@ -173,6 +213,16 @@ QString Style::makeStyleSheet(const QString& _styleSheetTemplate) const {
     replace("%backgroundColorGreen%", backgroundColorGreen()).
     replace("%backgroundColorGreenHover%", backgroundColorGreenHover()).
     replace("%backgroundColorAlternate%", backgroundColorAlternate()).
+    replace("%panelBackgroundColor%", panelBackgroundColor()).
+    replace("%inputBackgroundColor%", inputBackgroundColor()).
+    replace("%primaryTextColor%", primaryTextColor()).
+    replace("%selectionTextColor%", selectionTextColor()).
+    replace("%hoverBackgroundColor%", hoverBackgroundColor()).
+    replace("%menuBackgroundColor%", menuBackgroundColor()).
+    replace("%tabBackgroundColor%", tabBackgroundColor()).
+    replace("%tabInactiveBackgroundColor%", tabInactiveBackgroundColor()).
+    replace("%scrollBarBackgroundColor%", scrollBarBackgroundColor()).
+    replace("%calendarHeaderBackgroundColor%", calendarHeaderBackgroundColor()).
     replace("%borderColor%", borderColor()).
     replace("%borderColorDark%", borderColorDark()).
     replace("%selectionColor%", selectionColor()).

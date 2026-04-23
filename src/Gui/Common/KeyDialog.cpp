@@ -122,6 +122,7 @@ KeyDialog::KeyDialog(QWidget* _parent)
   }
 
   setFixedHeight(250);
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(KEY_DIALOG_STYLE_SHEET_TEMPLATE));
 }
 
 KeyDialog::~KeyDialog() {

@@ -29,6 +29,7 @@ class WalletCancelButton : public QPushButton {
 public:
   explicit WalletCancelButton(QWidget* _parent);
   ~WalletCancelButton();
+  void updateStyle();
 };
 
 }

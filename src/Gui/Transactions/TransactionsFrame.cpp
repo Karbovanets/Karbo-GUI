@@ -48,7 +48,7 @@ namespace {
 
 const char TRANSACTIONS_FRAME_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--TransactionsFrame {"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
     "border: none;"
   "}"
 
@@ -96,6 +96,10 @@ TransactionsFrame::TransactionsFrame(QWidget* _parent) : QFrame(_parent), m_ui(n
 }
 
 TransactionsFrame::~TransactionsFrame() {
+}
+
+void TransactionsFrame::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(TRANSACTIONS_FRAME_STYLE_SHEET_TEMPLATE));
 }
 
 void TransactionsFrame::setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter) {
@@ -158,8 +162,8 @@ void TransactionsFrame::setSortedTransactionsModel(QAbstractItemModel* _model) {
   m_ui->m_transactionsView->horizontalHeader()->resizeSection(newTransactionColumn, 6);
   m_ui->m_transactionsView->horizontalHeader()->resizeSection(timeColumn, 180);
   m_ui->m_transactionsView->horizontalHeader()->resizeSection(hashColumn, 280);
-  m_ui->m_transactionsView->horizontalHeader()->resizeSection(amountColumn, 220);
-  m_ui->m_transactionsView->horizontalHeader()->resizeSection(showTransfersColumn, 30);
+  m_ui->m_transactionsView->horizontalHeader()->resizeSection(amountColumn, 120);
+  m_ui->m_transactionsView->horizontalHeader()->resizeSection(showTransfersColumn, 50);
   QDateTime currentDateTime = QDateTime::currentDateTime();
   m_ui->m_filterBeginDtedit->setDateTime(currentDateTime.addDays(-1));
   m_ui->m_filterEndDtedit->setDateTime(currentDateTime);

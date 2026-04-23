@@ -30,14 +30,38 @@ namespace {
 
 const int AMOUNT_DECIMAL_COUNT = 3;
 
+QColor getAmountTextColor(const QModelIndex& _index, const QStyleOptionViewItem& _option) {
+  const Style& style = Settings::instance().getCurrentStyle();
+  if (_option.state & QStyle::State_Selected) {
+    return QColor(style.selectionTextColor());
+  }
+
+  const QColor foregroundColor = _index.data(Qt::ForegroundRole).value<QColor>();
+  if (foregroundColor.isValid()) {
+    return foregroundColor;
+  }
+
+  return QColor(style.primaryTextColor());
+}
+
+QColor getAmountFadeColor(const QStyleOptionViewItem& _option) {
+  const Style& style = Settings::instance().getCurrentStyle();
+  if (_option.state & QStyle::State_Selected) {
+    return QColor(style.selectionColor());
+  }
+
+  if (_option.state & QStyle::State_MouseOver) {
+    return QColor(style.hoverBackgroundColor());
+  }
+
+  return _option.features & QStyleOptionViewItem::Alternate ? QColor(style.panelBackgroundColor()) :
+    QColor(style.backgroundColorAlternate());
+}
+
 }
 
 TransactionsAmountDelegate::TransactionsAmountDelegate(bool _hideLongAmounts, QObject* _parent) : QStyledItemDelegate(_parent),
-  m_hideLongAmounts(_hideLongAmounts), m_amountGradient(0, 0, 1, 0) {
-  m_amountGradient.setCoordinateMode(QLinearGradient::ObjectBoundingMode);
-  m_amountGradient.setColorAt(0, Qt::black);
-  m_amountGradient.setColorAt(0.7, Qt::black);
-  m_amountGradient.setColorAt(1, Settings::instance().getCurrentStyle().backgroundColorAlternate());
+  m_hideLongAmounts(_hideLongAmounts) {
 }
 
 TransactionsAmountDelegate::~TransactionsAmountDelegate() {
@@ -62,6 +86,7 @@ void TransactionsAmountDelegate::paint(QPainter* _painter, const QStyleOptionVie
   }
 
   QString amountString = _index.data().toString();
+  bool isAmountTruncated = false;
   if (m_hideLongAmounts) {
     int dotPos = amountString.indexOf('.');
     int decimalDigitNumber = amountString.length() - 1 - dotPos;
@@ -71,14 +96,26 @@ void TransactionsAmountDelegate::paint(QPainter* _painter, const QStyleOptionVie
 
     if (decimalDigitNumber > AMOUNT_DECIMAL_COUNT && ((opt.state & QStyle::State_MouseOver) == 0)) {
       amountString = amountString.left(amountString.length() - decimalDigitNumber + AMOUNT_DECIMAL_COUNT);
-      QPen pen(m_amountGradient, 0);
-      _painter->setPen(pen);
+      isAmountTruncated = true;
     }
   }
 
   QRect textRect = opt.widget->style()->subElementRect(QStyle::SE_ItemViewItemText, &opt, opt.widget);
   _painter->setFont(opt.font);
-  opt.widget->style()->drawItemText(_painter, textRect, opt.displayAlignment, opt.palette, opt.state & QStyle::State_Enabled, amountString);
+  const QColor amountTextColor = getAmountTextColor(_index, opt);
+  if (isAmountTruncated) {
+    QLinearGradient amountGradient(0, 0, 1, 0);
+    amountGradient.setCoordinateMode(QLinearGradient::ObjectBoundingMode);
+    amountGradient.setColorAt(0, amountTextColor);
+    amountGradient.setColorAt(0.7, amountTextColor);
+    amountGradient.setColorAt(1, getAmountFadeColor(opt));
+    _painter->setPen(QPen(amountGradient, 0));
+    _painter->drawText(textRect, static_cast<int>(opt.displayAlignment) | Qt::TextSingleLine, amountString);
+  } else {
+    _painter->setPen(amountTextColor);
+    opt.widget->style()->drawItemText(_painter, textRect, opt.displayAlignment, opt.palette, opt.state & QStyle::State_Enabled, amountString);
+  }
+
   _painter->restore();
 }
 

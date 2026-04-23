@@ -138,6 +138,10 @@ void WalletStatusBar::updateStyle() {
     updateSyncState(m_walletIsSynchronized);
   }
 
+  if (m_nodeStateModel != nullptr) {
+    updateStatusConnection();
+  }
+
   setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(STATUS_BAR_STYLE_SHEET_TEMPLATE));
 }
 
@@ -247,8 +251,9 @@ void WalletStatusBar::updateStatusConnection() {
     m_remoteModeIconLabel->setPixmap(QPixmap(":icons/remote").scaledToHeight(16, Qt::SmoothTransformation));
     m_remoteModeIconLabel->setToolTip("Remote mode");
 
-    QString connectionIconPath = isConnected ? ":icons/light/connected" : ":icons/light/disconnected";
-    QPixmap connectionIcon = QPixmap(connectionIconPath).scaled(16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    QPixmap connectionIcon = (isConnected ?
+      Settings::instance().getCurrentStyle().getConnectedIcon() :
+      Settings::instance().getCurrentStyle().getDisconnectedIcon()).scaled(16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     m_connectionStateIconLabel->setPixmap(connectionIcon);
     m_connectionStateIconLabel->setToolTip(isConnected ? "connected" : "disconnected");
     m_connectionStateIconLabel->show();

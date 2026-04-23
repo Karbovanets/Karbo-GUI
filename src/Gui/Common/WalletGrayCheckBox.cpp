@@ -41,4 +41,8 @@ WalletGrayCheckBox::WalletGrayCheckBox(QWidget *parent) : QCheckBox(parent) {
 WalletGrayCheckBox::~WalletGrayCheckBox() {
 }
 
+void WalletGrayCheckBox::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(GRAY_CHECK_STYLE_SHEET_TEMPLATE));
+}
+
 }

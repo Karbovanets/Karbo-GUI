@@ -68,6 +68,10 @@ TransferFrame::TransferFrame(QWidget* _parent) : QFrame(_parent), m_ui(new Ui::T
 TransferFrame::~TransferFrame() {
 }
 
+void TransferFrame::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(TRANSFER_FRAME_STYLE_SHEET_TEMPLATE));
+}
+
 bool TransferFrame::readyToSend() const {
   QString address = getAddress();
   return !address.isEmpty() && m_cryptoNoteAdapter->isValidAddress(address);

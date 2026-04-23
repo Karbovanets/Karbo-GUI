@@ -29,6 +29,7 @@ class WalletBlueButton : public QPushButton {
 public:
   explicit WalletBlueButton(QWidget* _parent);
   virtual ~WalletBlueButton();
+  void updateStyle();
 };
 
 class WalletNormalBlueButton : public WalletBlueButton {

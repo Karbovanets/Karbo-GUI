@@ -44,4 +44,8 @@ WalletDescriptionLabel::WalletDescriptionLabel(QWidget* _parent) : QLabel(_paren
 WalletDescriptionLabel::~WalletDescriptionLabel() {
 }
 
+void WalletDescriptionLabel::updateStyle() {
+  setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(WALLET_DESCRIPTION_LABEL_STYLE_SHEET_TEMPLATE));
+}
+
 }

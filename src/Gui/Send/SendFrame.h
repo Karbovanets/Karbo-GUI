@@ -64,6 +64,8 @@ public:
   virtual void setAddressListModel(QAbstractItemModel* _model) override;
   virtual void setCurrentAddressState(CurrentAddressState* _currentAddressState) override;
 
+  virtual void updateStyle() override;
+
   // IWalletAdapterObserver
   Q_SLOT virtual void walletOpened() override;
   Q_SLOT virtual void walletOpenError(int _initStatus) override;

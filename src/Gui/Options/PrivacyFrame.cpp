@@ -27,7 +27,7 @@ namespace {
 const char PRIVACY_FRAME_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--PrivacyFrame {"
     "border: none;"
-    "background-color: #ffffff;"
+    "background-color: %panelBackgroundColor%;"
   "}"
 
   "WalletGui--PrivacyFrame QCheckBox {"

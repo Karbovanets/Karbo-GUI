@@ -48,6 +48,86 @@ QString DarkStyle::balanceFontColor() const {
   return "#ffffff";
 }
 
+QString DarkStyle::fontColorGray() const {
+  return "#AAB6C4";
+}
+
+QString DarkStyle::fontColorBlueNormal() const {
+  return "#69B7F2";
+}
+
+QString DarkStyle::fontColorBlueHover() const {
+  return "#8EC9FF";
+}
+
+QString DarkStyle::fontColorBluePressed() const {
+  return "#4DA3DF";
+}
+
+QString DarkStyle::backgroundColorGray() const {
+  return "#172235";
+}
+
+QString DarkStyle::backgroundButtonColorGrayHover() const {
+  return "#2A3A54";
+}
+
+QString DarkStyle::backgroundColorAlternate() const {
+  return "#202D42";
+}
+
+QString DarkStyle::panelBackgroundColor() const {
+  return "#1E2A3E";
+}
+
+QString DarkStyle::inputBackgroundColor() const {
+  return "#111B2B";
+}
+
+QString DarkStyle::primaryTextColor() const {
+  return "#F1F5FA";
+}
+
+QString DarkStyle::hoverBackgroundColor() const {
+  return "#283A56";
+}
+
+QString DarkStyle::menuBackgroundColor() const {
+  return "#1E2A3E";
+}
+
+QString DarkStyle::tabBackgroundColor() const {
+  return "#1E2A3E";
+}
+
+QString DarkStyle::tabInactiveBackgroundColor() const {
+  return "#172235";
+}
+
+QString DarkStyle::scrollBarBackgroundColor() const {
+  return "#101928";
+}
+
+QString DarkStyle::calendarHeaderBackgroundColor() const {
+  return "#253A5B";
+}
+
+QString DarkStyle::borderColor() const {
+  return "#344763";
+}
+
+QString DarkStyle::borderColorDark() const {
+  return "#435673";
+}
+
+QString DarkStyle::selectionColor() const {
+  return "#3E81B8";
+}
+
+QString DarkStyle::glassColor() const {
+  return "#dd101827";
+}
+
 QString DarkStyle::toolButtonBackgroundColorNormal() const {
   return "#1D3254";
 }

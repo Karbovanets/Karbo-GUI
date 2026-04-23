@@ -32,6 +32,7 @@ public:
   OverviewHeaderGlassFrame(QMovie* _syncMovie, QWidget* _parent);
   ~OverviewHeaderGlassFrame();
 
+  void updateStyle();
   virtual void install(QWidget* _parent);
   virtual void remove();
 
