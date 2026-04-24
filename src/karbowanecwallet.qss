@@ -268,8 +268,8 @@ QCalendarWidget QMenu {
   background-color: %toolButtonBackgroundColorNormal%;
   border: none;
   border-right: 1px solid %toolBarBorderColor%;
-  min-width: 173px;
-  max-width: 173px;
+  min-width: 200px;
+  max-width: 200px;
 }
 
 #MainWindow > #centralwidget > #m_toolFrame > QPushButton {
@@ -662,7 +662,7 @@ QToolBar#m_mainToolBar QToolButton:checked:disabled {
   border: 1px solid transparent;
   color: %fontColorBlueNormal%;
   font-size: %fontSizeLarge%;
-  padding: 6px 0;
+  padding: 3px 0;
   min-height: 28px;
   text-align: center;
 }
@@ -680,7 +680,7 @@ QToolBar#m_mainToolBar QToolButton:checked:disabled {
 QFrame#m_addressCard {
   background-color: %panelBackgroundColor%;
   border: 1px solid %borderColor%;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 QFrame#m_addressCard:hover {
@@ -706,18 +706,6 @@ QFrame#m_addressCard #m_addressCardLabel {
 QFrame#m_addressCard #m_addressCardAddress {
   font-size: %fontSizeTiny%;
   color: %addressFontColor%;
-}
-
-QFrame#m_addressCard #m_addressCardTotal {
-  font-size: %fontSizeNormal%;
-  font-weight: bold;
-  color: %balanceFontColor%;
-}
-
-QFrame#m_addressCard #m_addressCardUnlocked,
-QFrame#m_addressCard #m_addressCardPending {
-  font-size: %fontSizeTiny%;
-  color: %fontColorGray%;
 }
 
 QFrame#m_addressCard QToolButton {
