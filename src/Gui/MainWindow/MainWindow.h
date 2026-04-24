@@ -119,16 +119,24 @@ private:
   QAction* m_contactsNavAction;
   QAction* m_explorerNavAction;
   QLabel* m_menuBarBalanceLabel;
+  QLabel* m_sidebarTotalLabel;
+  QLabel* m_sidebarLockedLabel;
+  QAction* m_createAddressAction;
+  QAction* m_importAddressAction;
 
   void buildTopNavToolBar();
   void buildAddressSidebar();
-  void installMenuBarBalance();
+  void installSidebarBalance();
+  void rearrangeWalletMenu();
   Q_SLOT void createAddressRequested();
+  Q_SLOT void importAddressRequested();
   Q_SLOT void copyAddressFromCard(quintptr _index, const QString& _address);
   Q_SLOT void showQrFromCard(quintptr _index, const QString& _address);
   Q_SLOT void showKeysFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void exportTrackingKeyFromCard(quintptr _index, const QString& _address);
   Q_SLOT void renameAddressFromCard(quintptr _index, const QString& _address);
   Q_SLOT void sendFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void balanceProofFromCard(quintptr _index, const QString& _address);
   Q_SLOT void deleteAddressFromCard(quintptr _index, const QString& _address);
 
   void createRecentWalletMenu();

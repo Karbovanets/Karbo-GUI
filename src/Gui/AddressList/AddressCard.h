@@ -57,8 +57,10 @@ Q_SIGNALS:
   void copyAddressRequestedSignal();
   void showQrRequestedSignal();
   void showKeysRequestedSignal();
+  void exportTrackingKeyRequestedSignal();
   void renameRequestedSignal();
   void sendFromRequestedSignal();
+  void balanceProofRequestedSignal();
   void deleteRequestedSignal();
 
 protected:
@@ -76,7 +78,9 @@ private:
   QMenu* m_advancedMenu;
   QAction* m_renameAction;
   QAction* m_showKeysAction;
+  QAction* m_exportTrackingKeyAction;
   QAction* m_sendFromAction;
+  QAction* m_balanceProofAction;
   QAction* m_deleteAction;
 
   QString m_address;

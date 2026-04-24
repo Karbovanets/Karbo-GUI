@@ -236,6 +236,11 @@ void AddressSidebar::bindCardSignals(AddressCard* _card, int _row) {
       Q_EMIT showKeysRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
     }
   });
+  connect(_card, &AddressCard::exportTrackingKeyRequestedSignal, this, [this, _row]() {
+    if (_row < m_cards.size()) {
+      Q_EMIT exportTrackingKeyRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
+    }
+  });
   connect(_card, &AddressCard::renameRequestedSignal, this, [this, _row]() {
     if (_row < m_cards.size()) {
       Q_EMIT renameRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
@@ -244,6 +249,11 @@ void AddressSidebar::bindCardSignals(AddressCard* _card, int _row) {
   connect(_card, &AddressCard::sendFromRequestedSignal, this, [this, _row]() {
     if (_row < m_cards.size()) {
       Q_EMIT sendFromRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
+    }
+  });
+  connect(_card, &AddressCard::balanceProofRequestedSignal, this, [this, _row]() {
+    if (_row < m_cards.size()) {
+      Q_EMIT balanceProofRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
     }
   });
   connect(_card, &AddressCard::deleteRequestedSignal, this, [this, _row]() {

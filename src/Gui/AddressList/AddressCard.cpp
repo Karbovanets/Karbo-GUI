@@ -40,7 +40,8 @@ AddressCard::AddressCard(QWidget* _parent) : QFrame(_parent),
   m_unlockedRow(nullptr), m_pendingRow(nullptr), m_totalRow(nullptr),
   m_copyButton(nullptr), m_qrButton(nullptr), m_advancedButton(nullptr),
   m_advancedMenu(nullptr),
-  m_renameAction(nullptr), m_showKeysAction(nullptr), m_sendFromAction(nullptr), m_deleteAction(nullptr),
+  m_renameAction(nullptr), m_showKeysAction(nullptr), m_exportTrackingKeyAction(nullptr),
+  m_sendFromAction(nullptr), m_balanceProofAction(nullptr), m_deleteAction(nullptr),
   m_isPrimary(false), m_isSelected(false) {
   setObjectName("m_addressCard");
   setFrameShape(QFrame::StyledPanel);
@@ -161,7 +162,10 @@ void AddressCard::buildUi() {
   m_advancedMenu = new QMenu(this);
   m_renameAction = m_advancedMenu->addAction(tr("Rename..."));
   m_showKeysAction = m_advancedMenu->addAction(tr("Show keys..."));
+  m_exportTrackingKeyAction = m_advancedMenu->addAction(tr("Export tracking key..."));
   m_sendFromAction = m_advancedMenu->addAction(tr("Send from this address"));
+  m_advancedMenu->addSeparator();
+  m_balanceProofAction = m_advancedMenu->addAction(tr("Prove balance..."));
   m_advancedMenu->addSeparator();
   m_deleteAction = m_advancedMenu->addAction(tr("Delete address"));
   m_advancedButton->setMenu(m_advancedMenu);
@@ -185,7 +189,9 @@ void AddressCard::buildUi() {
   connect(m_qrButton, &QToolButton::clicked, this, &AddressCard::showQrRequestedSignal);
   connect(m_renameAction, &QAction::triggered, this, &AddressCard::renameRequestedSignal);
   connect(m_showKeysAction, &QAction::triggered, this, &AddressCard::showKeysRequestedSignal);
+  connect(m_exportTrackingKeyAction, &QAction::triggered, this, &AddressCard::exportTrackingKeyRequestedSignal);
   connect(m_sendFromAction, &QAction::triggered, this, &AddressCard::sendFromRequestedSignal);
+  connect(m_balanceProofAction, &QAction::triggered, this, &AddressCard::balanceProofRequestedSignal);
   connect(m_deleteAction, &QAction::triggered, this, &AddressCard::deleteRequestedSignal);
 }
 

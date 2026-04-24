@@ -567,3 +567,133 @@ QMessageBox > QDialogButtonBox > QPushButton:pressed {
   min-height: 25px;
   max-height: 25px;
 }
+
+/* -------- Address sidebar -------- */
+
+#m_addressSidebar {
+  background-color: %toolButtonBackgroundColorNormal%;
+  border: none;
+}
+
+#m_addressSidebar QScrollArea {
+  background-color: transparent;
+  border: none;
+}
+
+#m_addressSidebarList {
+  background-color: transparent;
+}
+
+#m_addressSidebarBalanceFrame {
+  background-color: %headerBackgroundColor%;
+  border: none;
+  border-bottom: 1px solid %headerBorderColor%;
+  min-height: 70px;
+  max-height: 70px;
+}
+
+#m_addressSidebarBalanceFrame QLabel {
+  background-color: transparent;
+  color: %balanceFontColor%;
+}
+
+#m_addressSidebarBalanceFrame #m_totalCaption,
+#m_addressSidebarBalanceFrame #m_lockedCaption {
+  font-size: %fontSizeTiny%;
+  font-weight: bold;
+}
+
+#m_addressSidebarBalanceFrame #m_totalValue {
+  font-size: %fontSizeLarge%;
+  font-weight: bold;
+}
+
+#m_addressSidebarBalanceFrame #m_lockedValue {
+  font-size: %fontSizeNormal%;
+  color: %fontColorGray%;
+}
+
+#m_addAddressButton {
+  min-height: 32px;
+  max-height: 32px;
+  background-color: %backgroundColorBlueNormal%;
+  color: %selectionTextColor%;
+  border: none;
+  border-radius: 2px;
+  font-size: %fontSizeNormal%;
+}
+
+#m_addAddressButton:hover {
+  background-color: %backgroundColorBlueHover%;
+}
+
+#m_addAddressButton:pressed {
+  background-color: %backgroundColorBluePressed%;
+}
+
+/* -------- Address card -------- */
+
+QFrame#m_addressCard {
+  background-color: %panelBackgroundColor%;
+  border: 1px solid %borderColor%;
+  border-radius: 3px;
+}
+
+QFrame#m_addressCard:hover {
+  border: 1px solid %toolButtonBackgroundColorHover%;
+}
+
+QFrame#m_addressCard[selected="true"] {
+  background-color: %headerBackgroundColor%;
+  border: 1px solid %toolButtonBackgroundColorPressed%;
+}
+
+QFrame#m_addressCard QLabel {
+  background-color: transparent;
+  color: %primaryTextColor%;
+}
+
+QFrame#m_addressCard #m_addressCardLabel {
+  font-size: %fontSizeNormal%;
+  font-weight: bold;
+  color: %balanceFontColor%;
+}
+
+QFrame#m_addressCard #m_addressCardAddress {
+  font-size: %fontSizeTiny%;
+  color: %addressFontColor%;
+}
+
+QFrame#m_addressCard #m_addressCardTotal {
+  font-size: %fontSizeNormal%;
+  font-weight: bold;
+  color: %balanceFontColor%;
+}
+
+QFrame#m_addressCard #m_addressCardUnlocked,
+QFrame#m_addressCard #m_addressCardPending {
+  font-size: %fontSizeTiny%;
+  color: %fontColorGray%;
+}
+
+QFrame#m_addressCard QToolButton {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: %fontColorBlueNormal%;
+  font-size: %fontSizeTiny%;
+  padding: 2px 6px;
+  min-height: 18px;
+}
+
+QFrame#m_addressCard QToolButton:hover {
+  color: %fontColorBlueHover%;
+}
+
+QFrame#m_addressCard QToolButton:pressed {
+  color: %fontColorBluePressed%;
+}
+
+QFrame#m_addressCard QToolButton::menu-indicator {
+  image: none;
+  width: 0;
+}

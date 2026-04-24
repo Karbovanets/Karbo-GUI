@@ -50,8 +50,10 @@ Q_SIGNALS:
   void copyAddressRequestedSignal(quintptr _addressIndex, const QString& _address);
   void showQrRequestedSignal(quintptr _addressIndex, const QString& _address);
   void showKeysRequestedSignal(quintptr _addressIndex, const QString& _address);
+  void exportTrackingKeyRequestedSignal(quintptr _addressIndex, const QString& _address);
   void renameRequestedSignal(quintptr _addressIndex, const QString& _address);
   void sendFromRequestedSignal(quintptr _addressIndex, const QString& _address);
+  void balanceProofRequestedSignal(quintptr _addressIndex, const QString& _address);
   void deleteRequestedSignal(quintptr _addressIndex, const QString& _address);
 
 private Q_SLOTS:

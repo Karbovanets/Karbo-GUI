@@ -28,7 +28,10 @@
 #include <QDataWidgetMapper>
 #include <QDesktopServices>
 #include <QFileDialog>
+#include <QFrame>
+#include <QGridLayout>
 #include <QLabel>
+#include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMetaMethod>
@@ -161,7 +164,9 @@ MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManag
   m_mainToolBar(nullptr), m_navActionGroup(nullptr),
   m_overviewNavAction(nullptr), m_sendNavAction(nullptr), m_receiveNavAction(nullptr),
   m_historyNavAction(nullptr), m_contactsNavAction(nullptr), m_explorerNavAction(nullptr),
-  m_menuBarBalanceLabel(nullptr) {
+  m_menuBarBalanceLabel(nullptr),
+  m_sidebarTotalLabel(nullptr), m_sidebarLockedLabel(nullptr),
+  m_createAddressAction(nullptr), m_importAddressAction(nullptr) {
   m_ui->setupUi(this);
   setWindowTitle(tr("Karbo Spring Wallet %1").arg(Settings::instance().getVersion()));
   m_addRecipientAction->setObjectName("m_addRecipientAction");
@@ -185,7 +190,8 @@ MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManag
 
   buildTopNavToolBar();
   buildAddressSidebar();
-  installMenuBarBalance();
+  installSidebarBalance();
+  rearrangeWalletMenu();
   m_ui->m_headerFrame->hide();
 
   QList<IWalletUiItem*> uiItems;
@@ -494,6 +500,9 @@ void MainWindow::setOpenedState() {
   m_ui->m_enableBlockchainExplorerAction->setEnabled(Settings::instance().getConnectionMethod() == ConnectionMethod::EMBEDDED ||
                                                      m_cryptoNoteAdapter->getNodeAdapter()->getNodeType() == NodeType::IN_PROCESS);
   m_ui->m_receiveButton->setEnabled(true);
+
+  if (m_createAddressAction != nullptr) m_createAddressAction->setEnabled(true);
+  if (m_importAddressAction != nullptr) m_importAddressAction->setEnabled(true);
 }
 
 void MainWindow::setClosedState() {
@@ -524,6 +533,9 @@ void MainWindow::setClosedState() {
   m_ui->m_signMessageAction->setEnabled(false);
   m_ui->m_verifyMessageAction->setEnabled(false);
   m_ui->m_getBalanceProofAction->setEnabled(false);
+
+  if (m_createAddressAction != nullptr) m_createAddressAction->setEnabled(false);
+  if (m_importAddressAction != nullptr) m_importAddressAction->setEnabled(false);
 
   m_ui->m_overviewFrame->hide();
   m_ui->m_sendFrame->hide();
@@ -1221,6 +1233,15 @@ void MainWindow::buildAddressSidebar() {
 
   QVBoxLayout* toolLayout = qobject_cast<QVBoxLayout*>(m_ui->m_toolFrame->layout());
   if (toolLayout != nullptr) {
+    // Remove any QSpacerItem left over from the legacy .ui layout so the sidebar
+    // (and its "+ New address" button at the bottom) can grow to fill the frame.
+    for (int i = toolLayout->count() - 1; i >= 0; --i) {
+      QLayoutItem* item = toolLayout->itemAt(i);
+      if (item != nullptr && item->spacerItem() != nullptr) {
+        toolLayout->takeAt(i);
+        delete item;
+      }
+    }
     toolLayout->insertWidget(0, m_addressSidebar, 1);
   }
 
@@ -1230,24 +1251,211 @@ void MainWindow::buildAddressSidebar() {
   connect(m_addressSidebar, &AddressSidebar::copyAddressRequestedSignal, this, &MainWindow::copyAddressFromCard);
   connect(m_addressSidebar, &AddressSidebar::showQrRequestedSignal, this, &MainWindow::showQrFromCard);
   connect(m_addressSidebar, &AddressSidebar::showKeysRequestedSignal, this, &MainWindow::showKeysFromCard);
+  connect(m_addressSidebar, &AddressSidebar::exportTrackingKeyRequestedSignal, this, &MainWindow::exportTrackingKeyFromCard);
   connect(m_addressSidebar, &AddressSidebar::renameRequestedSignal, this, &MainWindow::renameAddressFromCard);
   connect(m_addressSidebar, &AddressSidebar::sendFromRequestedSignal, this, &MainWindow::sendFromCard);
+  connect(m_addressSidebar, &AddressSidebar::balanceProofRequestedSignal, this, &MainWindow::balanceProofFromCard);
   connect(m_addressSidebar, &AddressSidebar::deleteRequestedSignal, this, &MainWindow::deleteAddressFromCard);
 }
 
-void MainWindow::installMenuBarBalance() {
-  m_menuBarBalanceLabel = new QLabel(this);
-  m_menuBarBalanceLabel->setObjectName("m_menuBarBalanceLabel");
-  m_menuBarBalanceLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  m_menuBarBalanceLabel->setContentsMargins(8, 0, 12, 0);
-  menuBar()->setCornerWidget(m_menuBarBalanceLabel, Qt::TopRightCorner);
+void MainWindow::installSidebarBalance() {
+  if (m_addressSidebar == nullptr) {
+    return;
+  }
+  QVBoxLayout* sidebarLayout = qobject_cast<QVBoxLayout*>(m_addressSidebar->layout());
+  if (sidebarLayout == nullptr) {
+    return;
+  }
+
+  QFrame* balanceFrame = new QFrame(m_addressSidebar);
+  balanceFrame->setObjectName("m_addressSidebarBalanceFrame");
+  QGridLayout* balanceLayout = new QGridLayout(balanceFrame);
+  balanceLayout->setContentsMargins(10, 8, 10, 8);
+  balanceLayout->setHorizontalSpacing(8);
+  balanceLayout->setVerticalSpacing(2);
+
+  QLabel* totalCaption = new QLabel(tr("Total"), balanceFrame);
+  totalCaption->setObjectName("m_totalCaption");
+  m_sidebarTotalLabel = new QLabel(balanceFrame);
+  m_sidebarTotalLabel->setObjectName("m_totalValue");
+  m_sidebarTotalLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+  QLabel* lockedCaption = new QLabel(tr("Locked"), balanceFrame);
+  lockedCaption->setObjectName("m_lockedCaption");
+  m_sidebarLockedLabel = new QLabel(balanceFrame);
+  m_sidebarLockedLabel->setObjectName("m_lockedValue");
+  m_sidebarLockedLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+  balanceLayout->addWidget(totalCaption, 0, 0);
+  balanceLayout->addWidget(m_sidebarTotalLabel, 0, 1);
+  balanceLayout->addWidget(lockedCaption, 1, 0);
+  balanceLayout->addWidget(m_sidebarLockedLabel, 1, 1);
+  balanceLayout->setColumnStretch(1, 1);
+
+  sidebarLayout->insertWidget(0, balanceFrame, 0);
 
   auto updateBalance = [this]() {
-    const QModelIndex idx = m_walletStateModel->index(0, WalletStateModel::COLUMN_TOTAL_SHORT_BALANCE);
-    m_menuBarBalanceLabel->setText(m_walletStateModel->data(idx).toString());
+    const quint64 actual = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+    const quint64 pending = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_PENDING_BALANCE).value<quint64>();
+    const quint64 total = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_TOTAL_BALANCE).value<quint64>();
+    const quint64 locked = (total >= actual) ? (total - actual) : pending;
+    if (m_cryptoNoteAdapter != nullptr) {
+      m_sidebarTotalLabel->setText(m_cryptoNoteAdapter->formatUnsignedAmount(total));
+      m_sidebarLockedLabel->setText(m_cryptoNoteAdapter->formatUnsignedAmount(locked));
+    } else {
+      m_sidebarTotalLabel->setText(QString::number(total));
+      m_sidebarLockedLabel->setText(QString::number(locked));
+    }
   };
   updateBalance();
-  connect(m_walletStateModel, &QAbstractItemModel::dataChanged, this, [this, updateBalance]() { updateBalance(); });
+  connect(m_walletStateModel, &QAbstractItemModel::dataChanged, this, [updateBalance]() { updateBalance(); });
+  connect(m_walletStateModel, &QAbstractItemModel::modelReset, this, [updateBalance]() { updateBalance(); });
+}
+
+void MainWindow::rearrangeWalletMenu() {
+  // Move wallet-container import actions (create a new wallet file from keys/seed)
+  // out of the Wallet menu and into the File menu, where other container operations live.
+  QMenu* walletMenu = m_ui->menuWallet;
+  QMenu* fileMenu = m_ui->menuFile;
+  if (walletMenu == nullptr || fileMenu == nullptr) {
+    return;
+  }
+
+  QAction* importKeyAction = m_ui->m_importKeyAction;
+  QAction* importSeedAction = m_ui->m_importSeedAction;
+  QAction* exportTrackingKeyAction = m_ui->m_exportTrackingKeyAction;
+  QAction* balanceProofAction = m_ui->m_getBalanceProofAction;
+
+  if (importKeyAction != nullptr) walletMenu->removeAction(importKeyAction);
+  if (importSeedAction != nullptr) walletMenu->removeAction(importSeedAction);
+  // Export tracking key and Prove balance become per-address operations reachable
+  // from the address card's Advanced menu; remove them from the Wallet menu entirely.
+  if (exportTrackingKeyAction != nullptr) walletMenu->removeAction(exportTrackingKeyAction);
+  if (balanceProofAction != nullptr) walletMenu->removeAction(balanceProofAction);
+
+  QAction* fileAnchor = m_ui->m_signMessageAction;
+  if (importKeyAction != nullptr) {
+    fileMenu->insertAction(fileAnchor, importKeyAction);
+  }
+  if (importSeedAction != nullptr) {
+    fileMenu->insertAction(fileAnchor, importSeedAction);
+  }
+  if ((importKeyAction != nullptr || importSeedAction != nullptr) && fileAnchor != nullptr) {
+    fileMenu->insertSeparator(fileAnchor);
+  }
+
+  // Insert Create/Import address actions at the top of the Wallet menu.
+  QList<QAction*> walletActions = walletMenu->actions();
+  QAction* walletAnchor = walletActions.isEmpty() ? nullptr : walletActions.first();
+
+  m_createAddressAction = new QAction(tr("Create new address"), this);
+  m_importAddressAction = new QAction(tr("Import address..."), this);
+  connect(m_createAddressAction, &QAction::triggered, this, &MainWindow::createAddressRequested);
+  connect(m_importAddressAction, &QAction::triggered, this, &MainWindow::importAddressRequested);
+
+  walletMenu->insertAction(walletAnchor, m_createAddressAction);
+  walletMenu->insertAction(walletAnchor, m_importAddressAction);
+  walletMenu->insertSeparator(walletAnchor);
+
+  // Gate both new actions on wallet-open state (start disabled; walletOpened/Closed toggle).
+  m_createAddressAction->setEnabled(false);
+  m_importAddressAction->setEnabled(false);
+}
+
+void MainWindow::importAddressRequested() {
+  IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
+  if (walletAdapter == nullptr || !walletAdapter->isOpen()) {
+    return;
+  }
+
+  bool ok = false;
+  const QString prompt = tr(
+    "Paste one of the following to import an address into this wallet:\n"
+    "  \u2022 a spend secret key (64 hex characters)\n"
+    "  \u2022 a spend public key (64 hex characters, watch-only)\n"
+    "  \u2022 an encoded address/keys blob produced by \"Save keys\"\n\n"
+    "The view key is shared across all addresses in this wallet, so it is reused automatically.");
+  const QString input = QInputDialog::getMultiLineText(this, tr("Import address"), prompt, QString(), &ok);
+  if (!ok) {
+    return;
+  }
+  const QString trimmed = input.trimmed();
+  if (trimmed.isEmpty()) {
+    return;
+  }
+
+  // Pick the view key from the primary address (all addresses in WalletGreen share a single view key).
+  AccountKeys primaryKeys = walletAdapter->getAccountKeys(0);
+  AccountKeys newKeys;
+  newKeys.viewKeys = primaryKeys.viewKeys;
+  std::memset(&newKeys.spendKeys, 0, sizeof(newKeys.spendKeys));
+
+  bool parsed = false;
+
+  // 1) Try Base58 address/keys blob (same encoding Save-keys produces).
+  {
+    uint64_t prefix = 0;
+    std::string data;
+    AccountKeys tmp;
+    if (Tools::Base58::decode_addr(trimmed.toStdString(), prefix, data) &&
+        prefix == Settings::instance().getAddressPrefix() &&
+        data.size() == sizeof(tmp)) {
+      tmp = convertByteArrayToAccountKeys(QByteArray::fromStdString(data));
+      newKeys.spendKeys = tmp.spendKeys;
+      parsed = true;
+    }
+  }
+
+  // 2) Try a bare 64-hex-char spend key (secret or public).
+  if (!parsed && trimmed.size() == 64) {
+    QByteArray raw = QByteArray::fromHex(trimmed.toLatin1());
+    if (raw.size() == static_cast<int>(sizeof(Crypto::SecretKey))) {
+      // Heuristic: try as secret first. If the derived public key is a valid point, keep the secret.
+      Crypto::SecretKey secret;
+      std::memcpy(&secret, raw.constData(), sizeof(secret));
+      Crypto::PublicKey derived;
+      if (Crypto::secret_key_to_public_key(secret, derived)) {
+        newKeys.spendKeys.secretKey = secret;
+        newKeys.spendKeys.publicKey = derived;
+        parsed = true;
+      } else {
+        // Fall back to treating it as a public key (watch-only sub-address).
+        Crypto::PublicKey pub;
+        std::memcpy(&pub, raw.constData(), sizeof(pub));
+        if (Crypto::check_key(pub)) {
+          newKeys.spendKeys.publicKey = pub;
+          std::memset(&newKeys.spendKeys.secretKey, 0, sizeof(newKeys.spendKeys.secretKey));
+          parsed = true;
+        }
+      }
+    }
+  }
+
+  if (!parsed) {
+    QMessageBox::warning(this, tr("Import address"),
+      tr("The input is not a recognized spend key or address/keys blob."));
+    return;
+  }
+
+  const QString created = walletAdapter->createAddress(newKeys);
+  if (created.isEmpty()) {
+    QMessageBox::warning(this, tr("Import address"),
+      tr("The wallet refused the key (it may already be present or the view key does not match)."));
+    return;
+  }
+
+  walletAdapter->save(CryptoNote::WalletSaveLevel::SAVE_ALL, true);
+
+  if (m_currentAddressState != nullptr && m_addressListModel != nullptr) {
+    const int rows = m_addressListModel->rowCount();
+    for (int row = 0; row < rows; ++row) {
+      const QModelIndex idx = m_addressListModel->index(row, 0);
+      if (m_addressListModel->data(idx, AddressListModel::ROLE_ADDRESS).toString() == created) {
+        m_currentAddressState->setCurrent(static_cast<quintptr>(row), created);
+        break;
+      }
+    }
+  }
 }
 
 void MainWindow::createAddressRequested() {
@@ -1278,6 +1486,28 @@ void MainWindow::showKeysFromCard(quintptr _index, const QString& _address) {
   AccountKeys accountKeys = walletAdapter->getAccountKeys(_index);
   QByteArray keys = convertAccountKeysToByteArray(accountKeys);
   KeyDialog dlg(keys, false, this);
+  dlg.exec();
+}
+
+void MainWindow::exportTrackingKeyFromCard(quintptr _index, const QString& _address) {
+  Q_UNUSED(_address);
+  IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
+  if (walletAdapter == nullptr || !walletAdapter->isOpen()) {
+    return;
+  }
+  AccountKeys accountKeys = walletAdapter->getAccountKeys(_index);
+  std::memset(&accountKeys.spendKeys.secretKey, 0, sizeof(Crypto::SecretKey));
+  QByteArray trackingKeys = convertAccountKeysToByteArray(accountKeys);
+  KeyDialog dlg(trackingKeys, true, this);
+  dlg.exec();
+}
+
+void MainWindow::balanceProofFromCard(quintptr _index, const QString& _address) {
+  Q_UNUSED(_index);
+  Q_UNUSED(_address);
+  // TODO: extend BalanceProofDialog to prove a single address's balance instead
+  //       of the aggregate wallet balance. For now invoke the existing dialog.
+  BalanceProofDialog dlg(m_cryptoNoteAdapter, this);
   dlg.exec();
 }
 
