@@ -553,7 +553,19 @@ void SendFrame::sendClicked() {
   }
   transactionParameters.changeDestination = changeAddress.toStdString();
 
-  const quint64 actualBalance = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+  quint64 actualBalance = 0;
+  if (!fromAddress.isEmpty() && m_addressListModel != nullptr) {
+    const int rows = m_addressListModel->rowCount();
+    for (int row = 0; row < rows; ++row) {
+      const QModelIndex idx = m_addressListModel->index(row, 0);
+      if (m_addressListModel->data(idx, AddressListModel::ROLE_ADDRESS).toString() == fromAddress) {
+        actualBalance = m_addressListModel->data(idx, AddressListModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+        break;
+      }
+    }
+  } else {
+    actualBalance = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+  }
   quint64 transferSum = 0;
   const qint64 fee = m_cryptoNoteAdapter->parseAmount(m_ui->m_feeSpin->cleanText()) - m_nodeFee;
   for (TransferFrame* transfer : m_transfers) {
@@ -812,7 +824,23 @@ void SendFrame::enableManualFee(bool _enable) {
 
 void SendFrame::sendAllClicked() {
   qreal amount;
-  const quint64 actualBalance = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+  QString fromAddress;
+  if (m_fromAddressCombo != nullptr) {
+    fromAddress = m_fromAddressCombo->currentData().toString();
+  }
+  quint64 actualBalance = 0;
+  if (!fromAddress.isEmpty() && m_addressListModel != nullptr) {
+    const int rows = m_addressListModel->rowCount();
+    for (int row = 0; row < rows; ++row) {
+      const QModelIndex idx = m_addressListModel->index(row, 0);
+      if (m_addressListModel->data(idx, AddressListModel::ROLE_ADDRESS).toString() == fromAddress) {
+        actualBalance = m_addressListModel->data(idx, AddressListModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+        break;
+      }
+    }
+  } else {
+    actualBalance = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+  }
   if (on_remote && !m_nodeFeeAddress.isEmpty() && m_flatRateNodeFee == 0) {
         m_nodeFee = 0;
         m_nodeFee = static_cast<qint64>(actualBalance * 0.0025); // fee is 0.25%
