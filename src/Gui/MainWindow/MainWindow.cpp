@@ -497,8 +497,10 @@ void MainWindow::setOpenedState() {
     m_explorerNavAction->setEnabled(m_cryptoNoteAdapter->getNodeAdapter()->getBlockChainExplorerAdapter() != nullptr);
   }
 
-  m_ui->m_enableBlockchainExplorerAction->setEnabled(Settings::instance().getConnectionMethod() == ConnectionMethod::EMBEDDED ||
-                                                     m_cryptoNoteAdapter->getNodeAdapter()->getNodeType() == NodeType::IN_PROCESS);
+  // The blockchain-explorer toggle used to be restricted to local/embedded nodes,
+  // but ProxyRpcNodeWorker also wires up a BlockChainExplorerAdapter when the
+  // setting is on, so the feature works over remote RPC too. Always allow toggling.
+  m_ui->m_enableBlockchainExplorerAction->setEnabled(true);
   m_ui->m_receiveButton->setEnabled(true);
 
   if (m_createAddressAction != nullptr) m_createAddressAction->setEnabled(true);
