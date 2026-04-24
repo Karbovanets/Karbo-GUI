@@ -245,6 +245,11 @@ void AddressSidebar::bindCardSignals(AddressCard* _card, int _row) {
       Q_EMIT exportTrackingKeyRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
     }
   });
+  connect(_card, &AddressCard::showSeedRequestedSignal, this, [this, _row]() {
+    if (_row < m_cards.size()) {
+      Q_EMIT showSeedRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
+    }
+  });
   connect(_card, &AddressCard::renameRequestedSignal, this, [this, _row]() {
     if (_row < m_cards.size()) {
       Q_EMIT renameRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());

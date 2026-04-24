@@ -223,9 +223,9 @@ QString WalletGreenAdapter::getBalanceProof(quint64& _amount, QString& _message)
   return m_worker->getBalanceProof(_amount, _message);
 }
 
-QString WalletGreenAdapter::signMessage(const QString &data) const {
+QString WalletGreenAdapter::signMessage(const QString &data, const QString &address) const {
   Q_ASSERT(m_worker != nullptr);
-  return m_worker->signMessage(data);
+  return m_worker->signMessage(data, address);
 }
 
 bool WalletGreenAdapter::verifyMessage(const QString &data, const QString &address, const QString &signature) const {

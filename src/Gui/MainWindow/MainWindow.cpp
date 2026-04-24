@@ -902,16 +902,32 @@ void MainWindow::encryptWallet() {
 }
 
 void MainWindow::signMessage() {
-  AccountKeys accountKeys = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->getAccountKeys(0);
-  QString address = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->getAddress(0);
+  IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
+  quintptr index = 0;
+  if (m_currentAddressState != nullptr) {
+    index = m_currentAddressState->currentAddressIndex();
+  }
+  if (index >= walletAdapter->getAddressCount()) {
+    index = 0;
+  }
+  AccountKeys accountKeys = walletAdapter->getAccountKeys(index);
+  QString address = walletAdapter->getAddress(index);
   SignMessageDialog dlg(m_cryptoNoteAdapter, accountKeys, address, this);
   dlg.sign();
   dlg.exec();
 }
 
 void MainWindow::verifyMessage() {
-  AccountKeys accountKeys = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->getAccountKeys(0);
-  QString address = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->getAddress(0);
+  IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
+  quintptr index = 0;
+  if (m_currentAddressState != nullptr) {
+    index = m_currentAddressState->currentAddressIndex();
+  }
+  if (index >= walletAdapter->getAddressCount()) {
+    index = 0;
+  }
+  AccountKeys accountKeys = walletAdapter->getAccountKeys(index);
+  QString address = walletAdapter->getAddress(index);
   SignMessageDialog dlg(m_cryptoNoteAdapter, accountKeys, address, this);
   dlg.verify();
   dlg.exec();
@@ -1156,6 +1172,22 @@ void MainWindow::showMnemonicSeed() {
   dlg.exec();
 }
 
+void MainWindow::showSeedFromCard(quintptr _index, const QString& _address) {
+  Q_UNUSED(_address);
+  // Mnemonic seeds only exist for the primary address: the wallet seed derives
+  // the index-0 spend key pair deterministically. Sub-addresses (index > 0) are
+  // generated with random keys and cannot be recovered from any mnemonic.
+  if (_index != 0) {
+    QMessageBox::information(this, tr("Mnemonic seed unavailable"),
+                             tr("Mnemonic seed is only available for the primary address.\n\n"
+                                "Additional addresses use random keys and are not recoverable from a seed phrase. "
+                                "Back them up via \"Show keys...\" on the address card."),
+                             QMessageBox::Ok);
+    return;
+  }
+  showMnemonicSeed();
+}
+
 void MainWindow::communityForumTriggered() {
   QDesktopServices::openUrl(QUrl::fromUserInput(COMMUNITY_FORUM_URL));
 }
@@ -1286,6 +1318,7 @@ void MainWindow::buildAddressSidebar() {
   connect(m_addressSidebar, &AddressSidebar::showQrRequestedSignal, this, &MainWindow::showQrFromCard);
   connect(m_addressSidebar, &AddressSidebar::showKeysRequestedSignal, this, &MainWindow::showKeysFromCard);
   connect(m_addressSidebar, &AddressSidebar::exportTrackingKeyRequestedSignal, this, &MainWindow::exportTrackingKeyFromCard);
+  connect(m_addressSidebar, &AddressSidebar::showSeedRequestedSignal, this, &MainWindow::showSeedFromCard);
   connect(m_addressSidebar, &AddressSidebar::renameRequestedSignal, this, &MainWindow::renameAddressFromCard);
   connect(m_addressSidebar, &AddressSidebar::sendFromRequestedSignal, this, &MainWindow::sendFromCard);
   connect(m_addressSidebar, &AddressSidebar::balanceProofRequestedSignal, this, &MainWindow::balanceProofFromCard);
@@ -1329,14 +1362,18 @@ void MainWindow::rearrangeWalletMenu() {
   QAction* exportKeyAction = m_ui->m_exportKeyAction;
   QAction* exportTrackingKeyAction = m_ui->m_exportTrackingKeyAction;
   QAction* balanceProofAction = m_ui->m_getBalanceProofAction;
+  QAction* showSeedAction = m_ui->m_showSeedAction;
 
   if (importKeyAction != nullptr) walletMenu->removeAction(importKeyAction);
   if (importSeedAction != nullptr) walletMenu->removeAction(importSeedAction);
-  // Export key, Export tracking key and Prove balance become per-address operations
-  // reachable from the address card's Advanced menu; remove them from the Wallet menu.
+  // Export key, Export tracking key, Prove balance and Show mnemonic seed become
+  // per-address operations reachable from the address card's Advanced menu;
+  // remove them from the Wallet menu. (Show seed only works for the primary
+  // address; the per-card handler shows an "unsupported" error for the rest.)
   if (exportKeyAction != nullptr) walletMenu->removeAction(exportKeyAction);
   if (exportTrackingKeyAction != nullptr) walletMenu->removeAction(exportTrackingKeyAction);
   if (balanceProofAction != nullptr) walletMenu->removeAction(balanceProofAction);
+  if (showSeedAction != nullptr) walletMenu->removeAction(showSeedAction);
 
   // Rename to clarify these actions create a NEW wallet container (not an address).
   if (importKeyAction != nullptr) {

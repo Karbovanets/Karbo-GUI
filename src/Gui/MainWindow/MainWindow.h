@@ -134,6 +134,7 @@ private:
   Q_SLOT void showQrFromCard(quintptr _index, const QString& _address);
   Q_SLOT void showKeysFromCard(quintptr _index, const QString& _address);
   Q_SLOT void exportTrackingKeyFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void showSeedFromCard(quintptr _index, const QString& _address);
   Q_SLOT void renameAddressFromCard(quintptr _index, const QString& _address);
   Q_SLOT void sendFromCard(quintptr _index, const QString& _address);
   Q_SLOT void balanceProofFromCard(quintptr _index, const QString& _address);

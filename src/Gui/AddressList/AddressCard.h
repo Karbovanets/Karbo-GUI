@@ -58,6 +58,7 @@ Q_SIGNALS:
   void showQrRequestedSignal();
   void showKeysRequestedSignal();
   void exportTrackingKeyRequestedSignal();
+  void showSeedRequestedSignal();
   void renameRequestedSignal();
   void sendFromRequestedSignal();
   void balanceProofRequestedSignal();
@@ -79,6 +80,7 @@ private:
   QAction* m_renameAction;
   QAction* m_showKeysAction;
   QAction* m_exportTrackingKeyAction;
+  QAction* m_showSeedAction;
   QAction* m_sendFromAction;
   QAction* m_balanceProofAction;
   QAction* m_deleteAction;

@@ -908,16 +908,17 @@ QString WalletGreenWorker::getBalanceProof(quint64& _amount, QString& _message) 
   return QString::fromStdString(proof);
 }
 
-QString WalletGreenWorker::signMessage(const QString &data) const {
+QString WalletGreenWorker::signMessage(const QString &data, const QString &address) const {
   if (isTrackingWallet()) {
     throw std::runtime_error("The message can only be signed by a full wallet");
   }
 
   SemaphoreLocker locker(m_walletSemaphore);
   std::string sig_str;
-  m_dispatcher->remoteSpawn([this, data, &sig_str]() {
+  m_dispatcher->remoteSpawn([this, data, address, &sig_str]() {
     SemaphoreUnlocker unlocker(m_walletSemaphore);
-    sig_str = m_wallet->signMessage(data.toStdString(), m_wallet->getAddress(0));
+    const std::string signingAddress = address.isEmpty() ? m_wallet->getAddress(0) : address.toStdString();
+    sig_str = m_wallet->signMessage(data.toStdString(), signingAddress);
   });
 
   locker.wait();

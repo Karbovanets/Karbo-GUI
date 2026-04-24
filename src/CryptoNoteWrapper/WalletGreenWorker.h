@@ -86,7 +86,7 @@ public:
   virtual Crypto::SecretKey getTransactionSecretKey(Crypto::Hash& _transactionId) const override;
   virtual QString getTransactionProof(Crypto::Hash& _txid, CryptoNote::AccountPublicAddress& _address) const override;
   virtual QString getBalanceProof(quint64& _amount, QString& _message) const override;
-  virtual QString signMessage(const QString &data) const override;
+  virtual QString signMessage(const QString &data, const QString &address) const override;
   virtual bool verifyMessage(const QString &data, const QString &address, const QString &signature) const override;
 
   virtual SendTransactionStatus sendTransaction(const CryptoNote::TransactionParameters& _transactionParameters) override;
