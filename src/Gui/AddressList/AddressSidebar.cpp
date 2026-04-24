@@ -213,7 +213,7 @@ void AddressSidebar::updateCardAt(int _row) {
     pendingText = QString::number(pending);
     totalText = QString::number(total);
   }
-  card->setBalances(unlockedText, unlocked, pendingText, pending, totalText);
+  card->setBalances(unlockedText, unlocked, pendingText, pending, totalText, total);
 }
 
 void AddressSidebar::bindCardSignals(AddressCard* _card, int _row) {

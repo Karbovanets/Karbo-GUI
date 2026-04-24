@@ -44,7 +44,7 @@ public:
 
   void setBalances(const QString& _unlockedFormatted, quint64 _unlockedRaw,
                    const QString& _pendingFormatted, quint64 _pendingRaw,
-                   const QString& _totalFormatted);
+                   const QString& _totalFormatted, quint64 _totalRaw);
 
   bool isPrimary() const;
   void setIsPrimary(bool _primary);
@@ -66,11 +66,12 @@ Q_SIGNALS:
 
 protected:
   void mousePressEvent(QMouseEvent* _event) override;
+  void resizeEvent(QResizeEvent* _event) override;
 
 private:
   QLabel* m_labelLabel;
   QLabel* m_addressLabel;
-  QLabel* m_unlockedRow;
+  QLabel* m_availableRow;
   QLabel* m_pendingRow;
   QLabel* m_totalRow;
   QToolButton* m_copyButton;
@@ -92,7 +93,7 @@ private:
 
   void buildUi();
   void refreshLabelDisplay();
-  QString elide(const QString& _address) const;
+  void updateElidedAddress();
 };
 
 }

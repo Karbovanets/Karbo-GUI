@@ -24,20 +24,17 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QResizeEvent>
 #include <QStyle>
 #include <QToolButton>
 #include <QVBoxLayout>
 
 namespace WalletGui {
 
-namespace {
-const int ADDRESS_HEAD = 6;
-const int ADDRESS_TAIL = 6;
-}
 
 AddressCard::AddressCard(QWidget* _parent) : QFrame(_parent),
   m_labelLabel(nullptr), m_addressLabel(nullptr),
-  m_unlockedRow(nullptr), m_pendingRow(nullptr), m_totalRow(nullptr),
+  m_availableRow(nullptr), m_pendingRow(nullptr), m_totalRow(nullptr),
   m_copyButton(nullptr), m_qrButton(nullptr), m_advancedButton(nullptr),
   m_advancedMenu(nullptr),
   m_renameAction(nullptr), m_showKeysAction(nullptr), m_exportTrackingKeyAction(nullptr),
@@ -60,8 +57,8 @@ QString AddressCard::address() const {
 
 void AddressCard::setAddress(const QString& _address) {
   m_address = _address;
-  m_addressLabel->setText(elide(_address));
   m_addressLabel->setToolTip(_address);
+  updateElidedAddress();
 }
 
 QString AddressCard::label() const {
@@ -75,12 +72,15 @@ void AddressCard::setLabel(const QString& _label) {
 
 void AddressCard::setBalances(const QString& _unlockedFormatted, quint64 _unlockedRaw,
                               const QString& _pendingFormatted, quint64 _pendingRaw,
-                              const QString& _totalFormatted) {
-  m_unlockedRow->setText(tr("Unlocked: %1").arg(_unlockedFormatted));
-  m_unlockedRow->setVisible(_unlockedRaw > 0);
+                              const QString& _totalFormatted, quint64 _totalRaw) {
+  m_totalRow->setText(tr("Total: %1").arg(_totalFormatted));
+  // Show Available only when some of the total is locked (unspendable right now).
+  // When total == unlocked there's nothing to disambiguate, so Total alone is enough.
+  const bool hasLocked = _totalRaw > _unlockedRaw;
+  m_availableRow->setText(tr("Available: %1").arg(_unlockedFormatted));
+  m_availableRow->setVisible(hasLocked);
   m_pendingRow->setText(tr("Pending: %1").arg(_pendingFormatted));
   m_pendingRow->setVisible(_pendingRaw > 0);
-  m_totalRow->setText(tr("Total: %1").arg(_totalFormatted));
 }
 
 bool AddressCard::isPrimary() const {
@@ -120,6 +120,11 @@ void AddressCard::mousePressEvent(QMouseEvent* _event) {
   QFrame::mousePressEvent(_event);
 }
 
+void AddressCard::resizeEvent(QResizeEvent* _event) {
+  QFrame::resizeEvent(_event);
+  updateElidedAddress();
+}
+
 void AddressCard::buildUi() {
   QVBoxLayout* root = new QVBoxLayout(this);
   root->setContentsMargins(8, 8, 8, 8);
@@ -133,9 +138,14 @@ void AddressCard::buildUi() {
   m_addressLabel->setObjectName("m_addressCardAddress");
   m_addressLabel->setTextInteractionFlags(Qt::NoTextInteraction);
   m_addressLabel->setCursor(Qt::PointingHandCursor);
+  // Address must be allowed to shrink below its natural width so the card can
+  // own the available width and we can middle-elide to fit (same UX as the
+  // transaction history address column).
+  m_addressLabel->setMinimumWidth(0);
+  m_addressLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 
-  m_unlockedRow = new QLabel(this);
-  m_unlockedRow->setObjectName("m_addressCardUnlocked");
+  m_availableRow = new QLabel(this);
+  m_availableRow->setObjectName("m_addressCardAvailable");
   m_pendingRow = new QLabel(this);
   m_pendingRow->setObjectName("m_addressCardPending");
   m_totalRow = new QLabel(this);
@@ -182,9 +192,9 @@ void AddressCard::buildUi() {
 
   root->addWidget(m_labelLabel);
   root->addWidget(m_addressLabel);
-  root->addWidget(m_unlockedRow);
-  root->addWidget(m_pendingRow);
   root->addWidget(m_totalRow);
+  root->addWidget(m_availableRow);
+  root->addWidget(m_pendingRow);
   root->addLayout(buttonRow);
 
   connect(m_copyButton, &QToolButton::clicked, this, &AddressCard::copyAddressRequestedSignal);
@@ -208,11 +218,22 @@ void AddressCard::refreshLabelDisplay() {
   }
 }
 
-QString AddressCard::elide(const QString& _address) const {
-  if (_address.size() <= ADDRESS_HEAD + ADDRESS_TAIL + 3) {
-    return _address;
+void AddressCard::updateElidedAddress() {
+  if (m_addressLabel == nullptr) {
+    return;
   }
-  return _address.left(ADDRESS_HEAD) + QStringLiteral("…") + _address.right(ADDRESS_TAIL);
+  if (m_address.isEmpty()) {
+    m_addressLabel->clear();
+    return;
+  }
+  // Elide middle to fit the label's current width, matching how addresses are
+  // rendered in the transaction history view.
+  const int available = m_addressLabel->width();
+  if (available <= 0) {
+    m_addressLabel->setText(m_address);
+    return;
+  }
+  m_addressLabel->setText(m_addressLabel->fontMetrics().elidedText(m_address, Qt::ElideMiddle, available));
 }
 
 }
