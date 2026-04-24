@@ -55,6 +55,50 @@ QRadioButton, QCheckBox {
   background-color: transparent;
 }
 
+/*
+ * Qt disables the native radio/check indicator the moment QSS styles the parent
+ * widget class, so without explicit ::indicator rules the dots/checkmarks go
+ * invisible (settings > Connection radios looked like bare labels). These rules
+ * draw a small circle/square using stylesheet primitives — no extra icons.
+ */
+QRadioButton::indicator {
+  width: 14px;
+  height: 14px;
+  border: 1px solid %borderColorDark%;
+  border-radius: 8px;
+  background-color: %inputBackgroundColor%;
+}
+
+QRadioButton::indicator:checked {
+  background-color: %selectionColor%;
+  border: 1px solid %selectionColor%;
+}
+
+QRadioButton::indicator:hover {
+  border: 1px solid %selectionColor%;
+}
+
+QRadioButton::indicator:disabled {
+  background-color: %backgroundColorGray%;
+}
+
+QCheckBox::indicator {
+  width: 14px;
+  height: 14px;
+  border: 1px solid %borderColorDark%;
+  border-radius: 2px;
+  background-color: %inputBackgroundColor%;
+}
+
+QCheckBox::indicator:checked {
+  background-color: %selectionColor%;
+  border: 1px solid %selectionColor%;
+}
+
+QCheckBox::indicator:disabled {
+  background-color: %backgroundColorGray%;
+}
+
 QDateTimeEdit {
   border: 1px solid %borderColorDark%;
   background-color: %inputBackgroundColor%;

@@ -23,7 +23,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QTimer>
-#include <QUrl>
 #include <QVBoxLayout>
 
 #include "OverviewHeaderFrame.h"
@@ -42,12 +41,16 @@ const char OVERVIEW_HEADER_STYLE_SHEET_TEMPLATE[] =
     "font-family: %fontFamily%;"
   "}"
 
+  // The header sits flush with the rest of the overview — same panel bg —
+  // and is separated from the transaction list below by a single hairline.
+  // The old backgroundColorGray gave it a "secondary surface" look that
+  // clashed with the toolbar/sidebar already using the gray shade.
   "WalletGui--OverviewHeaderFrame {"
     "border: none;"
     "border-bottom: 1px solid %borderColor%;"
-    "background-color: %backgroundColorGray%;"
-    "min-height: 100px;"
-    "max-height: 100px;"
+    "background-color: %panelBackgroundColor%;"
+    "min-height: 140px;"
+    "max-height: 150px;"
   "}"
 
   "WalletGui--OverviewHeaderFrame #m_overviewNetworkColumn {"
@@ -63,6 +66,18 @@ const char OVERVIEW_HEADER_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--OverviewHeaderFrame QLabel[role=\"value\"] {"
     "color: %primaryTextColor%;"
   "}";
+
+// Local/loopback detection for RPC hosts — used to tell a local daemon
+// (127.0.0.1 / localhost / ::1) apart from a remote one.
+bool isLoopbackHost(const QString& _host) {
+  if (_host.isEmpty()) {
+    return false;
+  }
+  const QString lower = _host.toLower();
+  return lower == QLatin1String("127.0.0.1")
+      || lower == QLatin1String("localhost")
+      || lower == QLatin1String("::1");
+}
 
 // "Time ago" formatter for block timestamps.
 QString formatAge(qint64 _secondsAgo) {
@@ -224,19 +239,28 @@ void OverviewHeaderFrame::refreshFromModel() {
                              .data(NodeStateModel::ROLE_CONNECTION_STATE).toBool();
   m_connectionStateLabel->setText(connected ? tr("Connected") : tr("Disconnected"));
 
-  const int nodeType = m_nodeStateModel->index(0, NodeStateModel::COLUMN_NODE_TYPE)
-                           .data(NodeStateModel::ROLE_NODE_TYPE).toInt();
+  // Node label: NodeType only tells us IN_PROCESS vs RPC. In AUTO mode the
+  // adapter tries a local RPC daemon first and falls back to the built-in
+  // node, so "RPC on 127.0.0.1" needs to be labelled "Local daemon" rather
+  // than "Remote RPC". Inspect the live host, not Settings::getRemoteRpcUrl()
+  // (which only holds the user's remote preference, not the actual target).
+  INodeAdapter* nodeAdapter = m_cryptoNoteAdapter != nullptr ? m_cryptoNoteAdapter->getNodeAdapter() : nullptr;
+  const NodeType nodeType = nodeAdapter != nullptr ? nodeAdapter->getNodeType() : NodeType::UNKNOWN;
   QString nodeDescription;
-  if (nodeType == static_cast<int>(NodeType::IN_PROCESS)) {
-    nodeDescription = tr("Local (embedded)");
-  } else {
-    // For RPC, show the host from settings if possible.
-    const QUrl url = Settings::instance().getRemoteRpcUrl();
-    if (!url.host().isEmpty()) {
-      nodeDescription = tr("Remote RPC: %1").arg(url.host());
+  if (nodeType == NodeType::IN_PROCESS) {
+    nodeDescription = tr("Built-in node");
+  } else if (nodeType == NodeType::RPC && nodeAdapter != nullptr) {
+    const QString host = nodeAdapter->getNodeHost();
+    const quint16 port = nodeAdapter->getNodePort();
+    if (isLoopbackHost(host)) {
+      nodeDescription = port != 0 ? tr("Local daemon (%1:%2)").arg(host).arg(port) : tr("Local daemon");
+    } else if (!host.isEmpty()) {
+      nodeDescription = port != 0 ? tr("Remote RPC (%1:%2)").arg(host).arg(port) : tr("Remote RPC (%1)").arg(host);
     } else {
       nodeDescription = tr("Remote RPC");
     }
+  } else {
+    nodeDescription = tr("Unknown");
   }
   m_nodeTypeLabel->setText(nodeDescription);
 
@@ -244,34 +268,53 @@ void OverviewHeaderFrame::refreshFromModel() {
                             .data(NodeStateModel::ROLE_PEER_COUNT).toULongLong();
   m_peerCountLabel->setText(QString::number(peers));
 
-  const QString hashrate = m_nodeStateModel->index(0, NodeStateModel::COLUMN_NETWORK_HASHRATE)
-                               .data(Qt::DisplayRole).toString();
-  m_networkHashrateLabel->setText(hashrate.isEmpty() ? tr("—") : hashrate);
-
   // --- Blockchain ---
-  const quint64 local = m_nodeStateModel->index(0, NodeStateModel::COLUMN_LOCAL_BLOCK_COUNT)
-                            .data(NodeStateModel::ROLE_LOCAL_BLOCK_COUNT).toULongLong();
-  const quint64 network = m_nodeStateModel->index(0, NodeStateModel::COLUMN_KNOWN_BLOCK_COUNT)
-                              .data(NodeStateModel::ROLE_KNOWN_BLOCK_COUNT).toULongLong();
-  if (network > local && network > 0) {
-    m_heightLabel->setText(tr("%1 / %2 (syncing)").arg(local).arg(network));
+  // Pull the last block info straight from the adapter rather than the model.
+  // The model's cached BlockHeaderInfo only refreshes when the node emits
+  // localBlockchainUpdated (i.e. on new blocks); for an already-synced
+  // built-in node opened on a quiet chain tip, that signal never fires and
+  // the cached difficulty/timestamp read from before init completes can be
+  // empty. Hitting the adapter here guarantees fresh numbers on every tick.
+  CryptoNote::BlockHeaderInfo lastBlock{};
+  if (nodeAdapter != nullptr) {
+    lastBlock = nodeAdapter->getLastLocalBlockInfo();
+  }
+  const quint64 localTop = static_cast<quint64>(lastBlock.index);
+  const quint64 knownCount = m_nodeStateModel->index(0, NodeStateModel::COLUMN_KNOWN_BLOCK_COUNT)
+                                 .data(NodeStateModel::ROLE_KNOWN_BLOCK_COUNT).toULongLong();
+  // knownCount is count (genesis-inclusive); top index is count - 1.
+  const quint64 networkTop = knownCount > 0 ? knownCount - 1 : 0;
+  if (networkTop > localTop && knownCount > 0) {
+    m_heightLabel->setText(tr("%1 / %2 (syncing)").arg(localTop).arg(networkTop));
   } else {
-    m_heightLabel->setText(QString::number(local));
+    m_heightLabel->setText(QString::number(localTop));
   }
 
-  const QString difficulty = m_nodeStateModel->index(0, NodeStateModel::COLUMN_LAST_LOCAL_BLOCK_DIFFICULTY)
-                                 .data(Qt::DisplayRole).toString();
-  m_difficultyLabel->setText(difficulty.isEmpty() ? tr("—") : difficulty);
+  const quint64 difficulty = static_cast<quint64>(lastBlock.difficulty);
+  m_difficultyLabel->setText(difficulty == 0 ? tr("—") : QString::number(difficulty));
+
+  // Hashrate = difficulty / blockTimeTargetSeconds. Format with SI prefix.
+  const quint64 targetSeconds = m_cryptoNoteAdapter != nullptr
+      ? qMax<quint64>(1, m_cryptoNoteAdapter->getTargetTime()) : 1;
+  const quint64 hashrate = difficulty / targetSeconds;
+  m_networkHashrateLabel->setText(hashrate == 0 ? tr("—") : NodeStateModel::formatHashRate(hashrate));
 
   refreshLastBlockAge();
 }
 
 void OverviewHeaderFrame::refreshLastBlockAge() {
-  if (m_lastBlockAgeLabel == nullptr || m_nodeStateModel == nullptr) {
+  if (m_lastBlockAgeLabel == nullptr) {
     return;
   }
-  const quint64 ts = m_nodeStateModel->index(0, NodeStateModel::COLUMN_LAST_LOCAL_BLOCK_TIMESTAMP)
-                         .data(NodeStateModel::ROLE_LAST_LOCAL_BLOCK_TIMESTAMP).toULongLong();
+  // Poll the adapter rather than the model cache — same rationale as in
+  // refreshFromModel(): on a quiet tip the model can hold a zero timestamp
+  // because localBlockchainUpdated() only fires on new blocks.
+  INodeAdapter* nodeAdapter = m_cryptoNoteAdapter != nullptr ? m_cryptoNoteAdapter->getNodeAdapter() : nullptr;
+  if (nodeAdapter == nullptr) {
+    m_lastBlockAgeLabel->setText(tr("Unknown"));
+    return;
+  }
+  const quint64 ts = static_cast<quint64>(nodeAdapter->getLastLocalBlockInfo().timestamp);
   if (ts == 0) {
     m_lastBlockAgeLabel->setText(tr("Unknown"));
     return;

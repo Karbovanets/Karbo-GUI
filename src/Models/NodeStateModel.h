@@ -65,6 +65,11 @@ public:
   Q_SLOT virtual void cryptoNoteAdapterInitCompleted(int _status) override;
   Q_SLOT virtual void cryptoNoteAdapterDeinitCompleted() override;
 
+  // Exposed so callers that compute hashrate off-model (e.g. OverviewHeaderFrame
+  // which pulls BlockHeaderInfo straight from the adapter to avoid stale cache)
+  // can share the same "X.YYY kH/s" formatting.
+  static QString formatHashRate(quint64 _hashRate);
+
 private:
   ICryptoNoteAdapter* m_cryptoNoteAdapter;
   const int m_columnCount;
@@ -77,7 +82,6 @@ private:
   QVariant getDisplayRole(const QModelIndex& _index) const;
   QVariant getUserRole(int _role) const;
   void reset();
-  static QString formatHashRate(quint64 _hashRate);
 };
 
 }

@@ -53,8 +53,8 @@ const char OVERVIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--OverviewFrame #m_newsFrame {"
-    "min-height: 130px;"
-    "max-height: 130px;"
+    "min-height: 100px;"
+    "max-height: 100px;"
     "border: none;"
     "border-top: 1px solid %borderColor%;"
     "background-color: %backgroundColorGray%;"
