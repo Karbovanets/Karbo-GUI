@@ -44,7 +44,8 @@ public:
 
   void setBalances(const QString& _unlockedFormatted, quint64 _unlockedRaw,
                    const QString& _pendingFormatted, quint64 _pendingRaw,
-                   const QString& _totalFormatted, quint64 _totalRaw);
+                   const QString& _totalFormatted, quint64 _totalRaw,
+                   const QString& _lockedFormatted);
 
   bool isPrimary() const;
   void setIsPrimary(bool _primary);
@@ -72,6 +73,7 @@ private:
   QLabel* m_labelLabel;
   QLabel* m_addressLabel;
   QLabel* m_availableRow;
+  QLabel* m_lockedRow;
   QLabel* m_pendingRow;
   QLabel* m_totalRow;
   QToolButton* m_copyButton;

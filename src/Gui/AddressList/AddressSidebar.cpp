@@ -201,19 +201,23 @@ void AddressSidebar::updateCardAt(int _row) {
   card->setLabel(label);
   card->setIsPrimary(_row == 0);
 
+  const quint64 locked = (total > unlocked) ? (total - unlocked) : 0;
   QString unlockedText;
   QString pendingText;
   QString totalText;
+  QString lockedText;
   if (m_cryptoNoteAdapter != nullptr) {
     unlockedText = m_cryptoNoteAdapter->formatUnsignedAmount(unlocked);
     pendingText = m_cryptoNoteAdapter->formatUnsignedAmount(pending);
     totalText = m_cryptoNoteAdapter->formatUnsignedAmount(total);
+    lockedText = m_cryptoNoteAdapter->formatUnsignedAmount(locked);
   } else {
     unlockedText = QString::number(unlocked);
     pendingText = QString::number(pending);
     totalText = QString::number(total);
+    lockedText = QString::number(locked);
   }
-  card->setBalances(unlockedText, unlocked, pendingText, pending, totalText, total);
+  card->setBalances(unlockedText, unlocked, pendingText, pending, totalText, total, lockedText);
 }
 
 void AddressSidebar::bindCardSignals(AddressCard* _card, int _row) {

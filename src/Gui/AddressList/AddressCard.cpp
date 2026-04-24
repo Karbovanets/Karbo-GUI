@@ -34,7 +34,7 @@ namespace WalletGui {
 
 AddressCard::AddressCard(QWidget* _parent) : QFrame(_parent),
   m_labelLabel(nullptr), m_addressLabel(nullptr),
-  m_availableRow(nullptr), m_pendingRow(nullptr), m_totalRow(nullptr),
+  m_availableRow(nullptr), m_lockedRow(nullptr), m_pendingRow(nullptr), m_totalRow(nullptr),
   m_copyButton(nullptr), m_qrButton(nullptr), m_advancedButton(nullptr),
   m_advancedMenu(nullptr),
   m_renameAction(nullptr), m_showKeysAction(nullptr), m_exportTrackingKeyAction(nullptr),
@@ -72,13 +72,17 @@ void AddressCard::setLabel(const QString& _label) {
 
 void AddressCard::setBalances(const QString& _unlockedFormatted, quint64 _unlockedRaw,
                               const QString& _pendingFormatted, quint64 _pendingRaw,
-                              const QString& _totalFormatted, quint64 _totalRaw) {
+                              const QString& _totalFormatted, quint64 _totalRaw,
+                              const QString& _lockedFormatted) {
   m_totalRow->setText(tr("Total: %1").arg(_totalFormatted));
-  // Show Available only when some of the total is locked (unspendable right now).
-  // When total == unlocked there's nothing to disambiguate, so Total alone is enough.
+  // When some of the total is locked (unspendable right now) show both Available
+  // and Locked together so the user doesn't have to do the subtraction mentally.
+  // When total == unlocked there's nothing to disambiguate — Total alone suffices.
   const bool hasLocked = _totalRaw > _unlockedRaw;
   m_availableRow->setText(tr("Available: %1").arg(_unlockedFormatted));
   m_availableRow->setVisible(hasLocked);
+  m_lockedRow->setText(tr("Locked: %1").arg(_lockedFormatted));
+  m_lockedRow->setVisible(hasLocked);
   m_pendingRow->setText(tr("Pending: %1").arg(_pendingFormatted));
   m_pendingRow->setVisible(_pendingRaw > 0);
 }
@@ -146,6 +150,8 @@ void AddressCard::buildUi() {
 
   m_availableRow = new QLabel(this);
   m_availableRow->setObjectName("m_addressCardAvailable");
+  m_lockedRow = new QLabel(this);
+  m_lockedRow->setObjectName("m_addressCardLocked");
   m_pendingRow = new QLabel(this);
   m_pendingRow->setObjectName("m_addressCardPending");
   m_totalRow = new QLabel(this);
@@ -194,6 +200,7 @@ void AddressCard::buildUi() {
   root->addWidget(m_addressLabel);
   root->addWidget(m_totalRow);
   root->addWidget(m_availableRow);
+  root->addWidget(m_lockedRow);
   root->addWidget(m_pendingRow);
   root->addLayout(buttonRow);
 
