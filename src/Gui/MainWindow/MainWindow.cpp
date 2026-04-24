@@ -106,7 +106,7 @@ namespace {
 
 const int MAX_RECENT_WALLET_COUNT = 10;
 const char COMMUNITY_FORUM_URL[] = "https://forum.karbo.io";
-const char REPORT_ISSUE_URL[] = "https://karbo.io/contact";
+const char REPORT_ISSUE_URL[] = "https://karbo.org";
 
 const char DONATION_URL_DONATION_TAG[] = "donation";
 const char DONATION_URL_LABEL_TAG[] = "label";
@@ -1279,7 +1279,7 @@ void MainWindow::buildAddressSidebar() {
     toolLayout->insertWidget(0, m_addressSidebar, 1);
   }
 
-  m_ui->m_toolFrame->setMinimumWidth(240);
+  m_ui->m_toolFrame->setMinimumWidth(280);
 
   connect(m_addressSidebar, &AddressSidebar::addAddressRequestedSignal, this, &MainWindow::createAddressRequested);
   connect(m_addressSidebar, &AddressSidebar::copyAddressRequestedSignal, this, &MainWindow::copyAddressFromCard);

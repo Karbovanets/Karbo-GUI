@@ -22,8 +22,10 @@
 #include <QClipboard>
 #include <QPainter>
 #include <QPropertyAnimation>
+#include <QToolButton>
 
 #include "TransactionsFrame.h"
+#include "Application/CurrentAddressState.h"
 #include "Settings/Settings.h"
 #include "Gui/Common/RightAlignmentColumnDelegate.h"
 #include "Gui/Common/NewTransactionDelegate.h"
@@ -65,6 +67,29 @@ const char TRANSACTIONS_FRAME_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--TransactionsFrame > #m_filterFrame > #m_filterHashFrame > QLineEdit,"
   "WalletGui--TransactionsFrame > #m_filterFrame > #m_filterAddressFrame > QLineEdit {"
     "font-size: %fontSizeNormal%;"
+  "}"
+
+  "WalletGui--TransactionsFrame #m_scopeStatusLabel {"
+    "color: %fontColorGray%;"
+    "font-size: %fontSizeTiny%;"
+    "margin-left: 10px;"
+    "margin-top: 6px;"
+  "}"
+
+  "WalletGui--TransactionsFrame #m_scopeToggleButton {"
+    "background: transparent;"
+    "border: none;"
+    "color: %fontColorBlueNormal%;"
+    "font-size: %fontSizeSmall%;"
+    "margin-top: 2px;"
+    "padding: 0 6px;"
+  "}"
+  "WalletGui--TransactionsFrame #m_scopeToggleButton:hover {"
+    "color: %fontColorBlueHover%;"
+  "}"
+  "WalletGui--TransactionsFrame #m_scopeToggleButton:pressed,"
+  "WalletGui--TransactionsFrame #m_scopeToggleButton:checked {"
+    "color: %fontColorBluePressed%;"
   "}";
 
 const quint32 FILTER_FRAME_HEIGHT = 70;
@@ -73,7 +98,9 @@ const quint32 FILTER_FRAME_HEIGHT = 70;
 
 TransactionsFrame::TransactionsFrame(QWidget* _parent) : QFrame(_parent), m_ui(new Ui::TransactionsFrame),
   m_mainWindow(nullptr), m_transactionsModel(nullptr), m_walletStateModel(nullptr), m_filterByAgeModel(nullptr),
-  m_filterByPeriodModel(nullptr), m_filterByHashModel(nullptr), m_filterByAddressModel(nullptr), m_animation(new QPropertyAnimation(this)) {
+  m_filterByPeriodModel(nullptr), m_filterByHashModel(nullptr), m_filterByAddressModel(nullptr),
+  m_animation(new QPropertyAnimation(this)), m_scopeStatusLabel(nullptr), m_scopeToggleButton(nullptr),
+  m_showAllAddresses(false) {
   m_ui->setupUi(this);
   m_ui->m_filterFrame->hide();
   m_ui->m_filterPeriodFrame->hide();
@@ -81,6 +108,41 @@ TransactionsFrame::TransactionsFrame(QWidget* _parent) : QFrame(_parent), m_ui(n
   m_animation->setPropertyName("maximumHeight");
   m_animation->setDuration(200);
   m_ui->m_resetFilterButton->hide();
+
+  // Collapse legacy hash/address filter UI into a single unified search field.
+  // The address filter row is no longer user-exposed; scoping by address is driven
+  // by the currently-selected address in the sidebar (see setCurrentAddressState).
+  m_ui->m_filterAddressFrame->hide();
+  m_ui->m_filterHashTextLabel->setText(tr("SEARCH"));
+  m_ui->m_filterHashEdit->setPlaceholderText(tr("hash, payment ID or address…"));
+
+  // A small status label next to the "Transactions" heading tells the user what
+  // scope they are currently viewing ("...for selected address only" vs. "...for
+  // all addresses"). The toggle button on the right advertises the OTHER scope
+  // — i.e. clicking it switches to the state whose name it shows.
+  m_scopeStatusLabel = new QLabel(this);
+  m_scopeStatusLabel->setObjectName("m_scopeStatusLabel");
+
+  m_scopeToggleButton = new QToolButton(this);
+  m_scopeToggleButton->setObjectName("m_scopeToggleButton");
+  m_scopeToggleButton->setCheckable(true);
+  m_scopeToggleButton->setAutoRaise(true);
+  m_scopeToggleButton->setCursor(Qt::PointingHandCursor);
+  m_scopeToggleButton->setFocusPolicy(Qt::NoFocus);
+  m_scopeToggleButton->setToolTip(tr("Switch between showing only the currently selected address "
+                                     "and showing transactions from all addresses in this wallet"));
+  connect(m_scopeToggleButton, &QToolButton::toggled, this, &TransactionsFrame::scopeToggled);
+
+  // The header row layout ("horizontalLayout_2" in TransactionsFrame.ui) holds
+  // the "Transactions" label, a stretch spacer, and the Reset / Show-filter buttons.
+  // Insert the status label right after the heading, and the toggle button just
+  // before the Reset / Show-filter pair on the right.
+  if (QHBoxLayout* headerLayout = findChild<QHBoxLayout*>("horizontalLayout_2")) {
+    headerLayout->insertWidget(1, m_scopeStatusLabel);
+    const int insertAt = headerLayout->count() >= 2 ? headerLayout->count() - 2 : headerLayout->count();
+    headerLayout->insertWidget(insertAt, m_scopeToggleButton);
+  }
+
   setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(TRANSACTIONS_FRAME_STYLE_SHEET_TEMPLATE));
   connect(m_animation, &QPropertyAnimation::finished, this, [this] {
     m_ui->m_filterButton->setEnabled(true);
@@ -120,6 +182,19 @@ void TransactionsFrame::setWalletStateModel(QAbstractItemModel* _model) {
 
 void TransactionsFrame::setTransactionsModel(QAbstractItemModel* _model) {
   m_transactionsModel = _model;
+}
+
+void TransactionsFrame::setCurrentAddressState(CurrentAddressState* _currentAddressState) {
+  if (!m_currentAddressState.isNull()) {
+    disconnect(m_currentAddressState.data(), &CurrentAddressState::currentAddressChangedSignal,
+               this, &TransactionsFrame::currentAddressChanged);
+  }
+  m_currentAddressState = _currentAddressState;
+  if (!m_currentAddressState.isNull()) {
+    connect(m_currentAddressState.data(), &CurrentAddressState::currentAddressChangedSignal,
+            this, &TransactionsFrame::currentAddressChanged);
+  }
+  applyAddressScope();
 }
 
 void TransactionsFrame::setSortedTransactionsModel(QAbstractItemModel* _model) {
@@ -163,12 +238,14 @@ void TransactionsFrame::setSortedTransactionsModel(QAbstractItemModel* _model) {
   m_ui->m_transactionsView->horizontalHeader()->resizeSection(timeColumn, 180);
   m_ui->m_transactionsView->horizontalHeader()->resizeSection(hashColumn, 180);
   m_ui->m_transactionsView->horizontalHeader()->resizeSection(amountColumn, 200);
-  m_ui->m_transactionsView->horizontalHeader()->resizeSection(transfersColumn, 5);
-  m_ui->m_transactionsView->horizontalHeader()->resizeSection(showTransfersColumn, 5);
+  m_ui->m_transactionsView->horizontalHeader()->resizeSection(transfersColumn, 10);
+  m_ui->m_transactionsView->horizontalHeader()->resizeSection(showTransfersColumn, 10);
   QDateTime currentDateTime = QDateTime::currentDateTime();
   m_ui->m_filterBeginDtedit->setDateTime(currentDateTime.addDays(-1));
   m_ui->m_filterEndDtedit->setDateTime(currentDateTime);
   connect(transactionsModel, &QAbstractItemModel::rowsInserted, this, &TransactionsFrame::rowsInserted);
+
+  applyAddressScope();
 }
 
 void TransactionsFrame::exportToCsv() {
@@ -237,7 +314,45 @@ void TransactionsFrame::filterHashChanged(const QString& _hash) {
 }
 
 void TransactionsFrame::filterAddressChanged(const QString& _hash) {
-  QString address = m_ui->m_filterAddressEdit->text().trimmed();
+  // The legacy "ADDRESS" filter field is no longer shown; scoping by address is
+  // driven by the current-address selection (see applyAddressScope). This slot is
+  // kept because the .ui file still connects m_filterAddressEdit->textChanged to it.
+  Q_UNUSED(_hash);
+}
+
+void TransactionsFrame::scopeToggled(bool _showAll) {
+  m_showAllAddresses = _showAll;
+  applyAddressScope();
+}
+
+void TransactionsFrame::currentAddressChanged(quintptr _index, const QString& _address) {
+  Q_UNUSED(_index);
+  Q_UNUSED(_address);
+  applyAddressScope();
+}
+
+void TransactionsFrame::applyAddressScope() {
+  // Refresh the status label and the toggle button so they always reflect the
+  // current scope. The button's label advertises the OTHER scope — clicking it
+  // switches to what it says.
+  if (m_scopeStatusLabel != nullptr) {
+    m_scopeStatusLabel->setText(m_showAllAddresses
+        ? tr("Showing transactions for all addresses")
+        : tr("Showing for selected address only"));
+  }
+  if (m_scopeToggleButton != nullptr) {
+    QSignalBlocker blocker(m_scopeToggleButton);
+    m_scopeToggleButton->setChecked(m_showAllAddresses);
+    m_scopeToggleButton->setText(m_showAllAddresses ? tr("Selected address") : tr("All addresses"));
+  }
+
+  if (m_filterByAddressModel == nullptr) {
+    return;
+  }
+  QString address;
+  if (!m_showAllAddresses && !m_currentAddressState.isNull()) {
+    address = m_currentAddressState->currentAddress();
+  }
   static_cast<FilteredByAddressTransactionsModel*>(m_filterByAddressModel)->setFilter(address);
 }
 
@@ -283,6 +398,11 @@ void TransactionsFrame::resetFilter() {
   m_ui->m_filterEndDtedit->setDateTime(currentDateTime);
   m_ui->m_filterHashEdit->clear();
   m_ui->m_filterAddressEdit->clear();
+  if (m_scopeToggleButton != nullptr) {
+    m_scopeToggleButton->setChecked(false);
+  }
+  m_showAllAddresses = false;
+  applyAddressScope();
 }
 
 void TransactionsFrame::onCustomContextMenu(const QPoint &point) {

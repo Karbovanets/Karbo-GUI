@@ -19,38 +19,61 @@
 #include "FilteredByHashTransactionsModel.h"
 #include "Models/TransactionsModel.h"
 
+Q_DECLARE_METATYPE(QList<CryptoNote::WalletTransfer>)
+
 namespace WalletGui {
 
 FilteredByHashTransactionsModel::FilteredByHashTransactionsModel(QObject* _parent) : QSortFilterProxyModel(_parent),
-  m_hash() {
+  m_query() {
   setDynamicSortFilter(true);
-  setFilterRole(TransactionsModel::ROLE_HASH);
 }
 
 FilteredByHashTransactionsModel::~FilteredByHashTransactionsModel() {
 }
 
-void FilteredByHashTransactionsModel::setFilter(const QString& _hash) {
-  if (m_hash.compare(_hash, Qt::CaseInsensitive)) {
-    if (_hash.isEmpty()) {
-      beginResetModel();
-      m_hash = _hash;
-      endResetModel();
-    } else {
-      m_hash = _hash;
-      invalidateFilter();
-    }
+void FilteredByHashTransactionsModel::setFilter(const QString& _query) {
+  if (m_query.compare(_query, Qt::CaseInsensitive) == 0) {
+    return;
+  }
+  if (_query.isEmpty()) {
+    beginResetModel();
+    m_query = _query;
+    endResetModel();
+  } else {
+    m_query = _query;
+    invalidateFilter();
   }
 }
 
 bool FilteredByHashTransactionsModel::filterAcceptsRow(int _sourceRow, const QModelIndex& _sourceParent) const {
-  if(m_hash.isEmpty()) {
+  if (m_query.isEmpty()) {
     return true;
   }
 
   QModelIndex index = sourceModel()->index(_sourceRow, 0, _sourceParent);
-  QString transactionHash = index.data(TransactionsModel::ROLE_HASH).toByteArray().toHex();
-  return transactionHash.startsWith(m_hash, Qt::CaseInsensitive);
+
+  // Hash (hex) prefix match.
+  const QString transactionHash = index.data(TransactionsModel::ROLE_HASH).toByteArray().toHex();
+  if (transactionHash.startsWith(m_query, Qt::CaseInsensitive)) {
+    return true;
+  }
+
+  // Payment ID prefix match.
+  const QString paymentId = index.data(TransactionsModel::ROLE_PAYMENT_ID).toString();
+  if (!paymentId.isEmpty() && paymentId.startsWith(m_query, Qt::CaseInsensitive)) {
+    return true;
+  }
+
+  // Address substring match across any transfer in this transaction.
+  const QList<CryptoNote::WalletTransfer> transfers =
+      index.data(TransactionsModel::ROLE_TRANSFERS).value<QList<CryptoNote::WalletTransfer>>();
+  for (const CryptoNote::WalletTransfer& transfer : transfers) {
+    if (QString::fromStdString(transfer.address).contains(m_query, Qt::CaseInsensitive)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 }
