@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <QAction>
 #include <QClipboard>
 #include <QDataWidgetMapper>
 
@@ -87,9 +88,12 @@ void OverviewFrame::setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter)
 
 void OverviewFrame::setMainWindow(QWidget* _mainWindow) {
   m_mainWindow = _mainWindow;
-  QList<QPushButton*> buttonList = m_mainWindow->findChildren<QPushButton*>("m_transactionsButton");
-  Q_ASSERT(!buttonList.isEmpty());
-  connect(m_ui->m_allTransactionsButton, &WalletTinyLinkLikeButton::clicked, buttonList.first(), &QPushButton::click);
+  // "All transactions" on the overview links to the History tab. The nav is a
+  // QAction on the top toolbar now, not the legacy QPushButton in the sidebar.
+  QAction* historyNavAction = m_mainWindow->findChild<QAction*>("m_historyNavAction");
+  Q_ASSERT(historyNavAction != nullptr);
+  connect(m_ui->m_allTransactionsButton, &WalletTinyLinkLikeButton::clicked, historyNavAction,
+    [historyNavAction]() { historyNavAction->setChecked(true); });
   m_ui->m_overviewHeaderFrame->setMainWindow(m_mainWindow);
 }
 

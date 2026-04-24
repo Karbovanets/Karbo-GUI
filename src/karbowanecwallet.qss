@@ -279,150 +279,12 @@ QCalendarWidget QMenu {
 }
 
 
-#MainWindow > #centralwidget > #m_headerFrame {
-  background-color: %headerBackgroundColor%;
-  border: none;
-  border-bottom: 1px solid %headerBorderColor%;
-  min-height: 105px;
-  max-height: 105px;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame #m_balanceTextLabel {
-  font-size: %fontSizeLarge%;
-  font-weight: bold;
-  color: %balanceFontColor%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame #m_balanceLabel {
-  font-size: %fontSizeHuge%;
-  color: %balanceFontColor%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame > #m_walletFrame > #m_addressLabel {
-  font-size: %fontSizeLarge%;
-  color: %addressFontColor%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame > #m_walletFrame > #m_copyAddressLabel {
-  font-size: %fontSizeTiny%;
-  color: %fontColorBlueHover%;
-}
-
 #MainWindow > #centralwidget > #m_toolFrame {
   background-color: %toolButtonBackgroundColorNormal%;
   border: none;
   border-right: 1px solid %toolBarBorderColor%;
   min-width: 200px;
   max-width: 200px;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > QPushButton {
-  min-height: 41px;
-  max-height: 41px;
-  background-color: transparent;
-  border: none;
-  border-top: 15px solid transparent;
-  border-bottom: 15px solid transparent;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  padding-left: 40px;
-  padding-right: 0px;
-  color: %toolButtonFontColorNormal%;
-  font-size: %fontSizeSmall%;
-  border-radius: 0px;
-  background-position: left center;
-  background-repeat: no-repeat;
-  text-align: left;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > QPushButton:disabled {
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame > #m_walletFrame > #m_addressLabel {
-  font-size: %fontSizeLarge%;
-  color: %addressFontColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > QPushButton:hover {
-  background-color: %toolButtonBackgroundColorHover%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > QPushButton:checked {
-  background-color: %toolButtonBackgroundColorPressed%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_overviewButton {
-  background-image: url(:icons/overview);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_transactionsButton {
-  background-image: url(:icons/transactions);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_blockExplorerButton {
-  background-image: url(:icons/explorer);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_receiveButton {
-  background-image: url(:icons/receive);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_addressBookButton {
-  background-image: url(:icons/address_book);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_sendButton {
-  background-image: url(:icons/send);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_overviewButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_transactionsButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_blockExplorerButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_receiveButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_addressBookButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_sendButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_overviewButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_transactionsButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_blockExplorerButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_addressBookButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_sendButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
 }
 
 
@@ -436,11 +298,6 @@ QCalendarWidget QMenu {
 
 #MainWindow > #centralwidget > #m_syncProgress::chunk {
   background-color: %backgroundColorBlueNormal%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame > #m_balanceFrame > #m_balanceCopyLabel {
-  font-size: %fontSizeTiny%;
-  color: %fontColorBlueHover%;
 }
 
 #m_overviewBalanceFrame,

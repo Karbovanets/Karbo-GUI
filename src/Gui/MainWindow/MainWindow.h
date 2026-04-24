@@ -26,10 +26,8 @@
 #include "IWalletAdapter.h"
 
 class QActionGroup;
-class QDataWidgetMapper;
 class QLabel;
 class QSplashScreen;
-class QAbstractButton;
 class QAbstractItemModel;
 class QSessionManager;
 class QToolBar;
@@ -104,8 +102,6 @@ private:
   QList<QAction*> m_recentWalletsActionList;
   QAction* m_addRecipientAction;
   QString m_styleSheetTemplate;
-  QDataWidgetMapper* m_walletStateMapper;
-  QMovie* m_syncMovie;
   QString m_address;
   QAbstractItemModel* m_addressListModel;
   CurrentAddressState* m_currentAddressState;
@@ -166,15 +162,12 @@ private:
   Q_SLOT void importKey();
   Q_SLOT void aboutQt();
   Q_SLOT void about();
-  Q_SLOT void copyAddress();
-  Q_SLOT void copyBalance();
   Q_SLOT void setStartOnLoginEnabled(bool _enable);
   Q_SLOT void setMinimizeToTrayEnabled(bool _enable);
   Q_SLOT void setCloseToTrayEnabled(bool _enable);
   Q_SLOT void showPreferences();
   Q_SLOT void communityForumTriggered();
   Q_SLOT void reportIssueTriggered();
-  Q_SLOT void showQrCode();
   Q_SLOT void showMnemonicSeed();
   Q_SLOT void restoreFromMnemonicSeed();
   Q_SLOT void openPaymentRequestClicked();

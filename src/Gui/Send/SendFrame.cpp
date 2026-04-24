@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <QAction>
 #include <QUrl>
 #include <QBoxLayout>
 #include <QComboBox>
@@ -223,9 +224,13 @@ void SendFrame::setMainWindow(QWidget* _mainWindow) {
     transfer->setMainWindow(_mainWindow);
   }
 
-  QList<QPushButton*> buttonList = m_mainWindow->findChildren<QPushButton*>("m_transactionsButton");
-  Q_ASSERT(!buttonList.isEmpty());
-  connect(this, &SendFrame::showTransactionsFrameSignal, buttonList.first(), &QPushButton::click);
+  // The legacy "transactions" QPushButton has been replaced by the History nav
+  // QAction on the top toolbar. Route the post-send "show transactions" signal
+  // through the action so the exclusive QActionGroup swaps frames correctly.
+  QAction* historyNavAction = m_mainWindow->findChild<QAction*>("m_historyNavAction");
+  Q_ASSERT(historyNavAction != nullptr);
+  connect(this, &SendFrame::showTransactionsFrameSignal, historyNavAction,
+    [historyNavAction]() { historyNavAction->setChecked(true); });
 }
 
 void SendFrame::setWalletStateModel(QAbstractItemModel* _model) {

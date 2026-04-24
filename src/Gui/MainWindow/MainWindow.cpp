@@ -25,7 +25,6 @@
 #include <QPushButton>
 #include <QClipboard>
 #include <QCloseEvent>
-#include <QDataWidgetMapper>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QFrame>
@@ -35,7 +34,6 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMetaMethod>
-#include <QMovie>
 #include <QSessionManager>
 #include <QSystemTrayIcon>
 #include <QToolBar>
@@ -158,8 +156,7 @@ MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManag
   m_addressBookManager(_addressBookManager), m_donationManager(_donationManager),
   m_applicationEventHandler(_applicationEventHandler),
   m_blockChainModel(nullptr), m_transactionPoolModel(nullptr), m_recentWalletsMenu(new QMenu(this)),
-  m_addRecipientAction(new QAction(this)), m_styleSheetTemplate(_styleSheetTemplate), m_walletStateMapper(new QDataWidgetMapper(this)),
-  m_syncMovie(new QMovie(Settings::instance().getCurrentStyle().getWalletSyncGifFile(), QByteArray(), this)),
+  m_addRecipientAction(new QAction(this)), m_styleSheetTemplate(_styleSheetTemplate),
   m_addressListModel(nullptr), m_currentAddressState(nullptr), m_addressSidebar(nullptr),
   m_mainToolBar(nullptr), m_navActionGroup(nullptr),
   m_overviewNavAction(nullptr), m_sendNavAction(nullptr), m_receiveNavAction(nullptr),
@@ -192,7 +189,6 @@ MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManag
   buildAddressSidebar();
   installSidebarBalance();
   rearrangeWalletMenu();
-  m_ui->m_headerFrame->hide();
 
   QList<IWalletUiItem*> uiItems;
   uiItems << m_ui->m_noWalletFrame << m_ui->m_overviewFrame << m_ui->m_sendFrame << m_ui->m_transactionsFrame <<
@@ -224,16 +220,6 @@ MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManag
   }
 
   createRecentWalletMenu();
-  m_ui->m_addressLabel->installEventFilter(this);
-  m_ui->m_balanceLabel->installEventFilter(this);
-  m_walletStateMapper->setModel(m_walletStateModel);
-  m_walletStateMapper->addMapping(m_ui->m_balanceFrame, WalletStateModel::COLUMN_IS_OPEN, "visible");
-  m_walletStateMapper->addMapping(m_ui->m_walletFrame, WalletStateModel::COLUMN_IS_OPEN, "visible");
-  m_walletStateMapper->addMapping(m_ui->m_noWalletLabel, WalletStateModel::COLUMN_IS_CLOSED, "visible");
-  m_walletStateMapper->addMapping(m_ui->m_notEncryptedFrame, WalletStateModel::COLUMN_IS_NOT_ENCRYPTED, "visible");
-  m_walletStateMapper->addMapping(m_ui->m_addressLabel, WalletStateModel::COLUMN_ADDRESS, "text");
-  m_walletStateMapper->addMapping(m_ui->m_balanceLabel, WalletStateModel::COLUMN_TOTAL_SHORT_BALANCE, "text");
-  m_walletStateMapper->setCurrentIndex(0);
 
   m_ui->m_enableBlockchainExplorerAction->setChecked(Settings::instance().isBlockchainExplorerEnabled());
 
@@ -260,7 +246,6 @@ MainWindow::MainWindow(ICryptoNoteAdapter* _cryptoNoteAdapter, IAddressBookManag
   */
   }
 
-  m_ui->m_balanceIconLabel->setPixmap(Settings::instance().getCurrentStyle().getBalanceIcon());
   QActionGroup* themeActionGroup = new QActionGroup(this);
   quintptr styleCount = Settings::instance().getStyleCount();
   for (quintptr i = 0; i < styleCount; ++i) {
@@ -287,12 +272,10 @@ MainWindow::~MainWindow() {
 }
 
 bool MainWindow::eventFilter(QObject* _object, QEvent* _event) {
-  if (_object == m_ui->m_addressLabel && _event->type() == QEvent::MouseButtonRelease) {
-    copyAddress();
-  } else if (_object == m_ui->m_balanceLabel && _event->type() == QEvent::MouseButtonRelease) {
-    copyBalance();
-  }
-
+  Q_UNUSED(_object);
+  Q_UNUSED(_event);
+  // Legacy header address/balance labels were click-to-copy; both have moved
+  // into the sidebar and toolbar, which wire up their own click handlers.
   return false;
 }
 
@@ -309,8 +292,8 @@ void MainWindow::walletOpened() {
   Settings::instance().setRecentWalletList(recentWalletList);
   updateRecentWalletActions();
   if (walletAdapter->isTrackingWallet()) {
-    m_ui->m_sendButton->setEnabled(false);
-    m_ui->m_addressBookButton->setEnabled(false);
+    if (m_sendNavAction != nullptr) m_sendNavAction->setEnabled(false);
+    if (m_contactsNavAction != nullptr) m_contactsNavAction->setEnabled(false);
     m_ui->m_openPaymentRequestAction->setEnabled(false);
     m_ui->m_exportKeyAction->setEnabled(false);
   }
@@ -348,10 +331,6 @@ void MainWindow::walletClosed() {
 
 void MainWindow::passwordChanged() {
   IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
-  if (walletAdapter->isEncrypted()) {
-    m_ui->m_notEncryptedFrame->hide();
-  }
-
   m_ui->m_changePasswordAction->setEnabled(walletAdapter->isEncrypted());
   m_ui->m_encryptWalletAction->setEnabled(!walletAdapter->isEncrypted());
   walletAdapter->save(CryptoNote::WalletSaveLevel::SAVE_ALL, true);
@@ -409,7 +388,7 @@ void MainWindow::urlReceived(const QUrl& _url) {
     dlg.setDonationAddress(label, address);
     dlg.exec();
   } else if (_url.isValid()) {
-    m_ui->m_sendButton->click();
+    if (m_sendNavAction != nullptr) m_sendNavAction->setChecked(true);
   }
 }
 
@@ -461,12 +440,6 @@ void MainWindow::closeEvent(QCloseEvent* _event) {
 }
 
 void MainWindow::setOpenedState() {
-  QList<QAbstractButton*> toolButtons = m_ui->m_toolButtonGroup->buttons();
-  for (const auto& button : toolButtons) {
-    button->setChecked(false);
-    button->setEnabled(true);
-  }
-
   IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
   m_ui->m_backupWalletAction->setEnabled(true);
   m_ui->m_resetAction->setEnabled(true);
@@ -485,9 +458,6 @@ void MainWindow::setOpenedState() {
   m_ui->m_noWalletFrame->hide();
   m_ui->m_overviewFrame->show();
 
-  m_ui->m_overviewButton->setChecked(true);
-  m_ui->m_blockExplorerButton->setEnabled(m_cryptoNoteAdapter->getNodeAdapter()->getBlockChainExplorerAdapter() != nullptr);
-
   if (m_overviewNavAction != nullptr) m_overviewNavAction->setEnabled(true);
   if (m_sendNavAction != nullptr) m_sendNavAction->setEnabled(true);
   if (m_receiveNavAction != nullptr) m_receiveNavAction->setEnabled(true);
@@ -496,25 +466,22 @@ void MainWindow::setOpenedState() {
   if (m_explorerNavAction != nullptr) {
     m_explorerNavAction->setEnabled(m_cryptoNoteAdapter->getNodeAdapter()->getBlockChainExplorerAdapter() != nullptr);
   }
+  if (m_overviewNavAction != nullptr) m_overviewNavAction->setChecked(true);
 
   // The blockchain-explorer toggle used to be restricted to local/embedded nodes,
   // but ProxyRpcNodeWorker also wires up a BlockChainExplorerAdapter when the
   // setting is on, so the feature works over remote RPC too. Always allow toggling.
   m_ui->m_enableBlockchainExplorerAction->setEnabled(true);
-  m_ui->m_receiveButton->setEnabled(true);
 
   if (m_createAddressAction != nullptr) m_createAddressAction->setEnabled(true);
   if (m_importAddressAction != nullptr) m_importAddressAction->setEnabled(true);
 }
 
 void MainWindow::setClosedState() {
-  QList<QAbstractButton*> toolButtons = m_ui->m_toolButtonGroup->buttons();
-  for (const auto& button : toolButtons) {
-    button->setChecked(false);
-    button->setEnabled(false);
+  if (m_overviewNavAction != nullptr) {
+    m_overviewNavAction->setChecked(false);
+    m_overviewNavAction->setEnabled(false);
   }
-
-  if (m_overviewNavAction != nullptr) m_overviewNavAction->setEnabled(false);
   if (m_sendNavAction != nullptr) m_sendNavAction->setEnabled(false);
   if (m_receiveNavAction != nullptr) m_receiveNavAction->setEnabled(false);
   if (m_historyNavAction != nullptr) m_historyNavAction->setEnabled(false);
@@ -554,7 +521,7 @@ void MainWindow::setClosedState() {
 void MainWindow::addRecipientTriggered() {
   RecepientPair recepient_pair = m_addRecipientAction->data().value<RecepientPair>();
   m_ui->m_sendFrame->addRecipient(recepient_pair);
-  m_ui->m_sendButton->click();
+  if (m_sendNavAction != nullptr) m_sendNavAction->setChecked(true);
 }
 
 void MainWindow::commitData(QSessionManager& _manager) {
@@ -568,26 +535,11 @@ void MainWindow::commitData(QSessionManager& _manager) {
 }
 
 void MainWindow::walletStateModelDataChanged(const QModelIndex& _topLeft, const QModelIndex& _bottomRight, const QVector<int>& _roles) {
+  Q_UNUSED(_bottomRight);
+  Q_UNUSED(_roles);
   if (_topLeft.column() == WalletStateModel::COLUMN_ABOUT_TO_BE_SYNCHRONIZED) {
-    bool walletAboutToBeSynchronized = _topLeft.data().toBool();
-    if (!walletAboutToBeSynchronized) {
-      //m_walletStateMapper->removeMapping(m_ui->m_balanceLabel);
-      //m_ui->m_balanceLabel->setMovie(m_syncMovie);
-      //m_syncMovie->start();
-      //m_ui->m_balanceLabel->setCursor(Qt::ArrowCursor);
-      //m_ui->m_balanceLabel->removeEventFilter(this);
-      //m_ui->m_balanceLabel->setToolTip(QString());
-      m_ui->m_getBalanceProofAction->setEnabled(true);
-  } else {
-      //m_syncMovie->stop();
-      //m_ui->m_balanceLabel->setMovie(nullptr);
-      //m_walletStateMapper->addMapping(m_ui->m_balanceLabel, WalletStateModel::COLUMN_TOTAL_SHORT_BALANCE, "text");
-      //m_walletStateMapper->revert();
-      //m_ui->m_balanceLabel->setCursor(Qt::PointingHandCursor);
-      //m_ui->m_balanceLabel->installEventFilter(this);
-      //m_ui->m_balanceLabel->setToolTip(tr("Click to copy"));
-      m_ui->m_getBalanceProofAction->setEnabled(false);
-    }
+    const bool walletAboutToBeSynchronized = _topLeft.data().toBool();
+    m_ui->m_getBalanceProofAction->setEnabled(!walletAboutToBeSynchronized);
   }
 }
 
@@ -646,10 +598,6 @@ void MainWindow::themeChanged() {
   }
 
   qApp->setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(m_styleSheetTemplate));
-  m_ui->m_balanceIconLabel->setPixmap(Settings::instance().getCurrentStyle().getBalanceIcon());
-  m_syncMovie->stop();
-  m_syncMovie->setFileName(Settings::instance().getCurrentStyle().getWalletSyncGifFile());
-  m_syncMovie->start();
   QList<IWalletUiItem*> uiItems;
   uiItems << m_ui->m_noWalletFrame << m_ui->m_overviewFrame << m_ui->m_sendFrame << m_ui->m_transactionsFrame <<
     m_ui->m_blockExplorerFrame <<  m_ui->m_receiveFrame << m_ui->m_addressBookFrame << m_ui->statusBar;
@@ -1086,7 +1034,7 @@ void MainWindow::openPaymentRequestClicked() {
       return;
     }
     m_ui->m_sendFrame->urlReceived(request);
-    m_ui->m_sendButton->click();
+    if (m_sendNavAction != nullptr) m_sendNavAction->setChecked(true);
   }
 }
 
@@ -1097,18 +1045,6 @@ void MainWindow::aboutQt() {
 void MainWindow::about() {
   AboutDialog dlg(this);
   dlg.exec();
-}
-
-void MainWindow::copyAddress() {
-  QApplication::clipboard()->setText(m_walletStateModel->index(0, WalletStateModel::COLUMN_ADDRESS).data().toString());
-  m_ui->m_copyAddressLabel->start();
-}
-
-void MainWindow::copyBalance() {
-  QString balanceString = m_walletStateModel->index(0, WalletStateModel::COLUMN_TOTAL_BALANCE).data().toString();
-  balanceString.remove(',');
-  QApplication::clipboard()->setText(balanceString);
-  m_ui->m_balanceCopyLabel->start();
 }
 
 void MainWindow::setStartOnLoginEnabled(bool _enable) {
@@ -1147,11 +1083,6 @@ void MainWindow::showPreferences() {
       Q_EMIT reinitCryptoNoteAdapterSignal();
     }
   }
-}
-
-void MainWindow::showQrCode() {
-  QRCodeDialog dlg(tr("QR Code"), m_walletStateModel->index(0, WalletStateModel::COLUMN_ADDRESS).data().toString(), this);
-  dlg.exec();
 }
 
 void MainWindow::showMnemonicSeed() {
@@ -1229,35 +1160,41 @@ void MainWindow::buildTopNavToolBar() {
   m_navActionGroup = new QActionGroup(this);
   m_navActionGroup->setExclusive(true);
 
+  // Each nav action owns the visibility of one content frame. The QActionGroup
+  // is exclusive, so toggling one on auto-toggles the others off and the
+  // action->frame visibility wiring keeps the right frame on screen.
   struct NavSpec {
     QAction** outAction;
-    QPushButton* button;
+    QFrame* frame;
+    QString objectName;
     QString text;
     QString iconPath;
   };
-  NavSpec specs[] = {
-    { &m_overviewNavAction, m_ui->m_overviewButton,      tr("Overview"), ":icons/overview" },
-    { &m_sendNavAction,     m_ui->m_sendButton,          tr("Send"),     ":icons/send" },
-    { &m_receiveNavAction,  m_ui->m_receiveButton,       tr("Receive"),  ":icons/receive" },
-    { &m_historyNavAction,  m_ui->m_transactionsButton,  tr("History"),  ":icons/transactions" },
-    { &m_contactsNavAction, m_ui->m_addressBookButton,   tr("Contacts"), ":icons/address_book" },
-    { &m_explorerNavAction, m_ui->m_blockExplorerButton, tr("Explorer"), ":icons/explorer" },
+  const NavSpec specs[] = {
+    { &m_overviewNavAction, m_ui->m_overviewFrame,      "m_overviewNavAction", tr("Overview"), ":icons/overview" },
+    { &m_sendNavAction,     m_ui->m_sendFrame,          "m_sendNavAction",     tr("Send"),     ":icons/send" },
+    { &m_receiveNavAction,  m_ui->m_receiveFrame,       "m_receiveNavAction",  tr("Receive"),  ":icons/receive" },
+    { &m_historyNavAction,  m_ui->m_transactionsFrame,  "m_historyNavAction",  tr("History"),  ":icons/transactions" },
+    { &m_contactsNavAction, m_ui->m_addressBookFrame,   "m_contactsNavAction", tr("Contacts"), ":icons/address_book" },
+    { &m_explorerNavAction, m_ui->m_blockExplorerFrame, "m_explorerNavAction", tr("Explorer"), ":icons/explorer" },
   };
   for (const NavSpec& spec : specs) {
     QAction* action = new QAction(spec.text, this);
+    action->setObjectName(spec.objectName);
     action->setCheckable(true);
     action->setIcon(QIcon(spec.iconPath));
     m_navActionGroup->addAction(action);
     m_mainToolBar->addAction(action);
-    QPushButton* button = spec.button;
-    connect(action, &QAction::triggered, this, [button]() { button->setChecked(true); });
-    connect(button, &QPushButton::toggled, action, &QAction::setChecked);
-    action->setEnabled(button->isEnabled());
+    QFrame* frame = spec.frame;
+    connect(action, &QAction::toggled, frame, &QWidget::setVisible);
+    action->setEnabled(false);
     *spec.outAction = action;
   }
 
-  for (QAbstractButton* button : m_ui->m_toolButtonGroup->buttons()) {
-    button->hide();
+  // Route the Payment menu's "Create payment request" straight to the Receive tab.
+  if (m_receiveNavAction != nullptr && m_ui->m_createPaymentRequestAction != nullptr) {
+    connect(m_ui->m_createPaymentRequestAction, &QAction::triggered,
+      m_receiveNavAction, [this]() { m_receiveNavAction->setChecked(true); });
   }
 
   // Right-aligned Locked / Total balance block at the far end of the toolbar.
@@ -1301,16 +1238,7 @@ void MainWindow::buildAddressSidebar() {
 
   QVBoxLayout* toolLayout = qobject_cast<QVBoxLayout*>(m_ui->m_toolFrame->layout());
   if (toolLayout != nullptr) {
-    // Remove any QSpacerItem left over from the legacy .ui layout so the sidebar
-    // (and its "+ New address" button at the bottom) can grow to fill the frame.
-    for (int i = toolLayout->count() - 1; i >= 0; --i) {
-      QLayoutItem* item = toolLayout->itemAt(i);
-      if (item != nullptr && item->spacerItem() != nullptr) {
-        toolLayout->takeAt(i);
-        delete item;
-      }
-    }
-    toolLayout->insertWidget(0, m_addressSidebar, 1);
+    toolLayout->addWidget(m_addressSidebar, 1);
   }
 
   m_ui->m_toolFrame->setMinimumWidth(280);
