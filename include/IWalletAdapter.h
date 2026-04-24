@@ -111,7 +111,7 @@ public:
   virtual bool getTransactionTransfer(quintptr _transactionIndex, quintptr _transferIndex, CryptoNote::WalletTransfer& _transfer) const = 0;
   virtual QByteArray getUserData() const = 0;
   virtual QString getBalanceProof(quint64& _amount, QString& _message) const = 0;
-  virtual QString signMessage(const QString &data) const = 0;
+  virtual QString signMessage(const QString &data, const QString &address) const = 0;
   virtual bool verifyMessage(const QString &data, const QString &address, const QString &signature) const = 0;
 
 
