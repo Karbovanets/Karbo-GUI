@@ -40,6 +40,7 @@ const char HIDE_BUTTON_STYLE_SHEET_TEMPLATE[] =
     "min-width: 5px;"
     "min-height: 5px;"
     "color: #ffffff;"
+    "background-color: #0e073f;"
   "}"
 
   "QPushButton:hover {"

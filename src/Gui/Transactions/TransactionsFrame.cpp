@@ -162,8 +162,9 @@ void TransactionsFrame::setSortedTransactionsModel(QAbstractItemModel* _model) {
   m_ui->m_transactionsView->horizontalHeader()->resizeSection(newTransactionColumn, 6);
   m_ui->m_transactionsView->horizontalHeader()->resizeSection(timeColumn, 180);
   m_ui->m_transactionsView->horizontalHeader()->resizeSection(hashColumn, 180);
-  m_ui->m_transactionsView->horizontalHeader()->resizeSection(amountColumn, 120);
-  m_ui->m_transactionsView->horizontalHeader()->resizeSection(showTransfersColumn, 50);
+  m_ui->m_transactionsView->horizontalHeader()->resizeSection(amountColumn, 200);
+  m_ui->m_transactionsView->horizontalHeader()->resizeSection(transfersColumn, 5);
+  m_ui->m_transactionsView->horizontalHeader()->resizeSection(showTransfersColumn, 5);
   QDateTime currentDateTime = QDateTime::currentDateTime();
   m_ui->m_filterBeginDtedit->setDateTime(currentDateTime.addDays(-1));
   m_ui->m_filterEndDtedit->setDateTime(currentDateTime);
