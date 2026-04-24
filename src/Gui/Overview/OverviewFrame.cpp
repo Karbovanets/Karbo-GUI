@@ -121,7 +121,9 @@ void OverviewFrame::setSortedTransactionsModel(QAbstractItemModel* _model) {
 }
 
 void OverviewFrame::setTransactionPoolModel(QAbstractItemModel* _model) {
-  m_ui->m_overviewHeaderFrame->setTransactionPoolModel(_model);
+  Q_UNUSED(_model);
+  // The overview no longer renders pool stats — sidebar/toolbar owns balance,
+  // pool volume is node-operator trivia. Intentional no-op.
 }
 
 void OverviewFrame::setNodeStateModel(QAbstractItemModel* _model) {
@@ -129,7 +131,8 @@ void OverviewFrame::setNodeStateModel(QAbstractItemModel* _model) {
 }
 
 void OverviewFrame::setWalletStateModel(QAbstractItemModel* _model) {
-  m_ui->m_overviewHeaderFrame->setWalletStateModel(_model);
+  Q_UNUSED(_model);
+  // Balance moved to the sidebar/toolbar; overview header no longer needs it.
 }
 
 void OverviewFrame::settingsUpdated() {
