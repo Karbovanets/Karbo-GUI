@@ -44,7 +44,8 @@ AddressCard::AddressCard(QWidget* _parent) : QFrame(_parent),
   m_sendFromAction(nullptr), m_balanceProofAction(nullptr), m_deleteAction(nullptr),
   m_isPrimary(false), m_isSelected(false) {
   setObjectName("m_addressCard");
-  setFrameShape(QFrame::StyledPanel);
+  setFrameShape(QFrame::NoFrame);
+  setAttribute(Qt::WA_StyledBackground, true);
   setProperty("selected", false);
   setFocusPolicy(Qt::ClickFocus);
   buildUi();

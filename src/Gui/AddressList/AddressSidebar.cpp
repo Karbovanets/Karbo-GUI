@@ -43,18 +43,22 @@ AddressSidebar::AddressSidebar(QWidget* _parent) : QFrame(_parent),
   m_scrollArea->setWidgetResizable(true);
   m_scrollArea->setFrameShape(QFrame::NoFrame);
   m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  m_scrollArea->viewport()->setAutoFillBackground(false);
 
   m_listContainer = new QWidget(m_scrollArea);
   m_listContainer->setObjectName("m_addressSidebarList");
   m_listLayout = new QVBoxLayout(m_listContainer);
-  m_listLayout->setContentsMargins(6, 6, 6, 6);
-  m_listLayout->setSpacing(6);
+  m_listLayout->setContentsMargins(10, 10, 10, 10);
+  m_listLayout->setSpacing(8);
   m_listLayout->addStretch();
   m_scrollArea->setWidget(m_listContainer);
 
   m_addButton = new QPushButton(this);
   m_addButton->setObjectName("m_addAddressButton");
   m_addButton->setText(tr("+ New address"));
+  m_addButton->setFlat(true);
+  m_addButton->setCursor(Qt::PointingHandCursor);
+  m_addButton->setFocusPolicy(Qt::NoFocus);
   connect(m_addButton, &QPushButton::clicked, this, &AddressSidebar::addAddressRequestedSignal);
 
   root->addWidget(m_scrollArea, 1);

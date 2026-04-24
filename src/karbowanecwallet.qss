@@ -568,6 +568,79 @@ QMessageBox > QDialogButtonBox > QPushButton:pressed {
   max-height: 25px;
 }
 
+/* -------- Top navigation toolbar (uses old m_toolFrame palette) -------- */
+
+QToolBar#m_mainToolBar {
+  background-color: %toolButtonBackgroundColorNormal%;
+  border: none;
+  border-bottom: 1px solid %toolBarBorderColor%;
+  spacing: 0;
+  padding: 0;
+}
+
+QToolBar#m_mainToolBar::separator {
+  background: transparent;
+  width: 0;
+}
+
+QToolBar#m_mainToolBar QToolButton {
+  min-height: 41px;
+  max-height: 41px;
+  padding: 0 18px;
+  background-color: transparent;
+  border: none;
+  color: %toolButtonFontColorNormal%;
+  font-size: %fontSizeSmall%;
+  text-align: left;
+}
+
+QToolBar#m_mainToolBar QToolButton:hover {
+  background-color: %toolButtonBackgroundColorHover%;
+}
+
+QToolBar#m_mainToolBar QToolButton:checked {
+  background-color: %toolButtonBackgroundColorPressed%;
+  color: %selectionTextColor%;
+}
+
+QToolBar#m_mainToolBar QToolButton:disabled {
+  color: %toolButtonFontColorDisabled%;
+}
+
+QToolBar#m_mainToolBar QToolButton:checked:disabled {
+  background-color: transparent;
+  color: %toolButtonFontColorDisabled%;
+}
+
+/* -------- Top toolbar balance block -------- */
+
+#m_toolBarBalanceFrame {
+  background-color: transparent;
+  border: none;
+}
+
+#m_toolBarBalanceFrame QLabel {
+  background-color: transparent;
+  color: %balanceFontColor%;
+}
+
+#m_toolBarBalanceFrame #m_lockedCaption,
+#m_toolBarBalanceFrame #m_totalCaption {
+  font-size: %fontSizeTiny%;
+  color: %fontColorGray%;
+}
+
+#m_toolBarBalanceFrame #m_lockedValue {
+  font-size: %fontSizeNormal%;
+  color: %fontColorGray%;
+}
+
+#m_toolBarBalanceFrame #m_totalValue {
+  font-size: %fontSizeLarge%;
+  font-weight: bold;
+  color: %balanceFontColor%;
+}
+
 /* -------- Address sidebar -------- */
 
 #m_addressSidebar {
@@ -584,51 +657,22 @@ QMessageBox > QDialogButtonBox > QPushButton:pressed {
   background-color: transparent;
 }
 
-#m_addressSidebarBalanceFrame {
-  background-color: %headerBackgroundColor%;
-  border: none;
-  border-bottom: 1px solid %headerBorderColor%;
-  min-height: 70px;
-  max-height: 70px;
-}
-
-#m_addressSidebarBalanceFrame QLabel {
-  background-color: transparent;
-  color: %balanceFontColor%;
-}
-
-#m_addressSidebarBalanceFrame #m_totalCaption,
-#m_addressSidebarBalanceFrame #m_lockedCaption {
-  font-size: %fontSizeTiny%;
-  font-weight: bold;
-}
-
-#m_addressSidebarBalanceFrame #m_totalValue {
-  font-size: %fontSizeLarge%;
-  font-weight: bold;
-}
-
-#m_addressSidebarBalanceFrame #m_lockedValue {
-  font-size: %fontSizeNormal%;
-  color: %fontColorGray%;
-}
-
 #m_addAddressButton {
-  min-height: 32px;
-  max-height: 32px;
-  background-color: %backgroundColorBlueNormal%;
-  color: %selectionTextColor%;
-  border: none;
-  border-radius: 2px;
-  font-size: %fontSizeNormal%;
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: %fontColorBlueNormal%;
+  font-size: %fontSizeLarge%;
+  padding: 6px 0;
+  min-height: 28px;
+  text-align: center;
 }
 
 #m_addAddressButton:hover {
-  background-color: %backgroundColorBlueHover%;
+  color: %fontColorBlueHover%;
 }
 
 #m_addAddressButton:pressed {
-  background-color: %backgroundColorBluePressed%;
+  color: %fontColorBluePressed%;
 }
 
 /* -------- Address card -------- */
@@ -640,12 +684,12 @@ QFrame#m_addressCard {
 }
 
 QFrame#m_addressCard:hover {
-  border: 1px solid %toolButtonBackgroundColorHover%;
+  border: 1px solid %backgroundColorBlueHover%;
 }
 
 QFrame#m_addressCard[selected="true"] {
-  background-color: %headerBackgroundColor%;
-  border: 1px solid %toolButtonBackgroundColorPressed%;
+  background-color: %backgroundColorAlternate%;
+  border: 2px solid %backgroundColorBlueNormal%;
 }
 
 QFrame#m_addressCard QLabel {

@@ -29,7 +29,7 @@
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QFrame>
-#include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
@@ -1189,6 +1189,7 @@ void MainWindow::buildTopNavToolBar() {
   m_mainToolBar->setMovable(false);
   m_mainToolBar->setFloatable(false);
   m_mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  m_mainToolBar->setIconSize(QSize(20, 20));
   addToolBar(Qt::TopToolBarArea, m_mainToolBar);
 
   m_navActionGroup = new QActionGroup(this);
@@ -1198,19 +1199,20 @@ void MainWindow::buildTopNavToolBar() {
     QAction** outAction;
     QPushButton* button;
     QString text;
+    QString iconPath;
   };
   NavSpec specs[] = {
-    { &m_overviewNavAction, m_ui->m_overviewButton, tr("Overview") },
-    { &m_sendNavAction,     m_ui->m_sendButton,     tr("Send") },
-    { &m_receiveNavAction,  m_ui->m_receiveButton,  tr("Receive") },
-    { &m_historyNavAction,  m_ui->m_transactionsButton, tr("History") },
-    { &m_contactsNavAction, m_ui->m_addressBookButton,  tr("Contacts") },
-    { &m_explorerNavAction, m_ui->m_blockExplorerButton, tr("Explorer") },
+    { &m_overviewNavAction, m_ui->m_overviewButton,      tr("Overview"), ":icons/overview" },
+    { &m_sendNavAction,     m_ui->m_sendButton,          tr("Send"),     ":icons/send" },
+    { &m_receiveNavAction,  m_ui->m_receiveButton,       tr("Receive"),  ":icons/receive" },
+    { &m_historyNavAction,  m_ui->m_transactionsButton,  tr("History"),  ":icons/transactions" },
+    { &m_contactsNavAction, m_ui->m_addressBookButton,   tr("Contacts"), ":icons/address_book" },
+    { &m_explorerNavAction, m_ui->m_blockExplorerButton, tr("Explorer"), ":icons/explorer" },
   };
   for (const NavSpec& spec : specs) {
     QAction* action = new QAction(spec.text, this);
     action->setCheckable(true);
-    action->setIcon(spec.button->icon());
+    action->setIcon(QIcon(spec.iconPath));
     m_navActionGroup->addAction(action);
     m_mainToolBar->addAction(action);
     QPushButton* button = spec.button;
@@ -1223,6 +1225,38 @@ void MainWindow::buildTopNavToolBar() {
   for (QAbstractButton* button : m_ui->m_toolButtonGroup->buttons()) {
     button->hide();
   }
+
+  // Right-aligned Locked / Total balance block at the far end of the toolbar.
+  QWidget* toolBarSpacer = new QWidget(m_mainToolBar);
+  toolBarSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  m_mainToolBar->addWidget(toolBarSpacer);
+
+  QFrame* balanceFrame = new QFrame(m_mainToolBar);
+  balanceFrame->setObjectName("m_toolBarBalanceFrame");
+  balanceFrame->setAttribute(Qt::WA_StyledBackground, true);
+  QHBoxLayout* bl = new QHBoxLayout(balanceFrame);
+  bl->setContentsMargins(8, 0, 16, 0);
+  bl->setSpacing(6);
+
+  QLabel* lockedCaption = new QLabel(tr("Locked"), balanceFrame);
+  lockedCaption->setObjectName("m_lockedCaption");
+  m_sidebarLockedLabel = new QLabel(balanceFrame);
+  m_sidebarLockedLabel->setObjectName("m_lockedValue");
+  m_sidebarLockedLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+  QLabel* totalCaption = new QLabel(tr("Total"), balanceFrame);
+  totalCaption->setObjectName("m_totalCaption");
+  m_sidebarTotalLabel = new QLabel(balanceFrame);
+  m_sidebarTotalLabel->setObjectName("m_totalValue");
+  m_sidebarTotalLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+  bl->addWidget(lockedCaption);
+  bl->addWidget(m_sidebarLockedLabel);
+  bl->addSpacing(24);
+  bl->addWidget(totalCaption);
+  bl->addWidget(m_sidebarTotalLabel);
+
+  m_mainToolBar->addWidget(balanceFrame);
 }
 
 void MainWindow::buildAddressSidebar() {
@@ -1259,40 +1293,9 @@ void MainWindow::buildAddressSidebar() {
 }
 
 void MainWindow::installSidebarBalance() {
-  if (m_addressSidebar == nullptr) {
+  if (m_sidebarTotalLabel == nullptr || m_sidebarLockedLabel == nullptr) {
     return;
   }
-  QVBoxLayout* sidebarLayout = qobject_cast<QVBoxLayout*>(m_addressSidebar->layout());
-  if (sidebarLayout == nullptr) {
-    return;
-  }
-
-  QFrame* balanceFrame = new QFrame(m_addressSidebar);
-  balanceFrame->setObjectName("m_addressSidebarBalanceFrame");
-  QGridLayout* balanceLayout = new QGridLayout(balanceFrame);
-  balanceLayout->setContentsMargins(10, 8, 10, 8);
-  balanceLayout->setHorizontalSpacing(8);
-  balanceLayout->setVerticalSpacing(2);
-
-  QLabel* totalCaption = new QLabel(tr("Total"), balanceFrame);
-  totalCaption->setObjectName("m_totalCaption");
-  m_sidebarTotalLabel = new QLabel(balanceFrame);
-  m_sidebarTotalLabel->setObjectName("m_totalValue");
-  m_sidebarTotalLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-
-  QLabel* lockedCaption = new QLabel(tr("Locked"), balanceFrame);
-  lockedCaption->setObjectName("m_lockedCaption");
-  m_sidebarLockedLabel = new QLabel(balanceFrame);
-  m_sidebarLockedLabel->setObjectName("m_lockedValue");
-  m_sidebarLockedLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-
-  balanceLayout->addWidget(totalCaption, 0, 0);
-  balanceLayout->addWidget(m_sidebarTotalLabel, 0, 1);
-  balanceLayout->addWidget(lockedCaption, 1, 0);
-  balanceLayout->addWidget(m_sidebarLockedLabel, 1, 1);
-  balanceLayout->setColumnStretch(1, 1);
-
-  sidebarLayout->insertWidget(0, balanceFrame, 0);
 
   auto updateBalance = [this]() {
     const quint64 actual = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
@@ -1323,15 +1326,25 @@ void MainWindow::rearrangeWalletMenu() {
 
   QAction* importKeyAction = m_ui->m_importKeyAction;
   QAction* importSeedAction = m_ui->m_importSeedAction;
+  QAction* exportKeyAction = m_ui->m_exportKeyAction;
   QAction* exportTrackingKeyAction = m_ui->m_exportTrackingKeyAction;
   QAction* balanceProofAction = m_ui->m_getBalanceProofAction;
 
   if (importKeyAction != nullptr) walletMenu->removeAction(importKeyAction);
   if (importSeedAction != nullptr) walletMenu->removeAction(importSeedAction);
-  // Export tracking key and Prove balance become per-address operations reachable
-  // from the address card's Advanced menu; remove them from the Wallet menu entirely.
+  // Export key, Export tracking key and Prove balance become per-address operations
+  // reachable from the address card's Advanced menu; remove them from the Wallet menu.
+  if (exportKeyAction != nullptr) walletMenu->removeAction(exportKeyAction);
   if (exportTrackingKeyAction != nullptr) walletMenu->removeAction(exportTrackingKeyAction);
   if (balanceProofAction != nullptr) walletMenu->removeAction(balanceProofAction);
+
+  // Rename to clarify these actions create a NEW wallet container (not an address).
+  if (importKeyAction != nullptr) {
+    importKeyAction->setText(tr("Import wallet from keys..."));
+  }
+  if (importSeedAction != nullptr) {
+    importSeedAction->setText(tr("Import wallet from mnemonic seed..."));
+  }
 
   QAction* fileAnchor = m_ui->m_signMessageAction;
   if (importKeyAction != nullptr) {
