@@ -609,6 +609,20 @@ QFrame#m_addressCard #m_addressCardAddress {
   color: %addressFontColor%;
 }
 
+WalletGui--AddressCard #m_addressCardAccountNumberCaption {
+  font-size: %fontSizeTiny%;
+  color: %fontColorGray%;
+  margin-top: 2px;
+  margin-bottom: 0px;
+}
+
+WalletGui--AddressCard #m_addressCardAccountNumberValue {
+  color: %balanceFontColor%;
+  margin-top: 0px;
+  margin-left: 0px;
+  margin-bottom: 2px;
+}
+
 QFrame#m_addressCard QToolButton {
   background-color: transparent;
   border: 1px solid transparent;

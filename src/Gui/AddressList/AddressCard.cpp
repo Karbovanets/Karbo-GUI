@@ -194,19 +194,18 @@ void AddressCard::buildUi() {
   m_labelLabel->setTextInteractionFlags(Qt::NoTextInteraction);
   m_labelLabel->setContentsMargins(0, 0, 28, 0);
 
-  // The address is shown elided-middle to fit the card's width. Selecting
-  // the elided text would only copy the elided portion, so we route the
-  // user toward the "Copy address" action (in the Advanced/context menu)
-  // for the canonical full-address copy. We still mark the displayed text
-  // selectable so the user can highlight what they actually see.
+  // The address is shown elided-middle to fit the card's width. We
+  // intentionally make it NON-selectable: selecting the elided text would
+  // copy only the visible (truncated) portion, which is a footgun — users
+  // think they've copied the full address but they've actually copied
+  // something useless. The canonical full-address copy is the "Copy
+  // address" action in the cog/right-click menu (also reachable by
+  // right-clicking anywhere on the card body).
   m_addressLabel = new QLabel(this);
   m_addressLabel->setObjectName("m_addressCardAddress");
-  m_addressLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  m_addressLabel->setCursor(Qt::IBeamCursor);
-  // Force right-clicks to bubble up to the card so the user always gets our
-  // cog menu (with "Copy address" doing a full-address copy) regardless of
-  // where on the address they clicked. Keyboard Ctrl+C still works on
-  // whatever they selected.
+  m_addressLabel->setTextInteractionFlags(Qt::NoTextInteraction);
+  // Right-clicks bubble up to the card's contextMenuEvent so the cog menu
+  // opens regardless of where on the address the user clicks.
   m_addressLabel->setContextMenuPolicy(Qt::NoContextMenu);
   // Address must be allowed to shrink below its natural width so the card can
   // own the available width and we can middle-elide to fit (same UX as the
