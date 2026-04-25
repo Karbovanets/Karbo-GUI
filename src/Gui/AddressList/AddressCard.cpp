@@ -19,8 +19,10 @@
 #include "AddressCard.h"
 
 #include <QAction>
+#include <QContextMenuEvent>
+#include <QFontDatabase>
 #include <QFontMetrics>
-#include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QMenu>
 #include <QMouseEvent>
@@ -34,10 +36,11 @@ namespace WalletGui {
 
 AddressCard::AddressCard(QWidget* _parent) : QFrame(_parent),
   m_labelLabel(nullptr), m_addressLabel(nullptr),
-  m_accountNumberRow(nullptr), m_copyAccountNumberButton(nullptr),
+  m_accountNumberCaption(nullptr), m_accountNumberValueLabel(nullptr),
   m_availableRow(nullptr), m_lockedRow(nullptr), m_pendingRow(nullptr), m_totalRow(nullptr),
-  m_copyButton(nullptr), m_qrButton(nullptr), m_advancedButton(nullptr),
+  m_advancedButton(nullptr),
   m_advancedMenu(nullptr),
+  m_copyAddressAction(nullptr), m_showQrAction(nullptr), m_copyAccountNumberAction(nullptr),
   m_renameAction(nullptr), m_showKeysAction(nullptr), m_exportTrackingKeyAction(nullptr),
   m_showSeedAction(nullptr), m_sendFromAction(nullptr), m_balanceProofAction(nullptr),
   m_registerAccountNumberAction(nullptr), m_deleteAction(nullptr),
@@ -162,111 +165,162 @@ void AddressCard::mousePressEvent(QMouseEvent* _event) {
 void AddressCard::resizeEvent(QResizeEvent* _event) {
   QFrame::resizeEvent(_event);
   updateElidedAddress();
+  // Float the dropdown button in the top-right corner of the card. We use
+  // a small inset (4px) from the edge so it sits visually inside the card
+  // rounded corner rather than punching out of it. The button isn't part
+  // of any layout, so it doesn't push other content around.
+  if (m_advancedButton != nullptr) {
+    const int inset = 4;
+    const int x = width() - m_advancedButton->width() - inset;
+    const int y = inset;
+    m_advancedButton->move(qMax(0, x), y);
+  }
 }
 
 void AddressCard::buildUi() {
   QVBoxLayout* root = new QVBoxLayout(this);
+  // Tight bottom padding because the advanced button no longer occupies its
+  // own row at the bottom of the card — it floats in the top-right corner
+  // (see resizeEvent), so the layout doesn't need to reserve space for it.
   root->setContentsMargins(8, 8, 8, 8);
   root->setSpacing(4);
 
+  // Small label showing the user's name for the address (or "Primary
+  // address"/"Unnamed address" fallback). Captioning style — not selectable.
+  // Right-side contents margin reserves room for the floating dropdown
+  // button (positioned in resizeEvent) so long labels don't slide under it.
   m_labelLabel = new QLabel(this);
   m_labelLabel->setObjectName("m_addressCardLabel");
   m_labelLabel->setTextInteractionFlags(Qt::NoTextInteraction);
+  m_labelLabel->setContentsMargins(0, 0, 28, 0);
 
+  // The address is shown elided-middle to fit the card's width. Selecting
+  // the elided text would only copy the elided portion, so we route the
+  // user toward the "Copy address" action (in the Advanced/context menu)
+  // for the canonical full-address copy. We still mark the displayed text
+  // selectable so the user can highlight what they actually see.
   m_addressLabel = new QLabel(this);
   m_addressLabel->setObjectName("m_addressCardAddress");
-  m_addressLabel->setTextInteractionFlags(Qt::NoTextInteraction);
-  m_addressLabel->setCursor(Qt::PointingHandCursor);
+  m_addressLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_addressLabel->setCursor(Qt::IBeamCursor);
+  // Force right-clicks to bubble up to the card so the user always gets our
+  // cog menu (with "Copy address" doing a full-address copy) regardless of
+  // where on the address they clicked. Keyboard Ctrl+C still works on
+  // whatever they selected.
+  m_addressLabel->setContextMenuPolicy(Qt::NoContextMenu);
   // Address must be allowed to shrink below its natural width so the card can
   // own the available width and we can middle-elide to fit (same UX as the
   // transaction history address column).
   m_addressLabel->setMinimumWidth(0);
   m_addressLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 
-  m_accountNumberRow = new QLabel(this);
-  m_accountNumberRow->setObjectName("m_addressCardAccountNumber");
-  m_accountNumberRow->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  m_accountNumberRow->setCursor(Qt::IBeamCursor);
-  m_accountNumberRow->setVisible(false);
+  // Two-line account number block: small "Account #" caption (matches the
+  // size of the address-name caption above) and a larger monospace value
+  // bigger than the address text. Both selectable. Hidden until a number
+  // is actually registered for this address.
+  m_accountNumberCaption = new QLabel(this);
+  m_accountNumberCaption->setObjectName("m_addressCardAccountNumberCaption");
+  m_accountNumberCaption->setTextInteractionFlags(Qt::NoTextInteraction);
+  m_accountNumberCaption->setText(tr("Account #"));
+  m_accountNumberCaption->setVisible(false);
 
-  m_copyAccountNumberButton = new QToolButton(this);
-  m_copyAccountNumberButton->setObjectName("m_addressCardCopyAccountNumberButton");
-  m_copyAccountNumberButton->setText(tr("Copy"));
-  m_copyAccountNumberButton->setToolTip(tr("Copy account number"));
-  m_copyAccountNumberButton->setAutoRaise(true);
-  m_copyAccountNumberButton->setVisible(false);
+  m_accountNumberValueLabel = new QLabel(this);
+  m_accountNumberValueLabel->setObjectName("m_addressCardAccountNumberValue");
+  m_accountNumberValueLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_accountNumberValueLabel->setCursor(Qt::IBeamCursor);
+  m_accountNumberValueLabel->setContextMenuPolicy(Qt::NoContextMenu);
+  m_accountNumberValueLabel->setVisible(false);
+  // Big bold monospace, larger than the address. Use the platform's
+  // fixed-width font so digits line up cleanly.
+  QFont accountNumberFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+  accountNumberFont.setBold(true);
+  // Pump up size relative to the default UI font; stay reasonable so the
+  // value still fits on one line in narrow sidebars.
+  const int basePx = m_addressLabel->fontMetrics().height();
+  accountNumberFont.setPixelSize(qMax(basePx + 6, 18));
+  m_accountNumberValueLabel->setFont(accountNumberFont);
 
-  m_availableRow = new QLabel(this);
-  m_availableRow->setObjectName("m_addressCardAvailable");
-  m_lockedRow = new QLabel(this);
-  m_lockedRow->setObjectName("m_addressCardLocked");
-  m_pendingRow = new QLabel(this);
-  m_pendingRow->setObjectName("m_addressCardPending");
-  m_totalRow = new QLabel(this);
-  m_totalRow->setObjectName("m_addressCardTotal");
+  // Balance rows. Selectable so the user can highlight + Ctrl+C any of
+  // them to grab the formatted amount.
+  auto makeAmountRow = [this](const char* objectName) {
+    QLabel* label = new QLabel(this);
+    label->setObjectName(QString::fromLatin1(objectName));
+    label->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    label->setCursor(Qt::IBeamCursor);
+    // Right-click on any amount also opens the cog menu — consistent with
+    // the address label. Selection + Ctrl+C still works.
+    label->setContextMenuPolicy(Qt::NoContextMenu);
+    return label;
+  };
+  m_availableRow = makeAmountRow("m_addressCardAvailable");
+  m_lockedRow = makeAmountRow("m_addressCardLocked");
+  m_pendingRow = makeAmountRow("m_addressCardPending");
+  m_totalRow = makeAmountRow("m_addressCardTotal");
 
-  m_copyButton = new QToolButton(this);
-  m_copyButton->setObjectName("m_addressCardCopyButton");
-  m_copyButton->setText(tr("Copy"));
-  m_copyButton->setToolTip(tr("Copy address"));
-  m_copyButton->setAutoRaise(true);
-
-  m_qrButton = new QToolButton(this);
-  m_qrButton->setObjectName("m_addressCardQrButton");
-  m_qrButton->setText(tr("QR"));
-  m_qrButton->setToolTip(tr("Show QR code"));
-  m_qrButton->setAutoRaise(true);
-
+  // Compact dropdown affordance floating in the card's top-right corner.
+  // It replaces the old Copy/QR/Advanced button trio. The same menu is
+  // surfaced via right-click anywhere on the card body (see
+  // contextMenuEvent), so this button is just a visible hint that the
+  // card has actions — it shouldn't steal vertical space. We use the
+  // shared :icons/down-arrow resource (also used by Qt combo-boxes
+  // throughout the app) for a familiar dropdown-arrow look, and size
+  // both the icon and the button down to feel like a chrome accent
+  // rather than a primary control.
   m_advancedButton = new QToolButton(this);
   m_advancedButton->setObjectName("m_addressCardAdvancedButton");
-  m_advancedButton->setText(tr("Advanced"));
-  m_advancedButton->setToolTip(tr("Advanced"));
+  m_advancedButton->setIcon(QIcon(QStringLiteral(":icons/down-arrow")));
+  m_advancedButton->setIconSize(QSize(10, 10));
+  m_advancedButton->setFixedSize(20, 20);
+  m_advancedButton->setToolTip(tr("Address actions"));
   m_advancedButton->setAutoRaise(true);
   m_advancedButton->setPopupMode(QToolButton::InstantPopup);
+  m_advancedButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  m_advancedButton->setFocusPolicy(Qt::NoFocus);
+  // Floats above the card content rather than taking a layout slot.
+  // Position is updated in resizeEvent. raise() is called below after all
+  // sibling widgets are constructed so the button stacks on top of them.
 
   m_advancedMenu = new QMenu(this);
+  m_copyAddressAction = m_advancedMenu->addAction(tr("Copy address"));
+  m_showQrAction = m_advancedMenu->addAction(tr("Show QR code"));
+  // Visible only when this address has an account number — toggled in
+  // refreshAccountNumberRow().
+  m_copyAccountNumberAction = m_advancedMenu->addAction(tr("Copy account number"));
+  m_copyAccountNumberAction->setVisible(false);
+  m_advancedMenu->addSeparator();
   m_renameAction = m_advancedMenu->addAction(tr("Rename..."));
   m_showKeysAction = m_advancedMenu->addAction(tr("Show keys..."));
   m_exportTrackingKeyAction = m_advancedMenu->addAction(tr("Export tracking key..."));
   m_showSeedAction = m_advancedMenu->addAction(tr("Show mnemonic seed..."));
-  m_sendFromAction = m_advancedMenu->addAction(tr("Send from this address"));
   m_advancedMenu->addSeparator();
+  m_sendFromAction = m_advancedMenu->addAction(tr("Send from this address"));
   m_balanceProofAction = m_advancedMenu->addAction(tr("Prove balance..."));
   // Register-account-number is hidden by default. refreshAccountNumberRow()
-  // reveals it only for the primary address of a full wallet that doesn't
-  // yet have a registered account number.
+  // reveals it for non-tracking wallets that don't yet have a registered
+  // account number AND don't have a registration tx in flight.
   m_registerAccountNumberAction = m_advancedMenu->addAction(tr("Register account number..."));
   m_registerAccountNumberAction->setVisible(false);
   m_advancedMenu->addSeparator();
   m_deleteAction = m_advancedMenu->addAction(tr("Delete address"));
   m_advancedButton->setMenu(m_advancedMenu);
 
-  QHBoxLayout* accountNumberRow = new QHBoxLayout();
-  accountNumberRow->setContentsMargins(0, 0, 0, 0);
-  accountNumberRow->setSpacing(4);
-  accountNumberRow->addWidget(m_accountNumberRow, 1);
-  accountNumberRow->addWidget(m_copyAccountNumberButton);
-
-  QHBoxLayout* buttonRow = new QHBoxLayout();
-  buttonRow->setContentsMargins(0, 0, 0, 0);
-  buttonRow->setSpacing(4);
-  buttonRow->addWidget(m_copyButton);
-  buttonRow->addWidget(m_qrButton);
-  buttonRow->addStretch();
-  buttonRow->addWidget(m_advancedButton);
-
   root->addWidget(m_labelLabel);
   root->addWidget(m_addressLabel);
-  root->addLayout(accountNumberRow);
+  root->addWidget(m_accountNumberCaption);
+  root->addWidget(m_accountNumberValueLabel);
   root->addWidget(m_totalRow);
   root->addWidget(m_availableRow);
   root->addWidget(m_lockedRow);
   root->addWidget(m_pendingRow);
-  root->addLayout(buttonRow);
 
-  connect(m_copyButton, &QToolButton::clicked, this, &AddressCard::copyAddressRequestedSignal);
-  connect(m_copyAccountNumberButton, &QToolButton::clicked, this, &AddressCard::copyAccountNumberRequestedSignal);
-  connect(m_qrButton, &QToolButton::clicked, this, &AddressCard::showQrRequestedSignal);
+  // Make sure the floating cog/dropdown button stays on top of the labels
+  // it overlaps in the top-right corner. Without this it can end up
+  // beneath the address-name label and become unclickable.
+  m_advancedButton->raise();
+
+  connect(m_copyAddressAction, &QAction::triggered, this, &AddressCard::copyAddressRequestedSignal);
+  connect(m_showQrAction, &QAction::triggered, this, &AddressCard::showQrRequestedSignal);
+  connect(m_copyAccountNumberAction, &QAction::triggered, this, &AddressCard::copyAccountNumberRequestedSignal);
   connect(m_renameAction, &QAction::triggered, this, &AddressCard::renameRequestedSignal);
   connect(m_showKeysAction, &QAction::triggered, this, &AddressCard::showKeysRequestedSignal);
   connect(m_exportTrackingKeyAction, &QAction::triggered, this, &AddressCard::exportTrackingKeyRequestedSignal);
@@ -286,14 +340,18 @@ void AddressCard::refreshAccountNumberRow() {
     m_registrationPending = false;
   }
   if (hasNumber) {
-    m_accountNumberRow->setText(tr("Account #: %1").arg(m_accountNumber));
-    m_accountNumberRow->setToolTip(m_accountNumber);
+    m_accountNumberValueLabel->setText(m_accountNumber);
+    m_accountNumberValueLabel->setToolTip(m_accountNumber);
   } else {
-    m_accountNumberRow->clear();
-    m_accountNumberRow->setToolTip(QString());
+    m_accountNumberValueLabel->clear();
+    m_accountNumberValueLabel->setToolTip(QString());
   }
-  m_accountNumberRow->setVisible(hasNumber);
-  m_copyAccountNumberButton->setVisible(hasNumber);
+  m_accountNumberCaption->setVisible(hasNumber);
+  m_accountNumberValueLabel->setVisible(hasNumber);
+
+  if (m_copyAccountNumberAction != nullptr) {
+    m_copyAccountNumberAction->setVisible(hasNumber);
+  }
 
   // Registration is offered for any address that doesn't already have a
   // number AND for which registration is possible (non-tracking wallet) AND
@@ -304,6 +362,22 @@ void AddressCard::refreshAccountNumberRow() {
     const bool show = !hasNumber && m_canRegisterAccountNumber && !m_registrationPending;
     m_registerAccountNumberAction->setVisible(show);
   }
+}
+
+void AddressCard::contextMenuEvent(QContextMenuEvent* _event) {
+  // Right-click anywhere on the card body opens the same per-address menu
+  // that the cog button shows. Selection on selectable text labels still
+  // works — Qt sends contextMenuEvent only when the click isn't already
+  // handled by the label's own context menu policy. We override at the
+  // frame level so the menu is consistent regardless of where the click
+  // lands. Clicking the address (no matter how badly elided) → the menu's
+  // "Copy address" action copies the FULL address.
+  if (m_advancedMenu != nullptr) {
+    m_advancedMenu->exec(_event->globalPos());
+    _event->accept();
+    return;
+  }
+  QFrame::contextMenuEvent(_event);
 }
 
 void AddressCard::refreshLabelDisplay() {

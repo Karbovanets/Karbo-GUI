@@ -21,6 +21,7 @@
 #include <QFrame>
 
 class QAction;
+class QContextMenuEvent;
 class QLabel;
 class QToolButton;
 class QMenu;
@@ -86,20 +87,22 @@ Q_SIGNALS:
 protected:
   void mousePressEvent(QMouseEvent* _event) override;
   void resizeEvent(QResizeEvent* _event) override;
+  void contextMenuEvent(QContextMenuEvent* _event) override;
 
 private:
   QLabel* m_labelLabel;
   QLabel* m_addressLabel;
-  QLabel* m_accountNumberRow;
-  QToolButton* m_copyAccountNumberButton;
+  QLabel* m_accountNumberCaption;
+  QLabel* m_accountNumberValueLabel;
   QLabel* m_availableRow;
   QLabel* m_lockedRow;
   QLabel* m_pendingRow;
   QLabel* m_totalRow;
-  QToolButton* m_copyButton;
-  QToolButton* m_qrButton;
   QToolButton* m_advancedButton;
   QMenu* m_advancedMenu;
+  QAction* m_copyAddressAction;
+  QAction* m_showQrAction;
+  QAction* m_copyAccountNumberAction;
   QAction* m_renameAction;
   QAction* m_showKeysAction;
   QAction* m_exportTrackingKeyAction;

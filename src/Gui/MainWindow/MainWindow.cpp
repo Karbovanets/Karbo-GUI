@@ -272,8 +272,31 @@ MainWindow::~MainWindow() {
 }
 
 bool MainWindow::eventFilter(QObject* _object, QEvent* _event) {
-  Q_UNUSED(_object);
-  Q_UNUSED(_event);
+  // Toolbar Total / Locked labels: the visible text is truncated to 4
+  // decimals (formatAmountToShort) so a long fractional balance doesn't
+  // blow up toolbar width. On hover we swap the visible text to the
+  // full-precision form (formatUnsignedAmount) — same UX as the
+  // transactions history amount column, which fades in the missing
+  // digits on mouse-over. We stash the full and short forms as dynamic
+  // properties so the filter doesn't need to recompute or look up the
+  // model on every event.
+  if ((_object == m_sidebarTotalLabel || _object == m_sidebarLockedLabel) &&
+      m_sidebarTotalLabel != nullptr && m_sidebarLockedLabel != nullptr) {
+    QLabel* label = qobject_cast<QLabel*>(_object);
+    if (label != nullptr) {
+      if (_event->type() == QEvent::Enter) {
+        const QString full = label->property("fullAmountText").toString();
+        if (!full.isEmpty()) {
+          label->setText(full);
+        }
+      } else if (_event->type() == QEvent::Leave) {
+        const QString shortText = label->property("shortAmountText").toString();
+        if (!shortText.isEmpty()) {
+          label->setText(shortText);
+        }
+      }
+    }
+  }
   // Legacy header address/balance labels were click-to-copy; both have moved
   // into the sidebar and toolbar, which wire up their own click handlers.
   return false;
@@ -1275,17 +1298,47 @@ void MainWindow::installSidebarBalance() {
     return;
   }
 
+  // Hover-to-expand: by default the toolbar shows a truncated 4-decimal form
+  // so a long fractional balance doesn't blow up toolbar width. When the
+  // user hovers a label we swap in the full-precision form in-place — same
+  // UX as the transactions history amount column. The actual swap happens
+  // in eventFilter(); both the short and full strings are stashed as
+  // dynamic properties on each label so the filter doesn't have to query
+  // the model on every Enter/Leave event.
+  m_sidebarTotalLabel->installEventFilter(this);
+  m_sidebarLockedLabel->installEventFilter(this);
+
   auto updateBalance = [this]() {
     const quint64 actual = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
     const quint64 pending = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_PENDING_BALANCE).value<quint64>();
     const quint64 total = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_TOTAL_BALANCE).value<quint64>();
     const quint64 locked = (total >= actual) ? (total - actual) : pending;
+    auto applyAmount = [](QLabel* label, const QString& shortText, const QString& fullText) {
+      label->setProperty("shortAmountText", shortText);
+      label->setProperty("fullAmountText", fullText);
+      // Show full text on first paint if the cursor is already over the
+      // label (e.g. the model updated while the user was hovering),
+      // otherwise the truncated form.
+      const bool hovered = label->underMouse();
+      label->setText(hovered ? fullText : shortText);
+      // Tooltip is no longer the precision-recovery affordance — the
+      // in-place swap on hover is — but we keep the full amount as a
+      // tooltip too in case a screen-reader / keyboard-only user wants
+      // to inspect it without moving the mouse onto the label.
+      label->setToolTip(fullText);
+    };
     if (m_cryptoNoteAdapter != nullptr) {
-      m_sidebarTotalLabel->setText(m_cryptoNoteAdapter->formatUnsignedAmount(total));
-      m_sidebarLockedLabel->setText(m_cryptoNoteAdapter->formatUnsignedAmount(locked));
+      const QString totalShort = m_cryptoNoteAdapter->formatAmountToShort(static_cast<qint64>(total));
+      const QString lockedShort = m_cryptoNoteAdapter->formatAmountToShort(static_cast<qint64>(locked));
+      const QString totalFull = m_cryptoNoteAdapter->formatUnsignedAmount(total);
+      const QString lockedFull = m_cryptoNoteAdapter->formatUnsignedAmount(locked);
+      applyAmount(m_sidebarTotalLabel, totalShort, totalFull);
+      applyAmount(m_sidebarLockedLabel, lockedShort, lockedFull);
     } else {
-      m_sidebarTotalLabel->setText(QString::number(total));
-      m_sidebarLockedLabel->setText(QString::number(locked));
+      const QString totalRaw = QString::number(total);
+      const QString lockedRaw = QString::number(locked);
+      applyAmount(m_sidebarTotalLabel, totalRaw, totalRaw);
+      applyAmount(m_sidebarLockedLabel, lockedRaw, lockedRaw);
     }
   };
   updateBalance();
