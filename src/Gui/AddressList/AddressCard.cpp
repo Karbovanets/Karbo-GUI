@@ -28,6 +28,7 @@
 #include <QResizeEvent>
 #include <QStyle>
 #include <QToolButton>
+#include <QHBoxLayout>
 #include <QVBoxLayout>
 
 namespace WalletGui {
@@ -36,6 +37,7 @@ namespace WalletGui {
 AddressCard::AddressCard(QWidget* _parent) : QFrame(_parent),
   m_labelLabel(nullptr), m_addressLabel(nullptr),
   m_accountNumberCaption(nullptr), m_accountNumberValueLabel(nullptr),
+  m_availableCaption(nullptr), m_lockedCaption(nullptr), m_pendingCaption(nullptr), m_totalCaption(nullptr),
   m_availableRow(nullptr), m_lockedRow(nullptr), m_pendingRow(nullptr), m_totalRow(nullptr),
   m_advancedButton(nullptr),
   m_advancedMenu(nullptr),
@@ -111,17 +113,21 @@ void AddressCard::setBalances(const QString& _unlockedFormatted, quint64 _unlock
                               const QString& _pendingFormatted, quint64 _pendingRaw,
                               const QString& _totalFormatted, quint64 _totalRaw,
                               const QString& _lockedFormatted) {
-  m_totalRow->setText(tr("Total: %1").arg(_totalFormatted));
+  m_totalRow->setText(_totalFormatted);
   // When some of the total is locked (unspendable right now) show both Available
   // and Locked together so the user doesn't have to do the subtraction mentally.
   // When total == unlocked there's nothing to disambiguate — Total alone suffices.
   const bool hasLocked = _totalRaw > _unlockedRaw;
-  m_availableRow->setText(tr("Available: %1").arg(_unlockedFormatted));
+  m_availableRow->setText(_unlockedFormatted);
+  m_availableCaption->setVisible(hasLocked);
   m_availableRow->setVisible(hasLocked);
-  m_lockedRow->setText(tr("Locked: %1").arg(_lockedFormatted));
+  m_lockedRow->setText(_lockedFormatted);
+  m_lockedCaption->setVisible(hasLocked);
   m_lockedRow->setVisible(hasLocked);
-  m_pendingRow->setText(tr("Pending: %1").arg(_pendingFormatted));
-  m_pendingRow->setVisible(_pendingRaw > 0);
+  m_pendingRow->setText(_pendingFormatted);
+  const bool hasPending = _pendingRaw > 0;
+  m_pendingCaption->setVisible(hasPending);
+  m_pendingRow->setVisible(hasPending);
 }
 
 bool AddressCard::isPrimary() const {
@@ -212,10 +218,14 @@ void AddressCard::buildUi() {
   m_addressLabel->setMinimumWidth(0);
   m_addressLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 
-  // Two-line account number block: small "Account #" caption (matches the
-  // size of the address-name caption above) and a larger monospace value
-  // bigger than the address text. Both selectable. Hidden until a number
+  // Account number row: small "Account #" caption (matches the size of
+  // the address-name caption above) followed by a larger monospace value.
+  // Hidden until a number
   // is actually registered for this address.
+  QHBoxLayout* accountNumberRow = new QHBoxLayout();
+  accountNumberRow->setContentsMargins(0, 0, 0, 0);
+  accountNumberRow->setSpacing(4);
+
   m_accountNumberCaption = new QLabel(this);
   m_accountNumberCaption->setObjectName("m_addressCardAccountNumberCaption");
   m_accountNumberCaption->setTextInteractionFlags(Qt::NoTextInteraction);
@@ -224,7 +234,7 @@ void AddressCard::buildUi() {
 
   m_accountNumberValueLabel = new QLabel(this);
   m_accountNumberValueLabel->setObjectName("m_addressCardAccountNumberValue");
-  m_accountNumberValueLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_accountNumberValueLabel->setTextInteractionFlags(Qt::NoTextInteraction /*Qt::TextSelectableByMouse*/);
   m_accountNumberValueLabel->setCursor(Qt::IBeamCursor);
   m_accountNumberValueLabel->setContextMenuPolicy(Qt::NoContextMenu);
   m_accountNumberValueLabel->setVisible(false);
@@ -233,8 +243,15 @@ void AddressCard::buildUi() {
   // src/karbowanecwallet.qss. Edit it there to change how the account
   // number renders.
 
-  // Balance rows. Selectable so the user can highlight + Ctrl+C any of
-  // them to grab the formatted amount.
+  // Balance rows: tiny caption on the left, current-size selectable amount
+  // on the right so users can highlight + Ctrl+C any formatted value.
+  auto makeBalanceCaption = [this](const QString& text) {
+    QLabel* label = new QLabel(text, this);
+    label->setObjectName("m_addressCardBalanceCaption");
+    label->setTextInteractionFlags(Qt::NoTextInteraction);
+    return label;
+  };
+
   auto makeAmountRow = [this](const char* objectName) {
     QLabel* label = new QLabel(this);
     label->setObjectName(QString::fromLatin1(objectName));
@@ -245,10 +262,29 @@ void AddressCard::buildUi() {
     label->setContextMenuPolicy(Qt::NoContextMenu);
     return label;
   };
+  auto makeBalanceRow = [](QLabel* caption, QLabel* value) {
+    QHBoxLayout* row = new QHBoxLayout();
+    row->setContentsMargins(0, 0, 0, 0);
+    row->setSpacing(4);
+    row->addWidget(caption);
+    row->addWidget(value);
+    row->addStretch();
+    return row;
+  };
+  m_totalCaption = makeBalanceCaption(tr("Total:"));
+  m_availableCaption = makeBalanceCaption(tr("Available:"));
+  m_lockedCaption = makeBalanceCaption(tr("Locked:"));
+  m_pendingCaption = makeBalanceCaption(tr("Pending:"));
   m_availableRow = makeAmountRow("m_addressCardAvailable");
   m_lockedRow = makeAmountRow("m_addressCardLocked");
   m_pendingRow = makeAmountRow("m_addressCardPending");
   m_totalRow = makeAmountRow("m_addressCardTotal");
+  m_availableCaption->setVisible(false);
+  m_availableRow->setVisible(false);
+  m_lockedCaption->setVisible(false);
+  m_lockedRow->setVisible(false);
+  m_pendingCaption->setVisible(false);
+  m_pendingRow->setVisible(false);
 
   // Compact dropdown affordance floating in the card's top-right corner.
   // It replaces the old Copy/QR/Advanced button trio. The same menu is
@@ -299,12 +335,14 @@ void AddressCard::buildUi() {
 
   root->addWidget(m_labelLabel);
   root->addWidget(m_addressLabel);
-  root->addWidget(m_accountNumberCaption);
-  root->addWidget(m_accountNumberValueLabel);
-  root->addWidget(m_totalRow);
-  root->addWidget(m_availableRow);
-  root->addWidget(m_lockedRow);
-  root->addWidget(m_pendingRow);
+  accountNumberRow->addWidget(m_accountNumberCaption);
+  accountNumberRow->addWidget(m_accountNumberValueLabel);
+  accountNumberRow->addStretch();
+  root->addLayout(accountNumberRow);
+  root->addLayout(makeBalanceRow(m_totalCaption, m_totalRow));
+  root->addLayout(makeBalanceRow(m_availableCaption, m_availableRow));
+  root->addLayout(makeBalanceRow(m_lockedCaption, m_lockedRow));
+  root->addLayout(makeBalanceRow(m_pendingCaption, m_pendingRow));
 
   // Make sure the floating cog/dropdown button stays on top of the labels
   // it overlaps in the top-right corner. Without this it can end up

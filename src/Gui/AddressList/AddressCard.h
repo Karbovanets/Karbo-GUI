@@ -94,6 +94,10 @@ private:
   QLabel* m_addressLabel;
   QLabel* m_accountNumberCaption;
   QLabel* m_accountNumberValueLabel;
+  QLabel* m_availableCaption;
+  QLabel* m_lockedCaption;
+  QLabel* m_pendingCaption;
+  QLabel* m_totalCaption;
   QLabel* m_availableRow;
   QLabel* m_lockedRow;
   QLabel* m_pendingRow;

@@ -581,7 +581,7 @@ QToolBar#m_mainToolBar QToolButton:checked:disabled {
 QFrame#m_addressCard {
   background-color: %panelBackgroundColor%;
   border: 1px solid %borderColor%;
-  border-radius: 2px;
+  border-radius: 5px;
 }
 
 QFrame#m_addressCard:hover {
@@ -610,6 +610,13 @@ QFrame#m_addressCard #m_addressCardAddress {
 }
 
 WalletGui--AddressCard #m_addressCardAccountNumberCaption {
+  font-size: %fontSizeTiny%;
+  color: %fontColorGray%;
+  margin-top: 2px;
+  margin-bottom: 0px;
+}
+
+WalletGui--AddressCard #m_addressCardBalanceCaption {
   font-size: %fontSizeTiny%;
   color: %fontColorGray%;
   margin-top: 2px;
