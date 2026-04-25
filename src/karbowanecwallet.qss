@@ -55,6 +55,50 @@ QRadioButton, QCheckBox {
   background-color: transparent;
 }
 
+/*
+ * Qt disables the native radio/check indicator the moment QSS styles the parent
+ * widget class, so without explicit ::indicator rules the dots/checkmarks go
+ * invisible (settings > Connection radios looked like bare labels). These rules
+ * draw a small circle/square using stylesheet primitives — no extra icons.
+ */
+QRadioButton::indicator {
+  width: 14px;
+  height: 14px;
+  border: 1px solid %borderColorDark%;
+  border-radius: 8px;
+  background-color: %inputBackgroundColor%;
+}
+
+QRadioButton::indicator:checked {
+  background-color: %selectionColor%;
+  border: 1px solid %selectionColor%;
+}
+
+QRadioButton::indicator:hover {
+  border: 1px solid %selectionColor%;
+}
+
+QRadioButton::indicator:disabled {
+  background-color: %backgroundColorGray%;
+}
+
+QCheckBox::indicator {
+  width: 14px;
+  height: 14px;
+  border: 1px solid %borderColorDark%;
+  border-radius: 2px;
+  background-color: %inputBackgroundColor%;
+}
+
+QCheckBox::indicator:checked {
+  background-color: %selectionColor%;
+  border: 1px solid %selectionColor%;
+}
+
+QCheckBox::indicator:disabled {
+  background-color: %backgroundColorGray%;
+}
+
 QDateTimeEdit {
   border: 1px solid %borderColorDark%;
   background-color: %inputBackgroundColor%;
@@ -235,150 +279,12 @@ QCalendarWidget QMenu {
 }
 
 
-#MainWindow > #centralwidget > #m_headerFrame {
-  background-color: %headerBackgroundColor%;
-  border: none;
-  border-bottom: 1px solid %headerBorderColor%;
-  min-height: 105px;
-  max-height: 105px;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame #m_balanceTextLabel {
-  font-size: %fontSizeLarge%;
-  font-weight: bold;
-  color: %balanceFontColor%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame #m_balanceLabel {
-  font-size: %fontSizeHuge%;
-  color: %balanceFontColor%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame > #m_walletFrame > #m_addressLabel {
-  font-size: %fontSizeLarge%;
-  color: %addressFontColor%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame > #m_walletFrame > #m_copyAddressLabel {
-  font-size: %fontSizeTiny%;
-  color: %fontColorBlueHover%;
-}
-
 #MainWindow > #centralwidget > #m_toolFrame {
   background-color: %toolButtonBackgroundColorNormal%;
   border: none;
   border-right: 1px solid %toolBarBorderColor%;
-  min-width: 173px;
-  max-width: 173px;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > QPushButton {
-  min-height: 41px;
-  max-height: 41px;
-  background-color: transparent;
-  border: none;
-  border-top: 15px solid transparent;
-  border-bottom: 15px solid transparent;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  padding-left: 40px;
-  padding-right: 0px;
-  color: %toolButtonFontColorNormal%;
-  font-size: %fontSizeSmall%;
-  border-radius: 0px;
-  background-position: left center;
-  background-repeat: no-repeat;
-  text-align: left;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > QPushButton:disabled {
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame > #m_walletFrame > #m_addressLabel {
-  font-size: %fontSizeLarge%;
-  color: %addressFontColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > QPushButton:hover {
-  background-color: %toolButtonBackgroundColorHover%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > QPushButton:checked {
-  background-color: %toolButtonBackgroundColorPressed%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_overviewButton {
-  background-image: url(:icons/overview);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_transactionsButton {
-  background-image: url(:icons/transactions);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_blockExplorerButton {
-  background-image: url(:icons/explorer);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_receiveButton {
-  background-image: url(:icons/receive);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_addressBookButton {
-  background-image: url(:icons/address_book);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_sendButton {
-  background-image: url(:icons/send);
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_overviewButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_transactionsButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_blockExplorerButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_receiveButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_addressBookButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_sendButton:checked {
-  color: %selectionTextColor%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_overviewButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_transactionsButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_blockExplorerButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_addressBookButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
-}
-
-#MainWindow > #centralwidget > #m_toolFrame > #m_sendButton:checked:disabled {
-  background-color: transparent;
-  color: %toolButtonFontColorDisabled%;
+  min-width: 200px;
+  max-width: 200px;
 }
 
 
@@ -392,11 +298,6 @@ QCalendarWidget QMenu {
 
 #MainWindow > #centralwidget > #m_syncProgress::chunk {
   background-color: %backgroundColorBlueNormal%;
-}
-
-#MainWindow > #centralwidget > #m_headerFrame > #m_balanceFrame > #m_balanceCopyLabel {
-  font-size: %fontSizeTiny%;
-  color: %fontColorBlueHover%;
 }
 
 #m_overviewBalanceFrame,
@@ -566,4 +467,194 @@ QMessageBox > QDialogButtonBox > QPushButton:pressed {
 #P2pBindPortErrorDialog > QSpinBox {
   min-height: 25px;
   max-height: 25px;
+}
+
+/* -------- Top navigation toolbar (uses old m_toolFrame palette) -------- */
+
+QToolBar#m_mainToolBar {
+  background-color: %toolButtonBackgroundColorNormal%;
+  border: none;
+  border-bottom: 1px solid %toolBarBorderColor%;
+  spacing: 0;
+  padding: 0;
+}
+
+QToolBar#m_mainToolBar::separator {
+  background: transparent;
+  width: 0;
+}
+
+QToolBar#m_mainToolBar QToolButton {
+  min-height: 41px;
+  max-height: 41px;
+  padding: 0 18px;
+  background-color: transparent;
+  border: none;
+  color: %toolButtonFontColorNormal%;
+  font-size: %fontSizeSmall%;
+  text-align: left;
+}
+
+QToolBar#m_mainToolBar QToolButton:hover {
+  background-color: %toolButtonBackgroundColorHover%;
+}
+
+QToolBar#m_mainToolBar QToolButton:checked {
+  background-color: %toolButtonBackgroundColorPressed%;
+  color: %selectionTextColor%;
+}
+
+QToolBar#m_mainToolBar QToolButton:disabled {
+  color: %toolButtonFontColorDisabled%;
+}
+
+QToolBar#m_mainToolBar QToolButton:checked:disabled {
+  background-color: transparent;
+  color: %toolButtonFontColorDisabled%;
+}
+
+/* -------- Top toolbar balance block -------- */
+
+#m_toolBarBalanceFrame {
+  background-color: transparent;
+  border: none;
+}
+
+#m_toolBarBalanceFrame QLabel {
+  background-color: transparent;
+  color: %balanceFontColor%;
+}
+
+#m_toolBarBalanceFrame #m_lockedCaption,
+#m_toolBarBalanceFrame #m_totalCaption {
+  font-size: %fontSizeTiny%;
+  color: %fontColorGray%;
+}
+
+#m_toolBarBalanceFrame #m_lockedValue {
+  font-size: %fontSizeNormal%;
+  color: %fontColorGray%;
+}
+
+#m_toolBarBalanceFrame #m_totalValue {
+  font-size: %fontSizeLarge%;
+  font-weight: bold;
+  color: %balanceFontColor%;
+}
+
+/* -------- Address sidebar -------- */
+
+#m_addressSidebar {
+  background-color: %toolButtonBackgroundColorNormal%;
+  border: none;
+}
+
+#m_addressSidebar QScrollArea {
+  background-color: transparent;
+  border: none;
+}
+
+#m_addressSidebarList {
+  background-color: transparent;
+}
+
+#m_addAddressButton {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: %fontColorBlueNormal%;
+  font-size: %fontSizeLarge%;
+  padding: 3px 0;
+  min-height: 28px;
+  text-align: center;
+}
+
+#m_addAddressButton:hover {
+  color: %fontColorBlueHover%;
+}
+
+#m_addAddressButton:pressed {
+  color: %fontColorBluePressed%;
+}
+
+/* -------- Address card -------- */
+
+QFrame#m_addressCard {
+  background-color: %panelBackgroundColor%;
+  border: 1px solid %borderColor%;
+  border-radius: 5px;
+}
+
+QFrame#m_addressCard:hover {
+  border: 1px solid %backgroundColorBlueHover%;
+}
+
+QFrame#m_addressCard[selected="true"] {
+  background-color: %backgroundColorAlternate%;
+  border: 2px solid %backgroundColorBlueNormal%;
+}
+
+QFrame#m_addressCard QLabel {
+  background-color: transparent;
+  color: %primaryTextColor%;
+}
+
+QFrame#m_addressCard #m_addressCardLabel {
+  font-size: %fontSizeNormal%;
+  font-weight: bold;
+  color: %balanceFontColor%;
+}
+
+QFrame#m_addressCard #m_addressCardAddress {
+  font-size: %fontSizeTiny%;
+  color: %addressFontColor%;
+}
+
+WalletGui--AddressCard #m_addressCardAccountNumberCaption {
+  font-size: %fontSizeTiny%;
+  color: %fontColorGray%;
+  margin-top: 2px;
+  margin-bottom: 0px;
+}
+
+WalletGui--AddressCard #m_addressCardBalanceCaption {
+  font-size: %fontSizeTiny%;
+  color: %fontColorGray%;
+  margin-top: 2px;
+  margin-bottom: 0px;
+}
+
+/* Big monospace value below the "Account #" caption. Edit family / size /
+ * weight / color / margins here — none of this is set in C++ anymore.
+ * Font-family is a fallback list so we land on a real fixed-width face on
+ * each platform (Windows / macOS / Linux). */
+WalletGui--AddressCard #m_addressCardAccountNumberValue {
+  font-family: "Consolas", "Menlo", "Monaco", "DejaVu Sans Mono", "Courier New", monospace;
+  font-size: 16px;
+  font-weight: bold;
+  color: %balanceFontColor%;
+  margin-top: 0px;
+  margin-left: 0px;
+  margin-bottom: 2px;
+}
+
+QFrame#m_addressCard QToolButton {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: %fontColorBlueNormal%;
+  font-size: %fontSizeTiny%;
+  padding: 2px 6px;
+  min-height: 18px;
+}
+
+QFrame#m_addressCard QToolButton:hover {
+  color: %fontColorBlueHover%;
+}
+
+QFrame#m_addressCard QToolButton:pressed {
+  color: %fontColorBluePressed%;
+}
+
+QFrame#m_addressCard QToolButton::menu-indicator {
+  image: none;
+  width: 0;
 }

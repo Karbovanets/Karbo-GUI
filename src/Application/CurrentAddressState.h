@@ -18,31 +18,30 @@
 
 #pragma once
 
-#include <QSortFilterProxyModel>
+#include <QObject>
 
 namespace WalletGui {
 
-// Unified text search proxy. A single query string is matched case-insensitively against:
-//   - transaction hash (prefix match)
-//   - payment ID (prefix match)
-//   - any transfer address in the row (substring match)
-// An empty query accepts everything. The class name is preserved for historical reasons;
-// semantically it is now a "search" filter rather than a pure hash filter.
-class FilteredByHashTransactionsModel : public QSortFilterProxyModel {
+class CurrentAddressState : public QObject {
   Q_OBJECT
-  Q_DISABLE_COPY(FilteredByHashTransactionsModel)
+  Q_DISABLE_COPY(CurrentAddressState)
 
 public:
-  explicit FilteredByHashTransactionsModel(QObject* _parent);
-  ~FilteredByHashTransactionsModel();
+  explicit CurrentAddressState(QObject* _parent = nullptr);
+  ~CurrentAddressState();
 
-  void setFilter(const QString& _query);
+  QString currentAddress() const;
+  quintptr currentAddressIndex() const;
 
-protected:
-  virtual bool filterAcceptsRow(int _sourceRow, const QModelIndex& _sourceParent) const override;
+  void setCurrent(quintptr _index, const QString& _address);
+  void clear();
+
+Q_SIGNALS:
+  void currentAddressChangedSignal(quintptr _index, const QString& _address);
 
 private:
-  QString m_query;
+  QString m_address;
+  quintptr m_index;
 };
 
 }

@@ -7,8 +7,10 @@
 
 #include <QClipboard>
 #include <QFileDialog>
+#include <QLabel>
 #include <QTextStream>
 #include <QTabWidget>
+#include <QVBoxLayout>
 
 #include <boost/utility/value_init.hpp>
 
@@ -54,6 +56,24 @@ SignMessageDialog::SignMessageDialog(ICryptoNoteAdapter* _cryptoNoteAdapter, con
   m_ui->m_verifySignatureEdit->setStyleSheet(QString());
   m_ui->m_verifyMessageEdit->setStyleSheet(QString());
   m_ui->m_verificationResult->setText("");
+
+  // Show which address we're signing with, inserted above the MESSAGE field on the sign tab.
+  if (QVBoxLayout* signLayout = m_ui->m_signTab->findChild<QVBoxLayout*>("verticalLayout")) {
+    QLabel* signingAddressCaption = new QLabel(tr("SIGNING WITH ADDRESS"), m_ui->m_signTab);
+    QLabel* signingAddressValue = new QLabel(m_address, m_ui->m_signTab);
+    signingAddressValue->setObjectName("m_signingAddressValue");
+    signingAddressValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    signingAddressValue->setWordWrap(true);
+    signLayout->insertWidget(0, signingAddressCaption);
+    signLayout->insertWidget(1, signingAddressValue);
+  }
+
+  // Prefill the verify tab's address field with the address we were opened for, so
+  // verifying a signature produced by the current sub-address is a one-paste flow.
+  if (!m_address.isEmpty()) {
+    m_ui->m_addressEdit->setText(m_address);
+  }
+
   setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(SIGN_MESSAGE_DIALOG_STYLE_SHEET_TEMPLATE));
 }
 
@@ -77,7 +97,7 @@ void SignMessageDialog::changeTitle(int _variant) {
 void SignMessageDialog::messageChanged() {
   if (m_ui->m_tabWidget->currentIndex() != 0) { return; }
   QString message = m_ui->m_messageEdit->toPlainText();
-  QString _signature = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->signMessage(message);
+  QString _signature = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->signMessage(message, m_address);
   m_ui->m_signatureEdit->setText(_signature);
 }
 

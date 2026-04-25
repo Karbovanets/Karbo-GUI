@@ -54,9 +54,15 @@ public:
   virtual bool isEncrypted() const override;
   virtual bool isTrackingWallet() const override;
   virtual QString getAddress(quintptr _addressIndex) const override;
+  virtual quintptr getAddressCount() const override;
+  virtual QString createAddress() override;
+  virtual QString createAddress(const AccountKeys& _accountKeys) override;
+  virtual void deleteAddress(quintptr _addressIndex) override;
   virtual AccountKeys getAccountKeys(quintptr _addressIndex) const override;
   virtual quint64 getActualBalance() const override;
   virtual quint64 getPendingBalance() const override;
+  virtual quint64 getActualBalance(quintptr _addressIndex) const override;
+  virtual quint64 getPendingBalance(quintptr _addressIndex) const override;
   virtual quintptr getTransactionCount() const override;
   virtual quintptr getTransactionTransferCount(quintptr _transactionIndex) const override;
   virtual bool getTransaction(quintptr _transactionIndex, CryptoNote::WalletTransaction& _transaction) const override;
@@ -68,9 +74,10 @@ public:
   virtual Crypto::SecretKey getTransactionSecretKey(Crypto::Hash& _transactionId) const override;
   virtual QString getTransactionProof(Crypto::Hash& _txid, CryptoNote::AccountPublicAddress& _address) const override;
   virtual QString getBalanceProof(quint64& _amount, QString& _message) const override;
-  virtual QString signMessage(const QString &data) const override;
+  virtual QString signMessage(const QString &data, const QString &address) const override;
   virtual bool verifyMessage(const QString &data, const QString &address, const QString &signature) const override;
   virtual SendTransactionStatus sendTransaction(const CryptoNote::TransactionParameters& _transactionParameters) override;
+  virtual SendTransactionStatus registerAccountNumber(quintptr _addressIndex) override;
   virtual void setUserData(const QByteArray& _userData) override;
 
   virtual void addObserver(IWalletAdapterObserver* _observer) override;
@@ -86,6 +93,8 @@ public:
   Q_SLOT virtual void balanceUpdated(quint64 _actualBalance, quint64 _pendingBalance) override;
   Q_SLOT virtual void externalTransactionCreated(quintptr _transactionId, const FullTransactionInfo& _transaction) override;
   Q_SLOT virtual void transactionUpdated(quintptr _transactionId, const FullTransactionInfo& _transaction) override;
+  virtual void addressCreated(quintptr _addressIndex, const QString& _address) override;
+  virtual void addressDeleted(quintptr _addressIndex, const QString& _address) override;
 
 private:
   const CryptoNote::Currency& m_currency;
@@ -108,6 +117,8 @@ Q_SIGNALS:
   void balanceUpdatedSignal(quint64 _actualBalance, quint64 _pendingBalance);
   void externalTransactionCreatedSignal(quintptr _transactionId, const FullTransactionInfo& _transaction);
   void transactionUpdatedSignal(quintptr _transactionId, const FullTransactionInfo& _transaction);
+  void addressCreatedSignal(quintptr _addressIndex, const QString& _address);
+  void addressDeletedSignal(quintptr _addressIndex, const QString& _address);
 };
 
 }

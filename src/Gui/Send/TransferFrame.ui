@@ -377,7 +377,7 @@
   </connection>
   <connection>
    <sender>m_sendAmountSpin</sender>
-   <signal>valueChanged(QString)</signal>
+   <signal>textChanged(QString)</signal>
    <receiver>TransferFrame</receiver>
    <slot>amountStringChanged(QString)</slot>
    <hints>

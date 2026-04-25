@@ -20,17 +20,22 @@
 
 #include <QFrame>
 #include <QMenu>
+#include <QPointer>
 #include <QSortFilterProxyModel>
 
 #include "Application/IWalletUiItem.h"
 
+class QLabel;
 class QPropertyAnimation;
+class QToolButton;
 
 namespace Ui {
 class TransactionsFrame;
 }
 
 namespace WalletGui {
+
+class CurrentAddressState;
 
 class TransactionsFrame : public QFrame, public IWalletUiItem {
   Q_OBJECT
@@ -48,6 +53,7 @@ public:
   virtual void setWalletStateModel(QAbstractItemModel* _model) override;
   virtual void setTransactionsModel(QAbstractItemModel* _model) override;
   virtual void setSortedTransactionsModel(QAbstractItemModel* _model) override;
+  virtual void setCurrentAddressState(CurrentAddressState* _currentAddressState) override;
   virtual void updateStyle() override;
 
 public slots:
@@ -72,9 +78,14 @@ private:
   QAbstractItemModel* m_filterByAddressModel;
   QPropertyAnimation* m_animation;
   QMenu* contextMenu;
+  QPointer<CurrentAddressState> m_currentAddressState;
+  QLabel* m_scopeStatusLabel;
+  QToolButton* m_scopeToggleButton;
+  bool m_showAllAddresses;
 
   void rowsInserted(const QModelIndex& _parent, int _first, int _last);
   void resetFilter();
+  void applyAddressScope();
 
   Q_SLOT void exportToCsv();
   Q_SLOT void transactionDoubleClicked(const QModelIndex& _index);
@@ -85,6 +96,8 @@ private:
   Q_SLOT void filterAddressChanged(const QString& _hash);
   Q_SLOT void showFilter(bool _on);
   Q_SLOT void resetClicked();
+  Q_SLOT void scopeToggled(bool _showAll);
+  Q_SLOT void currentAddressChanged(quintptr _index, const QString& _address);
 };
 
 }

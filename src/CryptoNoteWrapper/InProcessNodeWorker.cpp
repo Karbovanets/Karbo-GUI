@@ -242,6 +242,32 @@ IWalletAdapter* InProcessNodeWorker::getWalletAdapter() {
   return walletAdapter;
 }
 
+void InProcessNodeWorker::getAccountNumber(const QString& _address, AccountNumberCallback _callback) {
+  if (m_node.isNull()) {
+    _callback(std::make_error_code(std::errc::operation_canceled), QString());
+    return;
+  }
+  // The node fills the std::string via reference, so it must outlive the
+  // async call. The shared_ptr keeps it alive until the callback fires.
+  auto result = std::make_shared<std::string>();
+  const std::string addr = _address.toStdString();
+  m_node->getAccountNumber(addr, *result, [result, _callback](std::error_code _ec) {
+    _callback(_ec, _ec ? QString() : QString::fromStdString(*result));
+  });
+}
+
+void InProcessNodeWorker::resolveAccountNumber(const QString& _accountNumber, AccountNumberCallback _callback) {
+  if (m_node.isNull()) {
+    _callback(std::make_error_code(std::errc::operation_canceled), QString());
+    return;
+  }
+  auto result = std::make_shared<std::string>();
+  const std::string acct = _accountNumber.toStdString();
+  m_node->resolveAccountNumber(acct, *result, [result, _callback](std::error_code _ec) {
+    _callback(_ec, _ec ? QString() : QString::fromStdString(*result));
+  });
+}
+
 void InProcessNodeWorker::peerCountUpdated(size_t _count) {
   WalletLogger::debug(tr("[Embedded node] Event: Peer count updated: %1").arg(_count));
   Q_EMIT peerCountUpdatedSignal(_count);

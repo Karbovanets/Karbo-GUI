@@ -67,7 +67,7 @@ TransactionTransfersRenderer::TransactionTransfersRenderer(ICryptoNoteAdapter* _
   m_ui->m_transfersView->header()->setSectionResizeMode(TransfersModel::COLUMN_AMOUNT, QHeaderView::Fixed);
   m_ui->m_transfersView->header()->resizeSection(TransfersModel::COLUMN_AMOUNT, 110);
   m_ui->m_transfersView->header()->setSectionResizeMode(TransfersModel::COLUMN_PROOF, QHeaderView::Fixed);
-  m_ui->m_transfersView->header()->resizeSection(TransfersModel::COLUMN_PROOF, 110);
+  m_ui->m_transfersView->header()->resizeSection(TransfersModel::COLUMN_PROOF, 0);
   m_ui->m_transfersView->setFixedHeight(drawableModel->rowCount() * TREE_VIEW_ITEM_HEIGHT);
 }
 

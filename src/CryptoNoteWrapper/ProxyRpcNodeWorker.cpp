@@ -148,6 +148,30 @@ IWalletAdapter* ProxyRpcNodeWorker::getWalletAdapter() {
   return walletAdapter;
 }
 
+void ProxyRpcNodeWorker::getAccountNumber(const QString& _address, AccountNumberCallback _callback) {
+  if (m_node.isNull()) {
+    _callback(std::make_error_code(std::errc::operation_canceled), QString());
+    return;
+  }
+  auto result = std::make_shared<std::string>();
+  const std::string addr = _address.toStdString();
+  m_node->getAccountNumber(addr, *result, [result, _callback](std::error_code _ec) {
+    _callback(_ec, _ec ? QString() : QString::fromStdString(*result));
+  });
+}
+
+void ProxyRpcNodeWorker::resolveAccountNumber(const QString& _accountNumber, AccountNumberCallback _callback) {
+  if (m_node.isNull()) {
+    _callback(std::make_error_code(std::errc::operation_canceled), QString());
+    return;
+  }
+  auto result = std::make_shared<std::string>();
+  const std::string acct = _accountNumber.toStdString();
+  m_node->resolveAccountNumber(acct, *result, [result, _callback](std::error_code _ec) {
+    _callback(_ec, _ec ? QString() : QString::fromStdString(*result));
+  });
+}
+
 void ProxyRpcNodeWorker::peerCountUpdated(size_t _count) {
   WalletLogger::debug(tr("[RPC node] Event: Peer count updated: %1").arg(_count));
   Q_EMIT peerCountUpdatedSignal(_count);

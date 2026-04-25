@@ -123,6 +123,26 @@ QString WalletGreenAdapter::getAddress(quintptr _addressIndex) const {
   return m_worker->getAddress(_addressIndex);
 }
 
+quintptr WalletGreenAdapter::getAddressCount() const {
+  Q_ASSERT(m_worker != nullptr);
+  return m_worker->getAddressCount();
+}
+
+QString WalletGreenAdapter::createAddress() {
+  Q_ASSERT(m_worker != nullptr);
+  return m_worker->createAddress();
+}
+
+QString WalletGreenAdapter::createAddress(const AccountKeys& _accountKeys) {
+  Q_ASSERT(m_worker != nullptr);
+  return m_worker->createAddress(_accountKeys);
+}
+
+void WalletGreenAdapter::deleteAddress(quintptr _addressIndex) {
+  Q_ASSERT(m_worker != nullptr);
+  m_worker->deleteAddress(_addressIndex);
+}
+
 AccountKeys WalletGreenAdapter::getAccountKeys(quintptr _addressIndex) const {
   Q_ASSERT(m_worker != nullptr);
   return m_worker->getAccountKeys(_addressIndex);
@@ -136,6 +156,16 @@ quint64 WalletGreenAdapter::getActualBalance() const {
 quint64 WalletGreenAdapter::getPendingBalance() const {
   Q_ASSERT(m_worker != nullptr);
   return m_worker->getPendingBalance();
+}
+
+quint64 WalletGreenAdapter::getActualBalance(quintptr _addressIndex) const {
+  Q_ASSERT(m_worker != nullptr);
+  return m_worker->getActualBalance(_addressIndex);
+}
+
+quint64 WalletGreenAdapter::getPendingBalance(quintptr _addressIndex) const {
+  Q_ASSERT(m_worker != nullptr);
+  return m_worker->getPendingBalance(_addressIndex);
 }
 
 quintptr WalletGreenAdapter::getTransactionCount() const {
@@ -193,9 +223,9 @@ QString WalletGreenAdapter::getBalanceProof(quint64& _amount, QString& _message)
   return m_worker->getBalanceProof(_amount, _message);
 }
 
-QString WalletGreenAdapter::signMessage(const QString &data) const {
+QString WalletGreenAdapter::signMessage(const QString &data, const QString &address) const {
   Q_ASSERT(m_worker != nullptr);
-  return m_worker->signMessage(data);
+  return m_worker->signMessage(data, address);
 }
 
 bool WalletGreenAdapter::verifyMessage(const QString &data, const QString &address, const QString &signature) const {
@@ -206,6 +236,11 @@ bool WalletGreenAdapter::verifyMessage(const QString &data, const QString &addre
 IWalletAdapter::SendTransactionStatus WalletGreenAdapter::sendTransaction(const CryptoNote::TransactionParameters& _transactionParameters) {
   Q_ASSERT(m_worker != nullptr);
   return m_worker->sendTransaction(_transactionParameters);
+}
+
+IWalletAdapter::SendTransactionStatus WalletGreenAdapter::registerAccountNumber(quintptr _addressIndex) {
+  Q_ASSERT(m_worker != nullptr);
+  return m_worker->registerAccountNumber(_addressIndex);
 }
 
 void WalletGreenAdapter::setUserData(const QByteArray& _userData) {
@@ -227,6 +262,10 @@ void WalletGreenAdapter::addObserver(IWalletAdapterObserver* _observer) {
     observerObject, SLOT(externalTransactionCreated(quintptr,FullTransactionInfo)));
   connect(this, SIGNAL(transactionUpdatedSignal(quintptr,FullTransactionInfo)),
     observerObject, SLOT(transactionUpdated(quintptr,FullTransactionInfo)));
+  connect(this, &WalletGreenAdapter::addressCreatedSignal, observerObject,
+    [_observer](quintptr _addressIndex, const QString& _address) { _observer->addressCreated(_addressIndex, _address); });
+  connect(this, &WalletGreenAdapter::addressDeletedSignal, observerObject,
+    [_observer](quintptr _addressIndex, const QString& _address) { _observer->addressDeleted(_addressIndex, _address); });
 }
 
 void WalletGreenAdapter::removeObserver(IWalletAdapterObserver* _observer) {
@@ -243,6 +282,8 @@ void WalletGreenAdapter::removeObserver(IWalletAdapterObserver* _observer) {
     observerObject, SLOT(externalTransactionCreated(quintptr,FullTransactionInfo)));
   disconnect(this, SIGNAL(transactionUpdatedSignal(quintptr,FullTransactionInfo)),
     observerObject, SLOT(transactionUpdated(quintptr,FullTransactionInfo)));
+  disconnect(this, &WalletGreenAdapter::addressCreatedSignal, observerObject, nullptr);
+  disconnect(this, &WalletGreenAdapter::addressDeletedSignal, observerObject, nullptr);
 }
 
 void WalletGreenAdapter::walletOpened() {
@@ -279,6 +320,14 @@ void WalletGreenAdapter::externalTransactionCreated(quintptr _transactionId, con
 
 void WalletGreenAdapter::transactionUpdated(quintptr _transactionId, const FullTransactionInfo& _transaction) {
   Q_EMIT transactionUpdatedSignal(_transactionId, _transaction);
+}
+
+void WalletGreenAdapter::addressCreated(quintptr _addressIndex, const QString& _address) {
+  Q_EMIT addressCreatedSignal(_addressIndex, _address);
+}
+
+void WalletGreenAdapter::addressDeleted(quintptr _addressIndex, const QString& _address) {
+  Q_EMIT addressDeletedSignal(_addressIndex, _address);
 }
 
 void WalletGreenAdapter::createWorker() {

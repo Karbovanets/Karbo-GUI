@@ -26,11 +26,11 @@
 #include "IWalletAdapter.h"
 
 class QActionGroup;
-class QDataWidgetMapper;
+class QLabel;
 class QSplashScreen;
-class QAbstractButton;
 class QAbstractItemModel;
 class QSessionManager;
+class QToolBar;
 
 namespace Ui {
   class MainWindow;
@@ -38,6 +38,8 @@ namespace Ui {
 
 namespace WalletGui {
 
+class AddressSidebar;
+class CurrentAddressState;
 class IAddressBookManager;
 class IDonationManager;
 class INewsReader;
@@ -100,9 +102,41 @@ private:
   QList<QAction*> m_recentWalletsActionList;
   QAction* m_addRecipientAction;
   QString m_styleSheetTemplate;
-  QDataWidgetMapper* m_walletStateMapper;
-  QMovie* m_syncMovie;
   QString m_address;
+  QAbstractItemModel* m_addressListModel;
+  CurrentAddressState* m_currentAddressState;
+  AddressSidebar* m_addressSidebar;
+  QToolBar* m_mainToolBar;
+  QActionGroup* m_navActionGroup;
+  QAction* m_overviewNavAction;
+  QAction* m_sendNavAction;
+  QAction* m_receiveNavAction;
+  QAction* m_historyNavAction;
+  QAction* m_contactsNavAction;
+  QAction* m_explorerNavAction;
+  QLabel* m_menuBarBalanceLabel;
+  QLabel* m_sidebarTotalLabel;
+  QLabel* m_sidebarLockedLabel;
+  QAction* m_createAddressAction;
+  QAction* m_importAddressAction;
+
+  void buildTopNavToolBar();
+  void buildAddressSidebar();
+  void installSidebarBalance();
+  void rearrangeWalletMenu();
+  Q_SLOT void createAddressRequested();
+  Q_SLOT void importAddressRequested();
+  Q_SLOT void copyAddressFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void copyAccountNumberFromCard(quintptr _index, const QString& _accountNumber);
+  Q_SLOT void registerAccountNumberFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void showQrFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void showKeysFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void exportTrackingKeyFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void showSeedFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void renameAddressFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void sendFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void balanceProofFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void deleteAddressFromCard(quintptr _index, const QString& _address);
 
   void createRecentWalletMenu();
   void updateRecentWalletActions();
@@ -130,15 +164,12 @@ private:
   Q_SLOT void importKey();
   Q_SLOT void aboutQt();
   Q_SLOT void about();
-  Q_SLOT void copyAddress();
-  Q_SLOT void copyBalance();
   Q_SLOT void setStartOnLoginEnabled(bool _enable);
   Q_SLOT void setMinimizeToTrayEnabled(bool _enable);
   Q_SLOT void setCloseToTrayEnabled(bool _enable);
   Q_SLOT void showPreferences();
   Q_SLOT void communityForumTriggered();
   Q_SLOT void reportIssueTriggered();
-  Q_SLOT void showQrCode();
   Q_SLOT void showMnemonicSeed();
   Q_SLOT void restoreFromMnemonicSeed();
   Q_SLOT void openPaymentRequestClicked();

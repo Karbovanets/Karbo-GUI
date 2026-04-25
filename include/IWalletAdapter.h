@@ -53,6 +53,8 @@ public:
   virtual void balanceUpdated(quint64 _actualBalance, quint64 _pendingBalance) = 0;
   virtual void externalTransactionCreated(quintptr _transactionId, const FullTransactionInfo& _transaction) = 0;
   virtual void transactionUpdated(quintptr _transactionId, const FullTransactionInfo& _transaction) = 0;
+  virtual void addressCreated(quintptr _addressIndex, const QString& _address) {}
+  virtual void addressDeleted(quintptr _addressIndex, const QString& _address) {}
 };
 
 class IWalletAdapter {
@@ -89,9 +91,15 @@ public:
   virtual bool isEncrypted() const = 0;
   virtual bool isTrackingWallet() const = 0;
   virtual QString getAddress(quintptr _addressIndex) const = 0;
+  virtual quintptr getAddressCount() const = 0;
+  virtual QString createAddress() = 0;
+  virtual QString createAddress(const AccountKeys& _accountKeys) = 0;
+  virtual void deleteAddress(quintptr _addressIndex) = 0;
   virtual AccountKeys getAccountKeys(quintptr _addressIndex) const = 0;
   virtual quint64 getActualBalance() const = 0;
   virtual quint64 getPendingBalance() const = 0;
+  virtual quint64 getActualBalance(quintptr _addressIndex) const = 0;
+  virtual quint64 getPendingBalance(quintptr _addressIndex) const = 0;
   virtual quintptr getTransactionCount() const = 0;
   virtual quintptr getTransactionTransferCount(quintptr _transactionIndex) const = 0;
   virtual bool getTransaction(quintptr _transactionIndex, CryptoNote::WalletTransaction& _transaction) const = 0;
@@ -103,11 +111,17 @@ public:
   virtual bool getTransactionTransfer(quintptr _transactionIndex, quintptr _transferIndex, CryptoNote::WalletTransfer& _transfer) const = 0;
   virtual QByteArray getUserData() const = 0;
   virtual QString getBalanceProof(quint64& _amount, QString& _message) const = 0;
-  virtual QString signMessage(const QString &data) const = 0;
+  virtual QString signMessage(const QString &data, const QString &address) const = 0;
   virtual bool verifyMessage(const QString &data, const QString &address, const QString &signature) const = 0;
 
 
   virtual SendTransactionStatus sendTransaction(const CryptoNote::TransactionParameters& _transactionParameters) = 0;
+  // Registers the given address's account number on-chain by sending a tiny
+  // self-transfer whose extra carries the account-registration tag with that
+  // address's spend+view public keys. The node indexes these and exposes the
+  // mapping via INodeAdapter::getAccountNumber. Account numbers are per-
+  // address: every address in the wallet can have its own.
+  virtual SendTransactionStatus registerAccountNumber(quintptr _addressIndex) = 0;
   virtual void setUserData(const QByteArray& _userData) = 0;
 
   virtual void addObserver(IWalletAdapterObserver* _observer) = 0;

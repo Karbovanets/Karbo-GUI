@@ -192,7 +192,7 @@ public:
         QObject::connect(m_addressBookButton, SIGNAL(clicked()), TransferFrame, SLOT(addressBookClicked()));
         QObject::connect(m_sendAddressEdit, SIGNAL(textChanged(QString)), TransferFrame, SLOT(labelOrAddressChanged(QString)));
         QObject::connect(m_sendLabelEdit, SIGNAL(textChanged(QString)), TransferFrame, SLOT(labelOrAddressChanged(QString)));
-        QObject::connect(m_sendAmountSpin, SIGNAL(valueChanged(QString)), TransferFrame, SLOT(amountStringChanged(QString)));
+        QObject::connect(m_sendAmountSpin, SIGNAL(textChanged(QString)), TransferFrame, SLOT(amountStringChanged(QString)));
         QObject::connect(m_sendAddressEdit, SIGNAL(textChanged(QString)), TransferFrame, SLOT(addressChanged(QString)));
         QObject::connect(m_sendAllButton, SIGNAL(clicked()), TransferFrame, SLOT(sendAllClicked()));
 

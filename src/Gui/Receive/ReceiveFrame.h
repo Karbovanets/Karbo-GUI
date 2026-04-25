@@ -18,6 +18,7 @@
 #pragma once
 
 #include <QFrame>
+#include <QPointer>
 #include "Application/IWalletUiItem.h"
 #include "ICryptoNoteAdapter.h"
 
@@ -28,6 +29,8 @@ class ReceiveFrame;
 }
 
 namespace WalletGui {
+
+class CurrentAddressState;
 
 class ReceiveFrame : public QFrame, public IWalletUiItem, public ICryptoNoteAdapterObserver {
   Q_OBJECT
@@ -40,6 +43,7 @@ public:
   // IWalletUiItem
   virtual void setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter) override;
   virtual void setMainWindow(QWidget* _mainWindow) override;
+  virtual void setCurrentAddressState(CurrentAddressState* _currentAddressState) override;
 
   // ICryptoNoteAdapterObserver
   Q_SLOT virtual void cryptoNoteAdapterInitCompleted(int _status) override;
@@ -55,6 +59,9 @@ private:
   QScopedPointer<Ui::ReceiveFrame> m_ui;
   ICryptoNoteAdapter* m_cryptoNoteAdapter;
   QWidget* m_mainWindow;
+  QPointer<CurrentAddressState> m_currentAddressState;
+
+  Q_SLOT void onCurrentAddressChanged(quintptr _index, const QString& _address);
 
   Q_SLOT void generatePaymentIdClicked();
   Q_SLOT void generateRequest();

@@ -26,11 +26,12 @@
 #include "ICryptoNoteAdapter.h"
 #include "IDonationManager.h"
 #include "IWalletAdapter.h"
+#include "IWalletLabelsManager.h"
 
 namespace WalletGui {
 
-class AddressBookManager : public QObject, public IAddressBookManager, public IDonationManager, public IWalletAdapterObserver,
-  public ICryptoNoteAdapterObserver {
+class AddressBookManager : public QObject, public IAddressBookManager, public IDonationManager, public IWalletLabelsManager,
+  public IWalletAdapterObserver, public ICryptoNoteAdapterObserver {
   Q_OBJECT
   Q_DISABLE_COPY(AddressBookManager)
 
@@ -61,6 +62,12 @@ public:
   virtual void setDonationChangeAmount(int _amount) override;
   virtual void addObserver(IDonationManagerObserver* _observer) override;
   virtual void removeObserver(IDonationManagerObserver* _observer) override;
+
+  // IWalletLabelsManager
+  virtual QString getOwnAddressLabel(const QString& _address) const override;
+  virtual void setOwnAddressLabel(const QString& _address, const QString& _label) override;
+  virtual void addObserver(IWalletLabelsManagerObserver* _observer) override;
+  virtual void removeObserver(IWalletLabelsManagerObserver* _observer) override;
 
   // IWalletAdapterObserver
   Q_SLOT virtual void walletOpened() override;
@@ -102,6 +109,8 @@ Q_SIGNALS:
   void donationChangeEnabledSignal(bool _on);
   void donationChangeAddressChangedSignal(const QString& _address);
   void donationChangeAmountChangedSignal(int _amount);
+
+  void ownAddressLabelChangedSignal(const QString& _address, const QString& _label);
 };
 
 }

@@ -48,6 +48,8 @@ const char DONATION_CHANGE_ADDRESS_TAG_NAME[] = "address";
 const char DONATION_CHANGE_IS_ENABLED_TAG_NAME[] = "enabled";
 const char DONATION_CHANGE_AMOUNT_TAG_NAME[] = "amount";
 
+const char OWN_ADDRESS_LABELS_TAG_NAME[] = "ownAddressLabels";
+
 }
 
 AddressBookManager::AddressBookManager(ICryptoNoteAdapter* _cryptoNoteAdapter, QObject* _parent) : QObject(_parent),
@@ -386,6 +388,39 @@ void AddressBookManager::cryptoNoteAdapterInitCompleted(int _status) {
 
 void AddressBookManager::cryptoNoteAdapterDeinitCompleted() {
   // Do nothing
+}
+
+QString AddressBookManager::getOwnAddressLabel(const QString& _address) const {
+  return m_addressBookObject.value(OWN_ADDRESS_LABELS_TAG_NAME).toObject().value(_address).toString();
+}
+
+void AddressBookManager::setOwnAddressLabel(const QString& _address, const QString& _label) {
+  QJsonObject labels = m_addressBookObject.value(OWN_ADDRESS_LABELS_TAG_NAME).toObject();
+  const QString existing = labels.value(_address).toString();
+  if (existing == _label) {
+    return;
+  }
+  if (_label.isEmpty()) {
+    labels.remove(_address);
+  } else {
+    labels.insert(_address, _label);
+  }
+  m_addressBookObject.insert(OWN_ADDRESS_LABELS_TAG_NAME, labels);
+  saveAddressBook();
+  Q_EMIT ownAddressLabelChangedSignal(_address, _label);
+}
+
+void AddressBookManager::addObserver(IWalletLabelsManagerObserver* _observer) {
+  QObject* observer = dynamic_cast<QObject*>(_observer);
+  connect(this, &AddressBookManager::ownAddressLabelChangedSignal, observer,
+    [_observer](const QString& _address, const QString& _label) {
+      _observer->ownAddressLabelChanged(_address, _label);
+    });
+}
+
+void AddressBookManager::removeObserver(IWalletLabelsManagerObserver* _observer) {
+  QObject* observer = dynamic_cast<QObject*>(_observer);
+  disconnect(this, &AddressBookManager::ownAddressLabelChangedSignal, observer, nullptr);
 }
 
 void AddressBookManager::saveAddressBook() {

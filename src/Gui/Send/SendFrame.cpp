@@ -16,7 +16,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <QAction>
 #include <QUrl>
+#include <QBoxLayout>
+#include <QComboBox>
+#include <QLabel>
 #include <QPair>
 #include <QUrlQuery>
 #include <QMessageBox>
@@ -26,6 +30,7 @@
 #include <crypto/crypto.h>
 #include <Common/StringTools.h>
 #include "SendFrame.h"
+#include "Application/CurrentAddressState.h"
 #include "Settings/Settings.h"
 #include "Gui/Common/QuestionDialog.h"
 #include "Gui/Common/OpenUriDialog.h"
@@ -35,6 +40,7 @@
 #include "INodeAdapter.h"
 #include "IWallet.h"
 #include "Models/AddressBookModel.h"
+#include "Models/AddressListModel.h"
 #include "Models/WalletStateModel.h"
 #include "SendGlassFrame.h"
 #include "Style/Style.h"
@@ -114,13 +120,17 @@ bool isValidPaymentId(const QString& _paymentIdString) {
 
 SendFrame::SendFrame(QWidget* _parent) : QFrame(_parent), m_ui(new Ui::SendFrame),
   m_cryptoNoteAdapter(nullptr), m_donationManager(nullptr), m_applicationEventHandler(nullptr), m_mainWindow(nullptr),
-  m_glassFrame(new SendGlassFrame(nullptr)), m_walletStateModel(nullptr), m_nodeFee(0), m_flatRateNodeFee(0) {
+  m_glassFrame(new SendGlassFrame(nullptr)), m_walletStateModel(nullptr), m_addressBookModel(nullptr),
+  m_addressListModel(nullptr), m_fromAddressCombo(nullptr), m_changeAddressCombo(nullptr),
+  m_nodeFee(0), m_flatRateNodeFee(0) {
   m_ui->setupUi(this);
   m_glassFrame->setObjectName("m_sendGlassFrame");
   m_ui->m_mixinSpin->setMaximum(MAX_MIXIN_VALUE);
   mixinValueChanged(m_ui->m_mixinSlider->value());
   setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(SEND_FRAME_STYLE_SHEET));
   on_remote = Settings::instance().isOnRemote();
+
+  buildAddressSelectors();
 
   QLabel *label1 = new WalletGui::WalletTinyGrayTextLabel(this);
   label1->setText(tr("Low"));
@@ -214,9 +224,13 @@ void SendFrame::setMainWindow(QWidget* _mainWindow) {
     transfer->setMainWindow(_mainWindow);
   }
 
-  QList<QPushButton*> buttonList = m_mainWindow->findChildren<QPushButton*>("m_transactionsButton");
-  Q_ASSERT(!buttonList.isEmpty());
-  connect(this, &SendFrame::showTransactionsFrameSignal, buttonList.first(), &QPushButton::click);
+  // The legacy "transactions" QPushButton has been replaced by the History nav
+  // QAction on the top toolbar. Route the post-send "show transactions" signal
+  // through the action so the exclusive QActionGroup swaps frames correctly.
+  QAction* historyNavAction = m_mainWindow->findChild<QAction*>("m_historyNavAction");
+  Q_ASSERT(historyNavAction != nullptr);
+  connect(this, &SendFrame::showTransactionsFrameSignal, historyNavAction,
+    [historyNavAction]() { historyNavAction->setChecked(true); });
 }
 
 void SendFrame::setWalletStateModel(QAbstractItemModel* _model) {
@@ -230,6 +244,138 @@ void SendFrame::setAddressBookModel(QAbstractItemModel* _model) {
   m_addressBookModel = _model;
   for (auto& transfer : m_transfers) {
     transfer->setAddressBookModel(_model);
+  }
+}
+
+void SendFrame::setAddressListModel(QAbstractItemModel* _model) {
+  if (m_addressListModel == _model) {
+    return;
+  }
+  if (m_addressListModel != nullptr) {
+    m_addressListModel->disconnect(this);
+  }
+  m_addressListModel = _model;
+  if (m_addressListModel != nullptr) {
+    connect(m_addressListModel, &QAbstractItemModel::rowsInserted,
+            this, [this](const QModelIndex&, int, int) { repopulateAddressSelectors(); });
+    connect(m_addressListModel, &QAbstractItemModel::rowsRemoved,
+            this, [this](const QModelIndex&, int, int) { repopulateAddressSelectors(); });
+    connect(m_addressListModel, &QAbstractItemModel::modelReset,
+            this, [this]() { repopulateAddressSelectors(); });
+    connect(m_addressListModel, &QAbstractItemModel::dataChanged,
+            this, [this](const QModelIndex& _topLeft, const QModelIndex& _bottomRight, const QVector<int>&) {
+      if (_topLeft.column() <= AddressListModel::COLUMN_LABEL &&
+          _bottomRight.column() >= AddressListModel::COLUMN_LABEL) {
+        repopulateAddressSelectors();
+      }
+    });
+  }
+  repopulateAddressSelectors();
+}
+
+void SendFrame::setCurrentAddressState(CurrentAddressState* _currentAddressState) {
+  if (m_currentAddressState == _currentAddressState) {
+    return;
+  }
+  if (!m_currentAddressState.isNull()) {
+    disconnect(m_currentAddressState.data(), nullptr, this, nullptr);
+  }
+  m_currentAddressState = _currentAddressState;
+  if (!m_currentAddressState.isNull()) {
+    connect(m_currentAddressState.data(), &CurrentAddressState::currentAddressChangedSignal,
+            this, &SendFrame::onCurrentAddressChanged);
+    const QString current = m_currentAddressState->currentAddress();
+    if (!current.isEmpty()) {
+      onCurrentAddressChanged(m_currentAddressState->currentAddressIndex(), current);
+    }
+  }
+}
+
+void SendFrame::buildAddressSelectors() {
+  QVBoxLayout* rootLayout = qobject_cast<QVBoxLayout*>(layout());
+  if (rootLayout == nullptr) {
+    return;
+  }
+
+  QHBoxLayout* selectorsLayout = new QHBoxLayout();
+  selectorsLayout->setContentsMargins(25, 8, 25, 0);
+  selectorsLayout->setSpacing(8);
+
+  QLabel* fromLabel = new QLabel(tr("From:"), this);
+  m_fromAddressCombo = new QComboBox(this);
+  m_fromAddressCombo->setObjectName("m_fromAddressCombo");
+  m_fromAddressCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+
+  QLabel* changeLabel = new QLabel(tr("Change to:"), this);
+  m_changeAddressCombo = new QComboBox(this);
+  m_changeAddressCombo->setObjectName("m_changeAddressCombo");
+  m_changeAddressCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+
+  selectorsLayout->addWidget(fromLabel);
+  selectorsLayout->addWidget(m_fromAddressCombo, 1);
+  selectorsLayout->addSpacing(12);
+  selectorsLayout->addWidget(changeLabel);
+  selectorsLayout->addWidget(m_changeAddressCombo, 1);
+
+  rootLayout->insertLayout(0, selectorsLayout);
+}
+
+void SendFrame::repopulateAddressSelectors() {
+  if (m_fromAddressCombo == nullptr || m_changeAddressCombo == nullptr) {
+    return;
+  }
+
+  const QString prevFrom = m_fromAddressCombo->currentData().toString();
+  const QString prevChange = m_changeAddressCombo->currentData().toString();
+
+  m_fromAddressCombo->blockSignals(true);
+  m_changeAddressCombo->blockSignals(true);
+  m_fromAddressCombo->clear();
+  m_changeAddressCombo->clear();
+
+  m_fromAddressCombo->addItem(tr("<Any address>"), QString());
+
+  if (m_addressListModel != nullptr) {
+    const int rows = m_addressListModel->rowCount();
+    for (int row = 0; row < rows; ++row) {
+      const QModelIndex idx = m_addressListModel->index(row, 0);
+      const QString address = m_addressListModel->data(idx, AddressListModel::ROLE_ADDRESS).toString();
+      const QString label = m_addressListModel->data(m_addressListModel->index(row, AddressListModel::COLUMN_LABEL),
+                                                     AddressListModel::ROLE_LABEL).toString();
+      QString display;
+      if (!label.isEmpty()) {
+        display = QString("%1 (%2…%3)").arg(label, address.left(6), address.right(6));
+      } else if (row == 0) {
+        display = tr("Primary (%1…%2)").arg(address.left(6), address.right(6));
+      } else {
+        display = QString("%1…%2").arg(address.left(6), address.right(6));
+      }
+      m_fromAddressCombo->addItem(display, address);
+      m_changeAddressCombo->addItem(display, address);
+    }
+  }
+
+  int fromIdx = m_fromAddressCombo->findData(prevFrom);
+  if (fromIdx < 0 && !m_currentAddressState.isNull() && !m_currentAddressState->currentAddress().isEmpty()) {
+    fromIdx = m_fromAddressCombo->findData(m_currentAddressState->currentAddress());
+  }
+  m_fromAddressCombo->setCurrentIndex(fromIdx >= 0 ? fromIdx : 0);
+
+  int changeIdx = m_changeAddressCombo->findData(prevChange);
+  m_changeAddressCombo->setCurrentIndex(changeIdx >= 0 ? changeIdx : 0);
+
+  m_fromAddressCombo->blockSignals(false);
+  m_changeAddressCombo->blockSignals(false);
+}
+
+void SendFrame::onCurrentAddressChanged(quintptr _index, const QString& _address) {
+  Q_UNUSED(_index);
+  if (m_fromAddressCombo == nullptr || _address.isEmpty()) {
+    return;
+  }
+  const int idx = m_fromAddressCombo->findData(_address);
+  if (idx >= 0) {
+    m_fromAddressCombo->setCurrentIndex(idx);
   }
 }
 
@@ -393,11 +539,38 @@ void SendFrame::clearAll() {
 
 void SendFrame::sendClicked() {
   CryptoNote::TransactionParameters transactionParameters;
-  QString selfAddress = m_walletStateModel->index(0, WalletStateModel::COLUMN_ADDRESS).data().toString();
-  transactionParameters.sourceAddresses.push_back(selfAddress.toStdString());
-  transactionParameters.changeDestination = selfAddress.toStdString();
+  QString primaryAddress = m_walletStateModel->index(0, WalletStateModel::COLUMN_ADDRESS).data().toString();
 
-  const quint64 actualBalance = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+  QString fromAddress;
+  if (m_fromAddressCombo != nullptr) {
+    fromAddress = m_fromAddressCombo->currentData().toString();
+  }
+  QString changeAddress;
+  if (m_changeAddressCombo != nullptr) {
+    changeAddress = m_changeAddressCombo->currentData().toString();
+  }
+  if (changeAddress.isEmpty()) {
+    changeAddress = primaryAddress;
+  }
+
+  if (!fromAddress.isEmpty()) {
+    transactionParameters.sourceAddresses.push_back(fromAddress.toStdString());
+  }
+  transactionParameters.changeDestination = changeAddress.toStdString();
+
+  quint64 actualBalance = 0;
+  if (!fromAddress.isEmpty() && m_addressListModel != nullptr) {
+    const int rows = m_addressListModel->rowCount();
+    for (int row = 0; row < rows; ++row) {
+      const QModelIndex idx = m_addressListModel->index(row, 0);
+      if (m_addressListModel->data(idx, AddressListModel::ROLE_ADDRESS).toString() == fromAddress) {
+        actualBalance = m_addressListModel->data(idx, AddressListModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+        break;
+      }
+    }
+  } else {
+    actualBalance = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+  }
   quint64 transferSum = 0;
   const qint64 fee = m_cryptoNoteAdapter->parseAmount(m_ui->m_feeSpin->cleanText()) - m_nodeFee;
   for (TransferFrame* transfer : m_transfers) {
@@ -656,7 +829,23 @@ void SendFrame::enableManualFee(bool _enable) {
 
 void SendFrame::sendAllClicked() {
   qreal amount;
-  const quint64 actualBalance = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+  QString fromAddress;
+  if (m_fromAddressCombo != nullptr) {
+    fromAddress = m_fromAddressCombo->currentData().toString();
+  }
+  quint64 actualBalance = 0;
+  if (!fromAddress.isEmpty() && m_addressListModel != nullptr) {
+    const int rows = m_addressListModel->rowCount();
+    for (int row = 0; row < rows; ++row) {
+      const QModelIndex idx = m_addressListModel->index(row, 0);
+      if (m_addressListModel->data(idx, AddressListModel::ROLE_ADDRESS).toString() == fromAddress) {
+        actualBalance = m_addressListModel->data(idx, AddressListModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+        break;
+      }
+    }
+  } else {
+    actualBalance = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
+  }
   if (on_remote && !m_nodeFeeAddress.isEmpty() && m_flatRateNodeFee == 0) {
         m_nodeFee = 0;
         m_nodeFee = static_cast<qint64>(actualBalance * 0.0025); // fee is 0.25%

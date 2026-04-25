@@ -52,6 +52,8 @@ public:
   virtual QString getNodeFeeAddress() const override;
   virtual QString getNodeHost() const override;
   virtual quint16 getNodePort() const override;
+  virtual void getAccountNumber(const QString& _address, AccountNumberCallback _callback) override;
+  virtual void resolveAccountNumber(const QString& _accountNumber, AccountNumberCallback _callback) override;
 
   // INodeAdapterObserver
   Q_SLOT virtual void initCompleted(int _status) override;

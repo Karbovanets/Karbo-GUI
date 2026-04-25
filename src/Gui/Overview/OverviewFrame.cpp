@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <QAction>
 #include <QClipboard>
 #include <QDataWidgetMapper>
 
@@ -53,8 +54,8 @@ const char OVERVIEW_STYLE_SHEET_TEMPLATE[] =
   "}"
 
   "WalletGui--OverviewFrame #m_newsFrame {"
-    "min-height: 130px;"
-    "max-height: 130px;"
+    "min-height: 100px;"
+    "max-height: 100px;"
     "border: none;"
     "border-top: 1px solid %borderColor%;"
     "background-color: %backgroundColorGray%;"
@@ -87,9 +88,12 @@ void OverviewFrame::setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter)
 
 void OverviewFrame::setMainWindow(QWidget* _mainWindow) {
   m_mainWindow = _mainWindow;
-  QList<QPushButton*> buttonList = m_mainWindow->findChildren<QPushButton*>("m_transactionsButton");
-  Q_ASSERT(!buttonList.isEmpty());
-  connect(m_ui->m_allTransactionsButton, &WalletTinyLinkLikeButton::clicked, buttonList.first(), &QPushButton::click);
+  // "All transactions" on the overview links to the History tab. The nav is a
+  // QAction on the top toolbar now, not the legacy QPushButton in the sidebar.
+  QAction* historyNavAction = m_mainWindow->findChild<QAction*>("m_historyNavAction");
+  Q_ASSERT(historyNavAction != nullptr);
+  connect(m_ui->m_allTransactionsButton, &WalletTinyLinkLikeButton::clicked, historyNavAction,
+    [historyNavAction]() { historyNavAction->setChecked(true); });
   m_ui->m_overviewHeaderFrame->setMainWindow(m_mainWindow);
 }
 
@@ -121,7 +125,9 @@ void OverviewFrame::setSortedTransactionsModel(QAbstractItemModel* _model) {
 }
 
 void OverviewFrame::setTransactionPoolModel(QAbstractItemModel* _model) {
-  m_ui->m_overviewHeaderFrame->setTransactionPoolModel(_model);
+  Q_UNUSED(_model);
+  // The overview no longer renders pool stats — sidebar/toolbar owns balance,
+  // pool volume is node-operator trivia. Intentional no-op.
 }
 
 void OverviewFrame::setNodeStateModel(QAbstractItemModel* _model) {
@@ -129,7 +135,8 @@ void OverviewFrame::setNodeStateModel(QAbstractItemModel* _model) {
 }
 
 void OverviewFrame::setWalletStateModel(QAbstractItemModel* _model) {
-  m_ui->m_overviewHeaderFrame->setWalletStateModel(_model);
+  Q_UNUSED(_model);
+  // Balance moved to the sidebar/toolbar; overview header no longer needs it.
 }
 
 void OverviewFrame::settingsUpdated() {

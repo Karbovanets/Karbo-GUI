@@ -24,8 +24,8 @@
 #include "ICryptoNoteAdapter.h"
 #include "INodeAdapter.h"
 
-class QDataWidgetMapper;
-class QSortFilterProxyModel;
+class QLabel;
+class QTimer;
 
 namespace Ui {
   class OverviewHeaderFrame;
@@ -33,9 +33,10 @@ namespace Ui {
 
 namespace WalletGui {
 
-class OverviewHeaderGlassFrame;
-
-class OverviewHeaderFrame : public QFrame, public IWalletUiItem, 
+// Overview status band: two-column snapshot of node and blockchain state.
+// Replaces the old balance/pool header — the sidebar + toolbar already show
+// balance, and pool volume is niche info that doesn't belong on a dashboard.
+class OverviewHeaderFrame : public QFrame, public IWalletUiItem,
   public ICryptoNoteAdapterObserver {
   Q_OBJECT
   Q_DISABLE_COPY(OverviewHeaderFrame)
@@ -44,41 +45,40 @@ public:
   explicit OverviewHeaderFrame(QWidget* _parent);
   ~OverviewHeaderFrame();
 
-  // QObject
-  virtual bool eventFilter(QObject* _object, QEvent* _event) override;
-
   // IWalletUiItem
   virtual void setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter) override;
   virtual void setMainWindow(QWidget *_mainWindow) override;
   virtual void setNodeStateModel(QAbstractItemModel* _model) override;
-  virtual void setWalletStateModel(QAbstractItemModel* _model) override;
-  virtual void setTransactionPoolModel(QAbstractItemModel *_model) override;
   virtual void updateStyle() override;
 
   // ICryptoNoteAdapterObserver
   Q_SLOT virtual void cryptoNoteAdapterInitCompleted(int _status) override;
   Q_SLOT virtual void cryptoNoteAdapterDeinitCompleted() override;
 
-
 private:
   QScopedPointer<Ui::OverviewHeaderFrame> m_ui;
   ICryptoNoteAdapter* m_cryptoNoteAdapter;
   QWidget* m_mainWindow;
   QAbstractItemModel* m_nodeStateModel;
-  QAbstractItemModel* m_walletStateModel;
-  QAbstractItemModel* m_transactionPoolModel;
-  QSortFilterProxyModel* m_overViewTransactionPoolModel;
-  QMovie* m_syncMovie;
-  OverviewHeaderGlassFrame* m_balancesGlassFrame;
-  OverviewHeaderGlassFrame* m_transactionPoolGlassFrame;
+  QTimer* m_lastBlockAgeTimer;
 
-  void copyAvailableBalance();
-  void copyLockedBalance();
-  void copyTotalBalance();
-  void transactionPoolChanged();
-  void walletStateModelDataChanged(const QModelIndex& _topLeft, const QModelIndex& _bottomRight, const QVector<int>& _roles);
+  // Network column
+  QLabel* m_connectionStateLabel;
+  QLabel* m_nodeTypeLabel;
+  QLabel* m_peerCountLabel;
+  QLabel* m_networkHashrateLabel;
 
-  Q_SLOT void poolTransactionClicked(const QModelIndex& _index);
+  // Blockchain column
+  QLabel* m_heightLabel;
+  QLabel* m_lastBlockAgeLabel;
+  QLabel* m_difficultyLabel;
+
+  void buildUi();
+  void refreshFromModel();
+  void refreshLastBlockAge();
+
+  Q_SLOT void nodeStateModelDataChanged(const QModelIndex& _topLeft, const QModelIndex& _bottomRight,
+                                        const QVector<int>& _roles);
 };
 
 }

@@ -33,6 +33,8 @@
 #include "CryptoNoteCore/CryptoNoteTools.h"
 #include "CryptoNoteCore/CryptoNoteBasic.h"
 #include "CryptoNoteCore/CryptoNoteFormatUtils.h"
+#include "CryptoNoteCore/TransactionExtra.h"
+#include "CryptoNoteConfig.h"
 #include "Rpc/CoreRpcServerCommandsDefinitions.h"
 #include "WalletGreenWorker.h"
 #include "GuardExecutor.h"
@@ -476,6 +478,109 @@ QString WalletGreenWorker::getAddress(quintptr _addressIndex) const {
   return result;
 }
 
+quintptr WalletGreenWorker::getAddressCount() const {
+  Q_ASSERT(!m_wallet.isNull());
+  SemaphoreLocker locker(m_walletSemaphore);
+  quintptr result = 0;
+  m_dispatcher->remoteSpawn([this, &result]() {
+    SemaphoreUnlocker unlocker(m_walletSemaphore);
+    try {
+      result = m_wallet->getAddressCount();
+    } catch (const std::exception& _error) {
+      WalletLogger::critical(tr("[Wallet] Get address count error: %1").arg(_error.what()));
+      result = 0;
+    }
+  });
+
+  locker.wait();
+  return result;
+}
+
+QString WalletGreenWorker::createAddress() {
+  Q_ASSERT(!m_wallet.isNull());
+  SemaphoreLocker locker(m_walletSemaphore);
+  QString address;
+  quintptr index = 0;
+  m_dispatcher->remoteSpawn([this, &address, &index]() {
+    SemaphoreUnlocker unlocker(m_walletSemaphore);
+    try {
+      std::string created = m_wallet->createAddress();
+      address = QString::fromStdString(created);
+      index = m_wallet->getAddressCount() - 1;
+    } catch (const std::exception& _error) {
+      WalletLogger::critical(tr("[Wallet] Create address error: %1").arg(_error.what()));
+      address = "";
+    }
+  });
+
+  locker.wait();
+  if (!address.isEmpty()) {
+    m_isSaved.store(false);
+    Q_EMIT addressCreatedSignal(index, address);
+  }
+  return address;
+}
+
+QString WalletGreenWorker::createAddress(const AccountKeys& _accountKeys) {
+  Q_ASSERT(!m_wallet.isNull());
+  SemaphoreLocker locker(m_walletSemaphore);
+  QString address;
+  quintptr index = 0;
+  m_dispatcher->remoteSpawn([this, &_accountKeys, &address, &index]() {
+    SemaphoreUnlocker unlocker(m_walletSemaphore);
+    try {
+      std::string created;
+      QByteArray secret(reinterpret_cast<const char*>(&_accountKeys.spendKeys.secretKey), sizeof(_accountKeys.spendKeys.secretKey));
+      QByteArray zero(sizeof(_accountKeys.spendKeys.secretKey), 0);
+      if (secret == zero) {
+        created = m_wallet->createAddress(_accountKeys.spendKeys.publicKey);
+      } else {
+        created = m_wallet->createAddress(_accountKeys.spendKeys.secretKey);
+      }
+      address = QString::fromStdString(created);
+      index = m_wallet->getAddressCount() - 1;
+    } catch (const std::exception& _error) {
+      WalletLogger::critical(tr("[Wallet] Create address (with keys) error: %1").arg(_error.what()));
+      address = "";
+    }
+  });
+
+  locker.wait();
+  if (!address.isEmpty()) {
+    m_isSaved.store(false);
+    Q_EMIT addressCreatedSignal(index, address);
+  }
+  return address;
+}
+
+void WalletGreenWorker::deleteAddress(quintptr _addressIndex) {
+  Q_ASSERT(!m_wallet.isNull());
+  SemaphoreLocker locker(m_walletSemaphore);
+  QString deleted;
+  bool ok = false;
+  m_dispatcher->remoteSpawn([this, _addressIndex, &deleted, &ok]() {
+    SemaphoreUnlocker unlocker(m_walletSemaphore);
+    try {
+      if (_addressIndex >= m_wallet->getAddressCount()) {
+        return;
+      }
+      std::string address = m_wallet->getAddress(_addressIndex);
+      m_wallet->deleteAddress(address);
+      deleted = QString::fromStdString(address);
+      ok = true;
+    } catch (const std::exception& _error) {
+      WalletLogger::critical(tr("[Wallet] Delete address error: %1").arg(_error.what()));
+    }
+  });
+
+  locker.wait();
+  if (ok) {
+    m_isSaved.store(false);
+    Q_EMIT addressDeletedSignal(_addressIndex, deleted);
+    Q_EMIT balanceUpdatedSignal(getActualBalance(), getPendingBalance());
+  }
+}
+
 AccountKeys WalletGreenWorker::getAccountKeys(quintptr _addressIndex) const {
   Q_ASSERT(!m_wallet.isNull());
   SemaphoreLocker locker(m_walletSemaphore);
@@ -524,6 +629,48 @@ quint64 WalletGreenWorker::getPendingBalance() const {
     } catch (const std::exception& _error) {
       WalletLogger::critical(tr("[Wallet] Get pending balance error: %1").arg(_error.what()));
       result = std::numeric_limits<quint64>::max();
+    }
+  });
+
+  locker.wait();
+  return result;
+}
+
+quint64 WalletGreenWorker::getActualBalance(quintptr _addressIndex) const {
+  Q_ASSERT(!m_wallet.isNull());
+  SemaphoreLocker locker(m_walletSemaphore);
+  quint64 result = 0;
+  m_dispatcher->remoteSpawn([this, _addressIndex, &result]() {
+    SemaphoreUnlocker unlocker(m_walletSemaphore);
+    try {
+      if (_addressIndex >= m_wallet->getAddressCount()) {
+        return;
+      }
+      result = m_wallet->getActualBalance(m_wallet->getAddress(_addressIndex));
+    } catch (const std::exception& _error) {
+      WalletLogger::critical(tr("[Wallet] Get actual balance (per-address) error: %1").arg(_error.what()));
+      result = 0;
+    }
+  });
+
+  locker.wait();
+  return result;
+}
+
+quint64 WalletGreenWorker::getPendingBalance(quintptr _addressIndex) const {
+  Q_ASSERT(!m_wallet.isNull());
+  SemaphoreLocker locker(m_walletSemaphore);
+  quint64 result = 0;
+  m_dispatcher->remoteSpawn([this, _addressIndex, &result]() {
+    SemaphoreUnlocker unlocker(m_walletSemaphore);
+    try {
+      if (_addressIndex >= m_wallet->getAddressCount()) {
+        return;
+      }
+      result = m_wallet->getPendingBalance(m_wallet->getAddress(_addressIndex));
+    } catch (const std::exception& _error) {
+      WalletLogger::critical(tr("[Wallet] Get pending balance (per-address) error: %1").arg(_error.what()));
+      result = 0;
     }
   });
 
@@ -728,6 +875,50 @@ IWalletAdapter::SendTransactionStatus WalletGreenWorker::sendTransaction(const C
   return getSendStatus(errorCode);
 }
 
+IWalletAdapter::SendTransactionStatus WalletGreenWorker::registerAccountNumber(quintptr _addressIndex) {
+  Q_ASSERT(!m_wallet.isNull());
+
+  if (isTrackingWallet()) {
+    WalletLogger::critical(tr("[Wallet] Cannot register account number from a tracking wallet."));
+    return SEND_INTERNAL_ERROR;
+  }
+
+  if (_addressIndex >= getAddressCount()) {
+    WalletLogger::critical(tr("[Wallet] registerAccountNumber: address index %1 out of range.").arg(static_cast<quint64>(_addressIndex)));
+    return SEND_INTERNAL_ERROR;
+  }
+
+  // Account-number registration is per-address: the extra carries the
+  // spend+view public keys of the address being registered, and the node
+  // indexes that mapping. The tx is a tiny self-transfer from -> to the
+  // same address.
+  const AccountKeys keys = getAccountKeys(_addressIndex);
+  const QString address = getAddress(_addressIndex);
+  if (address.isEmpty()) {
+    return SEND_INTERNAL_ERROR;
+  }
+
+  std::vector<uint8_t> extra;
+  if (!CryptoNote::addAccountRegistrationToExtra(extra, keys.spendKeys.publicKey, keys.viewKeys.publicKey)) {
+    WalletLogger::critical(tr("[Wallet] Failed to build account registration extra."));
+    return SEND_INTERNAL_ERROR;
+  }
+
+  CryptoNote::TransactionParameters params;
+  params.sourceAddresses.push_back(address.toStdString());
+  CryptoNote::WalletOrder dest;
+  dest.address = address.toStdString();
+  dest.amount = CryptoNote::parameters::DEFAULT_DUST_THRESHOLD;
+  params.destinations.push_back(dest);
+  params.fee = m_node.getMinimalFee();
+  params.mixIn = 0;
+  params.extra.assign(extra.begin(), extra.end());
+  params.unlockTimestamp = 0;
+  params.changeDestination = address.toStdString();
+
+  return sendTransaction(params);
+}
+
 void WalletGreenWorker::setUserData(const QByteArray& _userData) {
   SemaphoreLocker locker(m_walletSemaphore);
   m_userData = _userData;
@@ -763,16 +954,17 @@ QString WalletGreenWorker::getBalanceProof(quint64& _amount, QString& _message) 
   return QString::fromStdString(proof);
 }
 
-QString WalletGreenWorker::signMessage(const QString &data) const {
+QString WalletGreenWorker::signMessage(const QString &data, const QString &address) const {
   if (isTrackingWallet()) {
     throw std::runtime_error("The message can only be signed by a full wallet");
   }
 
   SemaphoreLocker locker(m_walletSemaphore);
   std::string sig_str;
-  m_dispatcher->remoteSpawn([this, data, &sig_str]() {
+  m_dispatcher->remoteSpawn([this, data, address, &sig_str]() {
     SemaphoreUnlocker unlocker(m_walletSemaphore);
-    sig_str = m_wallet->signMessage(data.toStdString(), m_wallet->getAddress(0));
+    const std::string signingAddress = address.isEmpty() ? m_wallet->getAddress(0) : address.toStdString();
+    sig_str = m_wallet->signMessage(data.toStdString(), signingAddress);
   });
 
   locker.wait();
@@ -799,6 +991,12 @@ void WalletGreenWorker::addObserver(IWalletAdapterObserver* _observer) {
     SLOT(externalTransactionCreated(quintptr, FullTransactionInfo)), Qt::QueuedConnection);
   m_observerConnections[_observer] << connect(this, SIGNAL(transactionUpdatedSignal(quintptr, FullTransactionInfo)), observerObject,
     SLOT(transactionUpdated(quintptr, FullTransactionInfo)), Qt::QueuedConnection);
+  m_observerConnections[_observer] << connect(this, &WalletGreenWorker::addressCreatedSignal, observerObject,
+    [_observer](quintptr _addressIndex, const QString& _address) { _observer->addressCreated(_addressIndex, _address); },
+    Qt::QueuedConnection);
+  m_observerConnections[_observer] << connect(this, &WalletGreenWorker::addressDeletedSignal, observerObject,
+    [_observer](quintptr _addressIndex, const QString& _address) { _observer->addressDeleted(_addressIndex, _address); },
+    Qt::QueuedConnection);
 }
 
 void WalletGreenWorker::removeObserver(IWalletAdapterObserver* _observer) {

@@ -19,6 +19,7 @@
 #pragma once
 
 #include <QFrame>
+#include <QPointer>
 #include <QScrollArea>
 
 #include "Application/IWalletUiItem.h"
@@ -28,12 +29,15 @@
 #include "ICryptoNoteAdapter.h"
 #include "IWalletAdapter.h"
 
+class QComboBox;
+
 namespace Ui {
 class SendFrame;
 }
 
 namespace WalletGui {
 
+class CurrentAddressState;
 class ICryptoNoteAdapter;
 class SendGlassFrame;
 class TransferFrame;
@@ -57,6 +61,9 @@ public:
   virtual void setMainWindow(QWidget* _mainWindow) override;
   virtual void setWalletStateModel(QAbstractItemModel* _model) override;
   virtual void setAddressBookModel(QAbstractItemModel* _model) override;
+  virtual void setAddressListModel(QAbstractItemModel* _model) override;
+  virtual void setCurrentAddressState(CurrentAddressState* _currentAddressState) override;
+
   virtual void updateStyle() override;
 
   // IWalletAdapterObserver
@@ -90,6 +97,10 @@ private:
   SendGlassFrame* m_glassFrame;
   QAbstractItemModel* m_walletStateModel;
   QAbstractItemModel* m_addressBookModel;
+  QAbstractItemModel* m_addressListModel;
+  QPointer<CurrentAddressState> m_currentAddressState;
+  QComboBox* m_fromAddressCombo;
+  QComboBox* m_changeAddressCombo;
 
   QString m_nodeFeeAddress;
   quint64 m_nodeFee;
@@ -97,6 +108,9 @@ private:
   quint64 m_totalAmount;
   bool on_remote = false;
 
+  void buildAddressSelectors();
+  void repopulateAddressSelectors();
+  void onCurrentAddressChanged(quintptr _index, const QString& _address);
   void processTranactionSendStatus(IWalletAdapter::SendTransactionStatus _status);
   void setPaymentIdError(bool _error);
   void setMixinError(bool _error);
