@@ -1257,6 +1257,7 @@ void MainWindow::buildTopNavToolBar() {
   m_mainToolBar->setObjectName("m_mainToolBar");
   m_mainToolBar->setMovable(false);
   m_mainToolBar->setFloatable(false);
+  m_mainToolBar->setContextMenuPolicy(Qt::PreventContextMenu);
   m_mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   m_mainToolBar->setIconSize(QSize(20, 20));
   addToolBar(Qt::TopToolBarArea, m_mainToolBar);
