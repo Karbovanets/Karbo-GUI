@@ -30,6 +30,7 @@
 #include <QPushButton>
 #include <QClipboard>
 #include <QCloseEvent>
+#include <QContextMenuEvent>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QFrame>
@@ -119,7 +120,14 @@ namespace {
 // poke dynamic properties or run an external event filter.
 class FadingAmountLabel : public QLabel {
 public:
-  using QLabel::QLabel;
+  explicit FadingAmountLabel(QWidget* _parent = nullptr) : QLabel(_parent) {
+    setTextInteractionFlags(Qt::NoTextInteraction);
+  }
+
+  void setSelectableWhenExpanded(bool _selectable) {
+    m_selectableWhenExpanded = _selectable;
+    updateTextInteraction();
+  }
 
   void setAmount(const QString& _shortText, const QString& _fullText) {
     m_shortText = _shortText;
@@ -129,6 +137,7 @@ public:
     // or fewer decimals already — render plainly.
     m_truncated = (_shortText != _fullText);
     setText(m_hovered ? m_fullText : m_shortText);
+    updateTextInteraction();
     update();
   }
 
@@ -138,17 +147,64 @@ protected:
     if (!m_fullText.isEmpty()) {
       setText(m_fullText);
     }
+    updateTextInteraction();
     QLabel::enterEvent(_event);
     update();
   }
 
   void leaveEvent(QEvent* _event) override {
+    if (m_contextMenuOpen) {
+      QLabel::leaveEvent(_event);
+      return;
+    }
+
     m_hovered = false;
     if (!m_shortText.isEmpty()) {
       setText(m_shortText);
     }
+    updateTextInteraction();
     QLabel::leaveEvent(_event);
     update();
+  }
+
+  void contextMenuEvent(QContextMenuEvent* _event) override {
+    if (!m_selectableWhenExpanded) {
+      QLabel::contextMenuEvent(_event);
+      return;
+    }
+
+    const QString selected = selectedText();
+    m_hovered = true;
+    if (!m_fullText.isEmpty() && text() != m_fullText) {
+      setText(m_fullText);
+    }
+    updateTextInteraction();
+    update();
+
+    QMenu menu(this);
+    QAction* copyAction = menu.addAction(tr("Copy"));
+    QAction* selectAllAction = menu.addAction(tr("Select All"));
+
+    m_contextMenuOpen = true;
+    QAction* chosenAction = menu.exec(_event->globalPos());
+    m_contextMenuOpen = false;
+
+    if (chosenAction == copyAction) {
+      QApplication::clipboard()->setText(selected.isEmpty() ? m_fullText : selected);
+    } else if (chosenAction == selectAllAction) {
+      setSelection(0, text().length());
+    }
+
+    if (!underMouse() && chosenAction != selectAllAction) {
+      m_hovered = false;
+      if (!m_shortText.isEmpty()) {
+        setText(m_shortText);
+      }
+      updateTextInteraction();
+      update();
+    }
+
+    _event->accept();
   }
 
   void paintEvent(QPaintEvent* _event) override {
@@ -185,10 +241,19 @@ protected:
   }
 
 private:
+  void updateTextInteraction() {
+    const bool selectable = m_selectableWhenExpanded && m_hovered;
+    const Qt::TextInteractionFlags flags = selectable ? Qt::TextSelectableByMouse : Qt::NoTextInteraction;
+    setTextInteractionFlags(flags);
+    setCursor(selectable ? Qt::IBeamCursor : Qt::ArrowCursor);
+  }
+
   QString m_shortText;
   QString m_fullText;
   bool m_truncated = false;
   bool m_hovered = false;
+  bool m_selectableWhenExpanded = false;
+  bool m_contextMenuOpen = false;
 };
 
 const int MAX_RECENT_WALLET_COUNT = 10;
@@ -1314,7 +1379,7 @@ void MainWindow::buildTopNavToolBar() {
   bl->setContentsMargins(8, 0, 16, 0);
   bl->setSpacing(6);
 
-  QLabel* lockedCaption = new QLabel(tr("Locked"), balanceFrame);
+  QLabel* lockedCaption = new QLabel(tr("Locked: "), balanceFrame);
   lockedCaption->setObjectName("m_lockedCaption");
   // FadingAmountLabel: truncated 4-decimal form by default, full
   // precision on hover, gradient fade on the truncated tail. See the
@@ -1322,10 +1387,11 @@ void MainWindow::buildTopNavToolBar() {
   m_sidebarLockedLabel = new FadingAmountLabel(balanceFrame);
   m_sidebarLockedLabel->setObjectName("m_lockedValue");
 
-  QLabel* totalCaption = new QLabel(tr("Total"), balanceFrame);
+  QLabel* totalCaption = new QLabel(tr("Total: "), balanceFrame);
   totalCaption->setObjectName("m_totalCaption");
   m_sidebarTotalLabel = new FadingAmountLabel(balanceFrame);
   m_sidebarTotalLabel->setObjectName("m_totalValue");
+  static_cast<FadingAmountLabel*>(m_sidebarTotalLabel)->setSelectableWhenExpanded(true);
 
   bl->addWidget(lockedCaption);
   bl->addWidget(m_sidebarLockedLabel);
