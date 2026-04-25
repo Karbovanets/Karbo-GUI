@@ -20,7 +20,6 @@
 
 #include <QAction>
 #include <QContextMenuEvent>
-#include <QFontDatabase>
 #include <QFontMetrics>
 #include <QIcon>
 #include <QLabel>
@@ -229,15 +228,10 @@ void AddressCard::buildUi() {
   m_accountNumberValueLabel->setCursor(Qt::IBeamCursor);
   m_accountNumberValueLabel->setContextMenuPolicy(Qt::NoContextMenu);
   m_accountNumberValueLabel->setVisible(false);
-  // Big bold monospace, larger than the address. Use the platform's
-  // fixed-width font so digits line up cleanly.
-  QFont accountNumberFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-  accountNumberFont.setBold(true);
-  // Pump up size relative to the default UI font; stay reasonable so the
-  // value still fits on one line in narrow sidebars.
-  const int basePx = m_addressLabel->fontMetrics().height();
-  accountNumberFont.setPixelSize(qMax(basePx + 6, 18));
-  m_accountNumberValueLabel->setFont(accountNumberFont);
+  // Font (family / size / weight / color) is controlled from the global
+  // stylesheet — see the "#m_addressCardAccountNumberValue" rule in
+  // src/karbowanecwallet.qss. Edit it there to change how the account
+  // number renders.
 
   // Balance rows. Selectable so the user can highlight + Ctrl+C any of
   // them to grab the formatted amount.

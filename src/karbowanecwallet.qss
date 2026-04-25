@@ -616,7 +616,14 @@ WalletGui--AddressCard #m_addressCardAccountNumberCaption {
   margin-bottom: 0px;
 }
 
+/* Big monospace value below the "Account #" caption. Edit family / size /
+ * weight / color / margins here — none of this is set in C++ anymore.
+ * Font-family is a fallback list so we land on a real fixed-width face on
+ * each platform (Windows / macOS / Linux). */
 WalletGui--AddressCard #m_addressCardAccountNumberValue {
+  font-family: "Consolas", "Menlo", "Monaco", "DejaVu Sans Mono", "Courier New", monospace;
+  font-size: 16px;
+  font-weight: bold;
   color: %balanceFontColor%;
   margin-top: 0px;
   margin-left: 0px;
