@@ -282,6 +282,11 @@ bool MainWindow::eventFilter(QObject* _object, QEvent* _event) {
 void MainWindow::walletOpened() {
   IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
   setOpenedState();
+  // Reset the per-card "registration in flight" suppression so a fresh
+  // session never inherits stale UI state from whatever was open before.
+  if (m_addressSidebar != nullptr) {
+    m_addressSidebar->clearRegistrationPending();
+  }
   QStringList recentWalletList = Settings::instance().getRecentWalletList();
   recentWalletList.removeAll(Settings::instance().getWalletFile());
   recentWalletList.prepend(Settings::instance().getWalletFile());
@@ -327,6 +332,9 @@ void MainWindow::walletClosed() {
   if (m_currentAddressState != nullptr) {
     m_currentAddressState->clear();
   }
+  if (m_addressSidebar != nullptr) {
+    m_addressSidebar->clearRegistrationPending();
+  }
 }
 
 void MainWindow::passwordChanged() {
@@ -351,6 +359,11 @@ void MainWindow::synchronizationCompleted() {
   m_ui->m_syncProgress->setValue(m_ui->m_syncProgress->maximum());
   if (m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->getActualBalance() > 0) {
     m_ui->m_getBalanceProofAction->setEnabled(true);
+  }
+  // Now that the chain is up to date, ask the daemon for each address's
+  // registered account number alias (if any) and propagate to the cards.
+  if (m_addressSidebar != nullptr) {
+    m_addressSidebar->refreshAccountNumbers();
   }
 }
 
@@ -1245,6 +1258,8 @@ void MainWindow::buildAddressSidebar() {
 
   connect(m_addressSidebar, &AddressSidebar::addAddressRequestedSignal, this, &MainWindow::createAddressRequested);
   connect(m_addressSidebar, &AddressSidebar::copyAddressRequestedSignal, this, &MainWindow::copyAddressFromCard);
+  connect(m_addressSidebar, &AddressSidebar::copyAccountNumberRequestedSignal, this, &MainWindow::copyAccountNumberFromCard);
+  connect(m_addressSidebar, &AddressSidebar::registerAccountNumberRequestedSignal, this, &MainWindow::registerAccountNumberFromCard);
   connect(m_addressSidebar, &AddressSidebar::showQrRequestedSignal, this, &MainWindow::showQrFromCard);
   connect(m_addressSidebar, &AddressSidebar::showKeysRequestedSignal, this, &MainWindow::showKeysFromCard);
   connect(m_addressSidebar, &AddressSidebar::exportTrackingKeyRequestedSignal, this, &MainWindow::exportTrackingKeyFromCard);
@@ -1449,6 +1464,54 @@ void MainWindow::createAddressRequested() {
 void MainWindow::copyAddressFromCard(quintptr _index, const QString& _address) {
   Q_UNUSED(_index);
   QApplication::clipboard()->setText(_address);
+}
+
+void MainWindow::copyAccountNumberFromCard(quintptr _index, const QString& _accountNumber) {
+  Q_UNUSED(_index);
+  if (_accountNumber.isEmpty()) {
+    return;
+  }
+  QApplication::clipboard()->setText(_accountNumber);
+}
+
+void MainWindow::registerAccountNumberFromCard(quintptr _index, const QString& _address) {
+  Q_UNUSED(_address);
+  IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
+  if (walletAdapter == nullptr || !walletAdapter->isOpen() || walletAdapter->isTrackingWallet()) {
+    return;
+  }
+  if (_index >= walletAdapter->getAddressCount()) {
+    return;
+  }
+  QuestionDialog dlg(tr("Register account number?"),
+    tr("Registering an account number publishes a short alias for this "
+       "address on-chain. This costs one network fee plus a small dust amount "
+       "(returned to you in the same transaction).\n\n"
+       "After the next block confirms the registration, your account number "
+       "will appear under this address. Each address can have its own "
+       "account number.\n\n"
+       "Continue?"), this);
+  if (dlg.exec() != QDialog::Accepted) {
+    return;
+  }
+  IWalletAdapter::SendTransactionStatus status = walletAdapter->registerAccountNumber(_index);
+  if (status == IWalletAdapter::SEND_SUCCESS) {
+    // Hide the Register action immediately so the user can't re-trigger it
+    // while the registration tx is still unconfirmed. The flag is cleared
+    // automatically once the daemon hands us back the resolved account
+    // number, or on wallet close/open.
+    if (m_addressSidebar != nullptr) {
+      m_addressSidebar->markRegistrationSent(_index);
+    }
+    QMessageBox::information(this, tr("Account number"),
+      tr("Account-number registration submitted. It will become visible once "
+         "the transaction confirms."), QMessageBox::Ok);
+  } else {
+    QMessageBox::warning(this, tr("Account number"),
+      tr("Failed to register account number (status %1). Make sure the address "
+         "has at least 1 KRB available and try again.").arg(static_cast<int>(status)),
+      QMessageBox::Ok);
+  }
 }
 
 void MainWindow::showQrFromCard(quintptr _index, const QString& _address) {

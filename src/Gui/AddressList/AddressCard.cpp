@@ -34,11 +34,14 @@ namespace WalletGui {
 
 AddressCard::AddressCard(QWidget* _parent) : QFrame(_parent),
   m_labelLabel(nullptr), m_addressLabel(nullptr),
+  m_accountNumberRow(nullptr), m_copyAccountNumberButton(nullptr),
   m_availableRow(nullptr), m_lockedRow(nullptr), m_pendingRow(nullptr), m_totalRow(nullptr),
   m_copyButton(nullptr), m_qrButton(nullptr), m_advancedButton(nullptr),
   m_advancedMenu(nullptr),
   m_renameAction(nullptr), m_showKeysAction(nullptr), m_exportTrackingKeyAction(nullptr),
-  m_showSeedAction(nullptr), m_sendFromAction(nullptr), m_balanceProofAction(nullptr), m_deleteAction(nullptr),
+  m_showSeedAction(nullptr), m_sendFromAction(nullptr), m_balanceProofAction(nullptr),
+  m_registerAccountNumberAction(nullptr), m_deleteAction(nullptr),
+  m_canRegisterAccountNumber(false), m_registrationPending(false),
   m_isPrimary(false), m_isSelected(false) {
   setObjectName("m_addressCard");
   setFrameShape(QFrame::NoFrame);
@@ -68,6 +71,38 @@ QString AddressCard::label() const {
 void AddressCard::setLabel(const QString& _label) {
   m_label = _label;
   refreshLabelDisplay();
+}
+
+QString AddressCard::accountNumber() const {
+  return m_accountNumber;
+}
+
+void AddressCard::setAccountNumber(const QString& _accountNumber) {
+  if (m_accountNumber == _accountNumber) {
+    return;
+  }
+  m_accountNumber = _accountNumber;
+  refreshAccountNumberRow();
+}
+
+void AddressCard::setCanRegisterAccountNumber(bool _canRegister) {
+  if (m_canRegisterAccountNumber == _canRegister) {
+    return;
+  }
+  m_canRegisterAccountNumber = _canRegister;
+  refreshAccountNumberRow();
+}
+
+void AddressCard::setRegistrationPending(bool _pending) {
+  if (m_registrationPending == _pending) {
+    return;
+  }
+  m_registrationPending = _pending;
+  refreshAccountNumberRow();
+}
+
+bool AddressCard::isRegistrationPending() const {
+  return m_registrationPending;
 }
 
 void AddressCard::setBalances(const QString& _unlockedFormatted, quint64 _unlockedRaw,
@@ -148,6 +183,19 @@ void AddressCard::buildUi() {
   m_addressLabel->setMinimumWidth(0);
   m_addressLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 
+  m_accountNumberRow = new QLabel(this);
+  m_accountNumberRow->setObjectName("m_addressCardAccountNumber");
+  m_accountNumberRow->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  m_accountNumberRow->setCursor(Qt::IBeamCursor);
+  m_accountNumberRow->setVisible(false);
+
+  m_copyAccountNumberButton = new QToolButton(this);
+  m_copyAccountNumberButton->setObjectName("m_addressCardCopyAccountNumberButton");
+  m_copyAccountNumberButton->setText(tr("Copy"));
+  m_copyAccountNumberButton->setToolTip(tr("Copy account number"));
+  m_copyAccountNumberButton->setAutoRaise(true);
+  m_copyAccountNumberButton->setVisible(false);
+
   m_availableRow = new QLabel(this);
   m_availableRow->setObjectName("m_addressCardAvailable");
   m_lockedRow = new QLabel(this);
@@ -184,9 +232,20 @@ void AddressCard::buildUi() {
   m_sendFromAction = m_advancedMenu->addAction(tr("Send from this address"));
   m_advancedMenu->addSeparator();
   m_balanceProofAction = m_advancedMenu->addAction(tr("Prove balance..."));
+  // Register-account-number is hidden by default. refreshAccountNumberRow()
+  // reveals it only for the primary address of a full wallet that doesn't
+  // yet have a registered account number.
+  m_registerAccountNumberAction = m_advancedMenu->addAction(tr("Register account number..."));
+  m_registerAccountNumberAction->setVisible(false);
   m_advancedMenu->addSeparator();
   m_deleteAction = m_advancedMenu->addAction(tr("Delete address"));
   m_advancedButton->setMenu(m_advancedMenu);
+
+  QHBoxLayout* accountNumberRow = new QHBoxLayout();
+  accountNumberRow->setContentsMargins(0, 0, 0, 0);
+  accountNumberRow->setSpacing(4);
+  accountNumberRow->addWidget(m_accountNumberRow, 1);
+  accountNumberRow->addWidget(m_copyAccountNumberButton);
 
   QHBoxLayout* buttonRow = new QHBoxLayout();
   buttonRow->setContentsMargins(0, 0, 0, 0);
@@ -198,6 +257,7 @@ void AddressCard::buildUi() {
 
   root->addWidget(m_labelLabel);
   root->addWidget(m_addressLabel);
+  root->addLayout(accountNumberRow);
   root->addWidget(m_totalRow);
   root->addWidget(m_availableRow);
   root->addWidget(m_lockedRow);
@@ -205,6 +265,7 @@ void AddressCard::buildUi() {
   root->addLayout(buttonRow);
 
   connect(m_copyButton, &QToolButton::clicked, this, &AddressCard::copyAddressRequestedSignal);
+  connect(m_copyAccountNumberButton, &QToolButton::clicked, this, &AddressCard::copyAccountNumberRequestedSignal);
   connect(m_qrButton, &QToolButton::clicked, this, &AddressCard::showQrRequestedSignal);
   connect(m_renameAction, &QAction::triggered, this, &AddressCard::renameRequestedSignal);
   connect(m_showKeysAction, &QAction::triggered, this, &AddressCard::showKeysRequestedSignal);
@@ -212,7 +273,37 @@ void AddressCard::buildUi() {
   connect(m_showSeedAction, &QAction::triggered, this, &AddressCard::showSeedRequestedSignal);
   connect(m_sendFromAction, &QAction::triggered, this, &AddressCard::sendFromRequestedSignal);
   connect(m_balanceProofAction, &QAction::triggered, this, &AddressCard::balanceProofRequestedSignal);
+  connect(m_registerAccountNumberAction, &QAction::triggered, this, &AddressCard::registerAccountNumberRequestedSignal);
   connect(m_deleteAction, &QAction::triggered, this, &AddressCard::deleteRequestedSignal);
+}
+
+void AddressCard::refreshAccountNumberRow() {
+  const bool hasNumber = !m_accountNumber.isEmpty();
+  // Once a number actually arrives from the daemon the pending flag has done
+  // its job — clear it so the visibility check below collapses to the simple
+  // hasNumber test and the row reverts to the steady-state path.
+  if (hasNumber && m_registrationPending) {
+    m_registrationPending = false;
+  }
+  if (hasNumber) {
+    m_accountNumberRow->setText(tr("Account #: %1").arg(m_accountNumber));
+    m_accountNumberRow->setToolTip(m_accountNumber);
+  } else {
+    m_accountNumberRow->clear();
+    m_accountNumberRow->setToolTip(QString());
+  }
+  m_accountNumberRow->setVisible(hasNumber);
+  m_copyAccountNumberButton->setVisible(hasNumber);
+
+  // Registration is offered for any address that doesn't already have a
+  // number AND for which registration is possible (non-tracking wallet) AND
+  // for which we don't already have a registration tx in flight. The
+  // pending flag prevents users from spamming duplicate registration
+  // transactions while the first one is still unconfirmed.
+  if (m_registerAccountNumberAction != nullptr) {
+    const bool show = !hasNumber && m_canRegisterAccountNumber && !m_registrationPending;
+    m_registerAccountNumberAction->setVisible(show);
+  }
 }
 
 void AddressCard::refreshLabelDisplay() {

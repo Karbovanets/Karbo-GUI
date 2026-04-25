@@ -45,9 +45,28 @@ public:
   void setCurrentAddressState(CurrentAddressState* _state);
   void setCryptoNoteAdapter(ICryptoNoteAdapter* _adapter);
 
+  // Kicks off an async account-number lookup for every card. Typically called
+  // after the wallet reports sync-complete or whenever a registration might
+  // have just landed on-chain.
+  void refreshAccountNumbers();
+
+  // Marks the given card as having an in-flight registration transaction so
+  // its "Register account number" menu entry stays hidden until the wallet
+  // either picks the registered alias up via refreshAccountNumbers() or the
+  // wallet is closed/reopened. Called by MainWindow right after a successful
+  // submit. No-op if the index is out of range.
+  void markRegistrationSent(quintptr _addressIndex);
+
+  // Clears the registration-pending flag from every card. Called on wallet
+  // open/close so a user reopening the same wallet (or a different one)
+  // doesn't see stale "you already sent a registration" suppression from a
+  // previous session.
+  void clearRegistrationPending();
+
 Q_SIGNALS:
   void addAddressRequestedSignal();
   void copyAddressRequestedSignal(quintptr _addressIndex, const QString& _address);
+  void copyAccountNumberRequestedSignal(quintptr _addressIndex, const QString& _accountNumber);
   void showQrRequestedSignal(quintptr _addressIndex, const QString& _address);
   void showKeysRequestedSignal(quintptr _addressIndex, const QString& _address);
   void exportTrackingKeyRequestedSignal(quintptr _addressIndex, const QString& _address);
@@ -55,6 +74,7 @@ Q_SIGNALS:
   void renameRequestedSignal(quintptr _addressIndex, const QString& _address);
   void sendFromRequestedSignal(quintptr _addressIndex, const QString& _address);
   void balanceProofRequestedSignal(quintptr _addressIndex, const QString& _address);
+  void registerAccountNumberRequestedSignal(quintptr _addressIndex, const QString& _address);
   void deleteRequestedSignal(quintptr _addressIndex, const QString& _address);
 
 private Q_SLOTS:
@@ -79,6 +99,7 @@ private:
   AddressCard* makeCard(int _row);
   void bindCardSignals(AddressCard* _card, int _row);
   void applySelection();
+  void fetchAccountNumberFor(int _row);
 };
 
 }

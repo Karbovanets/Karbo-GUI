@@ -42,6 +42,22 @@ public:
   QString label() const;
   void setLabel(const QString& _label);
 
+  // Account number: a short on-chain alias registered for the primary address
+  // (format "NNNN-NNNN-X"). Calling with an empty string clears the display
+  // and re-shows the "Register account number" action (unless suppressed by
+  // setCanRegisterAccountNumber(false) for tracking wallets / non-primary cards).
+  QString accountNumber() const;
+  void setAccountNumber(const QString& _accountNumber);
+  void setCanRegisterAccountNumber(bool _canRegister);
+
+  // Marks the card as having an in-flight registration transaction so the
+  // "Register account number" action stays hidden until the wallet either
+  // confirms the registration (account number arrives) or the wallet is
+  // closed/reopened. Prevents users from spamming duplicate registration
+  // transactions while the first one is still unconfirmed.
+  void setRegistrationPending(bool _pending);
+  bool isRegistrationPending() const;
+
   void setBalances(const QString& _unlockedFormatted, quint64 _unlockedRaw,
                    const QString& _pendingFormatted, quint64 _pendingRaw,
                    const QString& _totalFormatted, quint64 _totalRaw,
@@ -56,6 +72,7 @@ public:
 Q_SIGNALS:
   void clickedSignal();
   void copyAddressRequestedSignal();
+  void copyAccountNumberRequestedSignal();
   void showQrRequestedSignal();
   void showKeysRequestedSignal();
   void exportTrackingKeyRequestedSignal();
@@ -63,6 +80,7 @@ Q_SIGNALS:
   void renameRequestedSignal();
   void sendFromRequestedSignal();
   void balanceProofRequestedSignal();
+  void registerAccountNumberRequestedSignal();
   void deleteRequestedSignal();
 
 protected:
@@ -72,6 +90,8 @@ protected:
 private:
   QLabel* m_labelLabel;
   QLabel* m_addressLabel;
+  QLabel* m_accountNumberRow;
+  QToolButton* m_copyAccountNumberButton;
   QLabel* m_availableRow;
   QLabel* m_lockedRow;
   QLabel* m_pendingRow;
@@ -86,15 +106,20 @@ private:
   QAction* m_showSeedAction;
   QAction* m_sendFromAction;
   QAction* m_balanceProofAction;
+  QAction* m_registerAccountNumberAction;
   QAction* m_deleteAction;
 
   QString m_address;
   QString m_label;
+  QString m_accountNumber;
+  bool m_canRegisterAccountNumber;
+  bool m_registrationPending;
   bool m_isPrimary;
   bool m_isSelected;
 
   void buildUi();
   void refreshLabelDisplay();
+  void refreshAccountNumberRow();
   void updateElidedAddress();
 };
 

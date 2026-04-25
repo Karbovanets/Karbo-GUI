@@ -19,6 +19,8 @@
 #pragma once
 
 #include <QObject>
+#include <functional>
+#include <system_error>
 
 #include "INode.h"
 
@@ -71,6 +73,14 @@ public:
   virtual void removeObserver(INodeAdapterObserver* _observer) = 0;
   virtual IBlockChainExplorerAdapter* getBlockChainExplorerAdapter() = 0;
   virtual IWalletAdapter* getWalletAdapter() = 0;
+
+  // Async account-number lookups. Callback fires on an arbitrary thread once
+  // the node replies. On success `_accountNumber` / `_address` carries the
+  // resolved value; on failure the std::error_code is non-zero and the string
+  // is empty. Callers are responsible for marshalling back to the UI thread.
+  using AccountNumberCallback = std::function<void(std::error_code, const QString&)>;
+  virtual void getAccountNumber(const QString& _address, AccountNumberCallback _callback) = 0;
+  virtual void resolveAccountNumber(const QString& _accountNumber, AccountNumberCallback _callback) = 0;
 };
 
 }

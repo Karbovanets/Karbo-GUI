@@ -33,6 +33,8 @@
 #include "CryptoNoteCore/CryptoNoteTools.h"
 #include "CryptoNoteCore/CryptoNoteBasic.h"
 #include "CryptoNoteCore/CryptoNoteFormatUtils.h"
+#include "CryptoNoteCore/TransactionExtra.h"
+#include "CryptoNoteConfig.h"
 #include "Rpc/CoreRpcServerCommandsDefinitions.h"
 #include "WalletGreenWorker.h"
 #include "GuardExecutor.h"
@@ -871,6 +873,50 @@ IWalletAdapter::SendTransactionStatus WalletGreenWorker::sendTransaction(const C
   WalletLogger::info(tr("[Wallet] Transaction send result: %1. New tranaction index %2, secret key %3.").arg(errorCode).arg(newTransactionId).arg(QString::fromStdString(Common::podToHex(newTransactionKey))));
 
   return getSendStatus(errorCode);
+}
+
+IWalletAdapter::SendTransactionStatus WalletGreenWorker::registerAccountNumber(quintptr _addressIndex) {
+  Q_ASSERT(!m_wallet.isNull());
+
+  if (isTrackingWallet()) {
+    WalletLogger::critical(tr("[Wallet] Cannot register account number from a tracking wallet."));
+    return SEND_INTERNAL_ERROR;
+  }
+
+  if (_addressIndex >= getAddressCount()) {
+    WalletLogger::critical(tr("[Wallet] registerAccountNumber: address index %1 out of range.").arg(static_cast<quint64>(_addressIndex)));
+    return SEND_INTERNAL_ERROR;
+  }
+
+  // Account-number registration is per-address: the extra carries the
+  // spend+view public keys of the address being registered, and the node
+  // indexes that mapping. The tx is a tiny self-transfer from -> to the
+  // same address.
+  const AccountKeys keys = getAccountKeys(_addressIndex);
+  const QString address = getAddress(_addressIndex);
+  if (address.isEmpty()) {
+    return SEND_INTERNAL_ERROR;
+  }
+
+  std::vector<uint8_t> extra;
+  if (!CryptoNote::addAccountRegistrationToExtra(extra, keys.spendKeys.publicKey, keys.viewKeys.publicKey)) {
+    WalletLogger::critical(tr("[Wallet] Failed to build account registration extra."));
+    return SEND_INTERNAL_ERROR;
+  }
+
+  CryptoNote::TransactionParameters params;
+  params.sourceAddresses.push_back(address.toStdString());
+  CryptoNote::WalletOrder dest;
+  dest.address = address.toStdString();
+  dest.amount = CryptoNote::parameters::DEFAULT_DUST_THRESHOLD;
+  params.destinations.push_back(dest);
+  params.fee = m_node.getMinimalFee();
+  params.mixIn = 0;
+  params.extra.assign(extra.begin(), extra.end());
+  params.unlockTimestamp = 0;
+  params.changeDestination = address.toStdString();
+
+  return sendTransaction(params);
 }
 
 void WalletGreenWorker::setUserData(const QByteArray& _userData) {

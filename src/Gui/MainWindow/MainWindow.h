@@ -127,6 +127,8 @@ private:
   Q_SLOT void createAddressRequested();
   Q_SLOT void importAddressRequested();
   Q_SLOT void copyAddressFromCard(quintptr _index, const QString& _address);
+  Q_SLOT void copyAccountNumberFromCard(quintptr _index, const QString& _accountNumber);
+  Q_SLOT void registerAccountNumberFromCard(quintptr _index, const QString& _address);
   Q_SLOT void showQrFromCard(quintptr _index, const QString& _address);
   Q_SLOT void showKeysFromCard(quintptr _index, const QString& _address);
   Q_SLOT void exportTrackingKeyFromCard(quintptr _index, const QString& _address);

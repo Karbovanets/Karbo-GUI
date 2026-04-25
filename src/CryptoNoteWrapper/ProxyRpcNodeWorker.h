@@ -66,6 +66,8 @@ public:
   virtual QString getNodeFeeAddress() const override;
   QString getNodeHost() const;
   quint16 getNodePort() const;
+  virtual void getAccountNumber(const QString& _address, AccountNumberCallback _callback) override;
+  virtual void resolveAccountNumber(const QString& _accountNumber, AccountNumberCallback _callback) override;
 
   // CryptoNote::INodeObserver
   virtual void peerCountUpdated(size_t _count) override;

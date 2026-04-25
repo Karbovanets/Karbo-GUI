@@ -238,6 +238,11 @@ IWalletAdapter::SendTransactionStatus WalletGreenAdapter::sendTransaction(const 
   return m_worker->sendTransaction(_transactionParameters);
 }
 
+IWalletAdapter::SendTransactionStatus WalletGreenAdapter::registerAccountNumber(quintptr _addressIndex) {
+  Q_ASSERT(m_worker != nullptr);
+  return m_worker->registerAccountNumber(_addressIndex);
+}
+
 void WalletGreenAdapter::setUserData(const QByteArray& _userData) {
   Q_ASSERT(m_worker != nullptr);
   m_worker->setUserData(_userData);

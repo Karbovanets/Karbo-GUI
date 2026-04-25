@@ -77,6 +77,7 @@ public:
   virtual QString signMessage(const QString &data, const QString &address) const override;
   virtual bool verifyMessage(const QString &data, const QString &address, const QString &signature) const override;
   virtual SendTransactionStatus sendTransaction(const CryptoNote::TransactionParameters& _transactionParameters) override;
+  virtual SendTransactionStatus registerAccountNumber(quintptr _addressIndex) override;
   virtual void setUserData(const QByteArray& _userData) override;
 
   virtual void addObserver(IWalletAdapterObserver* _observer) override;

@@ -169,6 +169,16 @@ void CommonNodeAdapter::connectionStatusUpdated(bool _connected) {
   Q_EMIT connectionStatusUpdatedSignal(_connected);
 }
 
+void CommonNodeAdapter::getAccountNumber(const QString& _address, AccountNumberCallback _callback) {
+  Q_ASSERT(m_worker != nullptr);
+  m_worker->getAccountNumber(_address, std::move(_callback));
+}
+
+void CommonNodeAdapter::resolveAccountNumber(const QString& _accountNumber, AccountNumberCallback _callback) {
+  Q_ASSERT(m_worker != nullptr);
+  m_worker->resolveAccountNumber(_accountNumber, std::move(_callback));
+}
+
 IBlockChainExplorerAdapter* CommonNodeAdapter::getBlockChainExplorerAdapter() {
   Q_ASSERT(m_worker != nullptr);
   if (m_blockChainExplorerAdapter == nullptr) {

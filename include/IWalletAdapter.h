@@ -116,6 +116,12 @@ public:
 
 
   virtual SendTransactionStatus sendTransaction(const CryptoNote::TransactionParameters& _transactionParameters) = 0;
+  // Registers the given address's account number on-chain by sending a tiny
+  // self-transfer whose extra carries the account-registration tag with that
+  // address's spend+view public keys. The node indexes these and exposes the
+  // mapping via INodeAdapter::getAccountNumber. Account numbers are per-
+  // address: every address in the wallet can have its own.
+  virtual SendTransactionStatus registerAccountNumber(quintptr _addressIndex) = 0;
   virtual void setUserData(const QByteArray& _userData) = 0;
 
   virtual void addObserver(IWalletAdapterObserver* _observer) = 0;

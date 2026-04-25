@@ -19,6 +19,9 @@
 #include "AddressSidebar.h"
 
 #include <QAbstractItemModel>
+#include <QCoreApplication>
+#include <QMetaObject>
+#include <QPointer>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -26,6 +29,8 @@
 #include "AddressCard.h"
 #include "Application/CurrentAddressState.h"
 #include "ICryptoNoteAdapter.h"
+#include "INodeAdapter.h"
+#include "IWalletAdapter.h"
 #include "Models/AddressListModel.h"
 
 namespace WalletGui {
@@ -104,6 +109,28 @@ void AddressSidebar::setCryptoNoteAdapter(ICryptoNoteAdapter* _adapter) {
   m_cryptoNoteAdapter = _adapter;
   for (int i = 0; i < m_cards.size(); ++i) {
     updateCardAt(i);
+  }
+}
+
+void AddressSidebar::refreshAccountNumbers() {
+  for (int i = 0; i < m_cards.size(); ++i) {
+    fetchAccountNumberFor(i);
+  }
+}
+
+void AddressSidebar::markRegistrationSent(quintptr _addressIndex) {
+  const int row = static_cast<int>(_addressIndex);
+  if (row < 0 || row >= m_cards.size()) {
+    return;
+  }
+  m_cards.at(row)->setRegistrationPending(true);
+}
+
+void AddressSidebar::clearRegistrationPending() {
+  for (AddressCard* card : m_cards) {
+    if (card != nullptr) {
+      card->setRegistrationPending(false);
+    }
   }
 }
 
@@ -197,9 +224,27 @@ void AddressSidebar::updateCardAt(int _row) {
   const quint64 pending = m_model->data(addrIdx, AddressListModel::ROLE_PENDING_BALANCE).toULongLong();
   const quint64 total = m_model->data(addrIdx, AddressListModel::ROLE_TOTAL_BALANCE).toULongLong();
 
+  const QString priorAddress = card->address();
   card->setAddress(address);
   card->setLabel(label);
   card->setIsPrimary(_row == 0);
+
+  // Account-number row gating: every address can register independently; only
+  // tracking wallets are excluded since they cannot sign transactions.
+  bool canRegister = false;
+  if (m_cryptoNoteAdapter != nullptr) {
+    INodeAdapter* nodeAdapter = m_cryptoNoteAdapter->getNodeAdapter();
+    IWalletAdapter* walletAdapter = nodeAdapter != nullptr ? nodeAdapter->getWalletAdapter() : nullptr;
+    canRegister = walletAdapter != nullptr && walletAdapter->isOpen() && !walletAdapter->isTrackingWallet();
+  }
+  card->setCanRegisterAccountNumber(canRegister);
+
+  // If the card's address actually changed, clear any stale account number so
+  // we don't display the previous occupant's alias while we re-fetch.
+  if (priorAddress != address) {
+    card->setAccountNumber(QString());
+  }
+  fetchAccountNumberFor(_row);
 
   const quint64 locked = (total > unlocked) ? (total - unlocked) : 0;
   QString unlockedText;
@@ -232,6 +277,16 @@ void AddressSidebar::bindCardSignals(AddressCard* _card, int _row) {
   connect(_card, &AddressCard::copyAddressRequestedSignal, this, [this, _row]() {
     if (_row < m_cards.size()) {
       Q_EMIT copyAddressRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
+    }
+  });
+  connect(_card, &AddressCard::copyAccountNumberRequestedSignal, this, [this, _row]() {
+    if (_row < m_cards.size()) {
+      Q_EMIT copyAccountNumberRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->accountNumber());
+    }
+  });
+  connect(_card, &AddressCard::registerAccountNumberRequestedSignal, this, [this, _row]() {
+    if (_row < m_cards.size()) {
+      Q_EMIT registerAccountNumberRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
     }
   });
   connect(_card, &AddressCard::showQrRequestedSignal, this, [this, _row]() {
@@ -274,6 +329,42 @@ void AddressSidebar::bindCardSignals(AddressCard* _card, int _row) {
       Q_EMIT deleteRequestedSignal(static_cast<quintptr>(_row), m_cards.at(_row)->address());
     }
   });
+}
+
+void AddressSidebar::fetchAccountNumberFor(int _row) {
+  if (m_cryptoNoteAdapter == nullptr || _row < 0 || _row >= m_cards.size()) {
+    return;
+  }
+  INodeAdapter* nodeAdapter = m_cryptoNoteAdapter->getNodeAdapter();
+  if (nodeAdapter == nullptr) {
+    return;
+  }
+  AddressCard* card = m_cards.at(_row);
+  const QString address = card->address();
+  if (address.isEmpty()) {
+    return;
+  }
+  // Guard against the card outliving the sidebar: QPointer goes null if the
+  // card is destroyed. The callback fires on a worker thread, so we hop back
+  // to the GUI thread via QMetaObject::invokeMethod before touching widgets.
+  QPointer<AddressCard> guardedCard(card);
+  QPointer<AddressSidebar> self(this);
+  nodeAdapter->getAccountNumber(address,
+    [guardedCard, self, address](std::error_code _ec, const QString& _accountNumber) {
+      const QString result = _ec ? QString() : _accountNumber;
+      QMetaObject::invokeMethod(QCoreApplication::instance(),
+        [guardedCard, self, address, result]() {
+          if (self.isNull() || guardedCard.isNull()) {
+            return;
+          }
+          // Make sure the card still represents the same address; rows can
+          // shift between fetch start and reply when addresses are deleted.
+          if (guardedCard->address() != address) {
+            return;
+          }
+          guardedCard->setAccountNumber(result);
+        }, Qt::QueuedConnection);
+    });
 }
 
 void AddressSidebar::applySelection() {
