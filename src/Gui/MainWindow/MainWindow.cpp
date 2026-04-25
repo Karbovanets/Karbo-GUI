@@ -21,7 +21,12 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QActionGroup>
+#include <QEnterEvent>
 #include <QInputDialog>
+#include <QLinearGradient>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QPen>
 #include <QPushButton>
 #include <QClipboard>
 #include <QCloseEvent>
@@ -101,6 +106,90 @@ extern "C"
 namespace WalletGui {
 
 namespace {
+
+// QLabel subclass for the toolbar Total/Locked balances. Default state
+// shows a truncated 4-decimal form (so a long fractional balance can't
+// blow up the toolbar width); on mouseover the full-precision form
+// replaces it in-place. When the truncated form is on screen the label
+// paints its own text with a left-to-right gradient that fades the last
+// ~30% into the toolbar background — same UX as the transactions
+// history amount column (TransactionsAmountDelegate).
+//
+// Holds both strings itself so the model-update path doesn't have to
+// poke dynamic properties or run an external event filter.
+class FadingAmountLabel : public QLabel {
+public:
+  using QLabel::QLabel;
+
+  void setAmount(const QString& _shortText, const QString& _fullText) {
+    m_shortText = _shortText;
+    m_fullText = _fullText;
+    // Truncation actually happened (and so the fade is meaningful) only
+    // when the two forms differ. If they match — e.g. the balance has 4
+    // or fewer decimals already — render plainly.
+    m_truncated = (_shortText != _fullText);
+    setText(m_hovered ? m_fullText : m_shortText);
+    update();
+  }
+
+protected:
+  void enterEvent(QEnterEvent* _event) override {
+    m_hovered = true;
+    if (!m_fullText.isEmpty()) {
+      setText(m_fullText);
+    }
+    QLabel::enterEvent(_event);
+    update();
+  }
+
+  void leaveEvent(QEvent* _event) override {
+    m_hovered = false;
+    if (!m_shortText.isEmpty()) {
+      setText(m_shortText);
+    }
+    QLabel::leaveEvent(_event);
+    update();
+  }
+
+  void paintEvent(QPaintEvent* _event) override {
+    // Hover or non-truncated cases get the stock QLabel render so we
+    // inherit QSS-driven foreground color, font, alignment, etc. as-is.
+    if (m_hovered || !m_truncated) {
+      QLabel::paintEvent(_event);
+      return;
+    }
+
+    // Truncated + not hovered: paint the text with a gradient pen so the
+    // rightmost characters fade into the toolbar background, signaling
+    // "more digits hidden — hover to see them all". The fade target is
+    // the active theme's toolbar background (toolButtonBackgroundColorNormal),
+    // which is what the transparent toolbar frame is sitting on.
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    const Style& style = Settings::instance().getCurrentStyle();
+    const QColor textColor = palette().color(foregroundRole());
+    const QColor fadeColor(style.toolButtonBackgroundColorNormal());
+
+    QLinearGradient gradient(0, 0, 1, 0);
+    gradient.setCoordinateMode(QLinearGradient::ObjectBoundingMode);
+    gradient.setColorAt(0.0, textColor);
+    gradient.setColorAt(0.7, textColor);
+    gradient.setColorAt(1.0, fadeColor);
+
+    painter.setPen(QPen(gradient, 0));
+    painter.setFont(font());
+    painter.drawText(contentsRect(),
+                     static_cast<int>(alignment()) | Qt::TextSingleLine,
+                     text());
+  }
+
+private:
+  QString m_shortText;
+  QString m_fullText;
+  bool m_truncated = false;
+  bool m_hovered = false;
+};
 
 const int MAX_RECENT_WALLET_COUNT = 10;
 const char COMMUNITY_FORUM_URL[] = "https://forum.karbo.io";
@@ -272,33 +361,12 @@ MainWindow::~MainWindow() {
 }
 
 bool MainWindow::eventFilter(QObject* _object, QEvent* _event) {
-  // Toolbar Total / Locked labels: the visible text is truncated to 4
-  // decimals (formatAmountToShort) so a long fractional balance doesn't
-  // blow up toolbar width. On hover we swap the visible text to the
-  // full-precision form (formatUnsignedAmount) — same UX as the
-  // transactions history amount column, which fades in the missing
-  // digits on mouse-over. We stash the full and short forms as dynamic
-  // properties so the filter doesn't need to recompute or look up the
-  // model on every event.
-  if ((_object == m_sidebarTotalLabel || _object == m_sidebarLockedLabel) &&
-      m_sidebarTotalLabel != nullptr && m_sidebarLockedLabel != nullptr) {
-    QLabel* label = qobject_cast<QLabel*>(_object);
-    if (label != nullptr) {
-      if (_event->type() == QEvent::Enter) {
-        const QString full = label->property("fullAmountText").toString();
-        if (!full.isEmpty()) {
-          label->setText(full);
-        }
-      } else if (_event->type() == QEvent::Leave) {
-        const QString shortText = label->property("shortAmountText").toString();
-        if (!shortText.isEmpty()) {
-          label->setText(shortText);
-        }
-      }
-    }
-  }
-  // Legacy header address/balance labels were click-to-copy; both have moved
-  // into the sidebar and toolbar, which wire up their own click handlers.
+  Q_UNUSED(_object);
+  Q_UNUSED(_event);
+  // Toolbar Total/Locked hover behavior moved to FadingAmountLabel, which
+  // handles enter/leave/paint itself. Legacy header address/balance
+  // labels were click-to-copy; both have moved into the sidebar and
+  // toolbar, which wire up their own click handlers.
   return false;
 }
 
@@ -1247,15 +1315,16 @@ void MainWindow::buildTopNavToolBar() {
 
   QLabel* lockedCaption = new QLabel(tr("Locked"), balanceFrame);
   lockedCaption->setObjectName("m_lockedCaption");
-  m_sidebarLockedLabel = new QLabel(balanceFrame);
+  // FadingAmountLabel: truncated 4-decimal form by default, full
+  // precision on hover, gradient fade on the truncated tail. See the
+  // class definition near the top of this file.
+  m_sidebarLockedLabel = new FadingAmountLabel(balanceFrame);
   m_sidebarLockedLabel->setObjectName("m_lockedValue");
-  m_sidebarLockedLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
   QLabel* totalCaption = new QLabel(tr("Total"), balanceFrame);
   totalCaption->setObjectName("m_totalCaption");
-  m_sidebarTotalLabel = new QLabel(balanceFrame);
+  m_sidebarTotalLabel = new FadingAmountLabel(balanceFrame);
   m_sidebarTotalLabel->setObjectName("m_totalValue");
-  m_sidebarTotalLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
   bl->addWidget(lockedCaption);
   bl->addWidget(m_sidebarLockedLabel);
@@ -1298,35 +1367,23 @@ void MainWindow::installSidebarBalance() {
     return;
   }
 
-  // Hover-to-expand: by default the toolbar shows a truncated 4-decimal form
-  // so a long fractional balance doesn't blow up toolbar width. When the
-  // user hovers a label we swap in the full-precision form in-place — same
-  // UX as the transactions history amount column. The actual swap happens
-  // in eventFilter(); both the short and full strings are stashed as
-  // dynamic properties on each label so the filter doesn't have to query
-  // the model on every Enter/Leave event.
-  m_sidebarTotalLabel->installEventFilter(this);
-  m_sidebarLockedLabel->installEventFilter(this);
+  // FadingAmountLabel handles hover/swap/gradient internally; we just feed
+  // it the truncated and full strings each time the model changes. (The
+  // labels are constructed as FadingAmountLabel* in buildTopNavToolBar
+  // and then exposed as QLabel* on MainWindow, so we cast back here.)
+  auto applyAmount = [](QLabel* label, const QString& shortText, const QString& fullText) {
+    auto* fading = static_cast<FadingAmountLabel*>(label);
+    fading->setAmount(shortText, fullText);
+    // Tooltip stays as the full amount for screen-reader / keyboard-only
+    // users who can't hover the label themselves.
+    fading->setToolTip(fullText);
+  };
 
-  auto updateBalance = [this]() {
+  auto updateBalance = [this, applyAmount]() {
     const quint64 actual = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_ACTUAL_BALANCE).value<quint64>();
     const quint64 pending = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_PENDING_BALANCE).value<quint64>();
     const quint64 total = m_walletStateModel->index(0, 0).data(WalletStateModel::ROLE_TOTAL_BALANCE).value<quint64>();
     const quint64 locked = (total >= actual) ? (total - actual) : pending;
-    auto applyAmount = [](QLabel* label, const QString& shortText, const QString& fullText) {
-      label->setProperty("shortAmountText", shortText);
-      label->setProperty("fullAmountText", fullText);
-      // Show full text on first paint if the cursor is already over the
-      // label (e.g. the model updated while the user was hovering),
-      // otherwise the truncated form.
-      const bool hovered = label->underMouse();
-      label->setText(hovered ? fullText : shortText);
-      // Tooltip is no longer the precision-recovery affordance — the
-      // in-place swap on hover is — but we keep the full amount as a
-      // tooltip too in case a screen-reader / keyboard-only user wants
-      // to inspect it without moving the mouse onto the label.
-      label->setToolTip(fullText);
-    };
     if (m_cryptoNoteAdapter != nullptr) {
       const QString totalShort = m_cryptoNoteAdapter->formatAmountToShort(static_cast<qint64>(total));
       const QString lockedShort = m_cryptoNoteAdapter->formatAmountToShort(static_cast<qint64>(locked));
