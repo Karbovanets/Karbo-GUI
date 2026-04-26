@@ -37,8 +37,8 @@ namespace WalletGui {
 AddressCard::AddressCard(QWidget* _parent) : QFrame(_parent),
   m_labelLabel(nullptr), m_addressLabel(nullptr),
   m_accountNumberCaption(nullptr), m_accountNumberValueLabel(nullptr),
-  m_availableCaption(nullptr), m_lockedCaption(nullptr), m_pendingCaption(nullptr), m_totalCaption(nullptr),
-  m_availableRow(nullptr), m_lockedRow(nullptr), m_pendingRow(nullptr), m_totalRow(nullptr),
+  m_availableCaption(nullptr), m_lockedCaption(nullptr), m_totalCaption(nullptr),
+  m_availableRow(nullptr), m_lockedRow(nullptr), m_totalRow(nullptr),
   m_advancedButton(nullptr),
   m_advancedMenu(nullptr),
   m_copyAddressAction(nullptr), m_showQrAction(nullptr), m_copyAccountNumberAction(nullptr),
@@ -113,6 +113,9 @@ void AddressCard::setBalances(const QString& _unlockedFormatted, quint64 _unlock
                               const QString& _pendingFormatted, quint64 _pendingRaw,
                               const QString& _totalFormatted, quint64 _totalRaw,
                               const QString& _lockedFormatted) {
+  Q_UNUSED(_pendingFormatted);
+  Q_UNUSED(_pendingRaw);
+
   m_totalRow->setText(_totalFormatted);
   // When some of the total is locked (unspendable right now) show both Available
   // and Locked together so the user doesn't have to do the subtraction mentally.
@@ -124,10 +127,6 @@ void AddressCard::setBalances(const QString& _unlockedFormatted, quint64 _unlock
   m_lockedRow->setText(_lockedFormatted);
   m_lockedCaption->setVisible(hasLocked);
   m_lockedRow->setVisible(hasLocked);
-  m_pendingRow->setText(_pendingFormatted);
-  const bool hasPending = _pendingRaw > 0;
-  m_pendingCaption->setVisible(hasPending);
-  m_pendingRow->setVisible(hasPending);
 }
 
 bool AddressCard::isPrimary() const {
@@ -274,17 +273,13 @@ void AddressCard::buildUi() {
   m_totalCaption = makeBalanceCaption(tr("Total:"));
   m_availableCaption = makeBalanceCaption(tr("Available:"));
   m_lockedCaption = makeBalanceCaption(tr("Locked:"));
-  m_pendingCaption = makeBalanceCaption(tr("Pending:"));
   m_availableRow = makeAmountRow("m_addressCardAvailable");
   m_lockedRow = makeAmountRow("m_addressCardLocked");
-  m_pendingRow = makeAmountRow("m_addressCardPending");
   m_totalRow = makeAmountRow("m_addressCardTotal");
   m_availableCaption->setVisible(false);
   m_availableRow->setVisible(false);
   m_lockedCaption->setVisible(false);
   m_lockedRow->setVisible(false);
-  m_pendingCaption->setVisible(false);
-  m_pendingRow->setVisible(false);
 
   // Compact dropdown affordance floating in the card's top-right corner.
   // It replaces the old Copy/QR/Advanced button trio. The same menu is
@@ -342,7 +337,6 @@ void AddressCard::buildUi() {
   root->addLayout(makeBalanceRow(m_totalCaption, m_totalRow));
   root->addLayout(makeBalanceRow(m_availableCaption, m_availableRow));
   root->addLayout(makeBalanceRow(m_lockedCaption, m_lockedRow));
-  root->addLayout(makeBalanceRow(m_pendingCaption, m_pendingRow));
 
   // Make sure the floating cog/dropdown button stays on top of the labels
   // it overlaps in the top-right corner. Without this it can end up

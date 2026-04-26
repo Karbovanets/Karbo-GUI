@@ -96,11 +96,9 @@ private:
   QLabel* m_accountNumberValueLabel;
   QLabel* m_availableCaption;
   QLabel* m_lockedCaption;
-  QLabel* m_pendingCaption;
   QLabel* m_totalCaption;
   QLabel* m_availableRow;
   QLabel* m_lockedRow;
-  QLabel* m_pendingRow;
   QLabel* m_totalRow;
   QToolButton* m_advancedButton;
   QMenu* m_advancedMenu;
