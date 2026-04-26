@@ -11,8 +11,8 @@
 #include <QNetworkReply>
 #include <QUrl>
 
-const static QString KARBO_UPDATE_URL   = "https://api.github.com/repos/seredat/Karbo-GUI/tags";
-const static QString KARBO_DOWNLOAD_URL = "https://github.com/seredat/Karbo-GUI/releases/";
+const static QString KARBO_UPDATE_URL   = "https://api.github.com/repos/Karbovanets/Karbo-GUI/tags";
+const static QString KARBO_DOWNLOAD_URL = "https://github.com/Karbovanets/Karbo-GUI/releases/";
 
 class Updater : public QObject
 {
