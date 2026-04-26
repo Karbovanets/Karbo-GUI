@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2017, The Bytecoin developers
-// Copyright (c) 2017-2018, The Karbo developers
+// Copyright (c) 2017-2026, The Karbo developers
 // Copyright (c) 2014-2017, The Monero project
 // Copyright (c) 2017-2019, The Karbo developers
 //
