@@ -17,6 +17,10 @@
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "DonationColumnDelegate.h"
+
+#include <QPainter>
+#include <QPixmap>
+
 #include "Models/AddressBookModel.h"
 
 
@@ -33,7 +37,12 @@ void DonationColumnDelegate::paint(QPainter* _painter, const QStyleOptionViewIte
     QStyleOptionViewItem opt(_option);
     initStyleOption(&opt, _index);
     opt.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, _painter, opt.widget);
-    opt.widget->style()->drawItemPixmap(_painter, _option.rect, opt.displayAlignment, _index.data(Qt::DecorationRole).value<QPixmap>());
+    const QPixmap pixmap = _index.data(Qt::DecorationRole).value<QPixmap>();
+    if (!pixmap.isNull()) {
+      const QSize iconSize(20, 20);
+      const QRect iconRect(_option.rect.center() - QPoint(iconSize.width() / 2, iconSize.height() / 2), iconSize);
+      _painter->drawPixmap(iconRect, pixmap);
+    }
     return;
   }
 

@@ -57,7 +57,7 @@ include_directories(${CMAKE_BINARY_DIR}
   libqrencode
 )
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Network Svg)
 if (UNIX AND NOT APPLE)
   find_package(Qt6 REQUIRED COMPONENTS DBus)
 endif()
@@ -437,7 +437,7 @@ add_executable(${PROJECT_NAME} ${BUILD_PLATFORM} ${BUILD_RESOURCES} ${SOURCES} $
 
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS _GNU_SOURCE)
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${CRYPTONOTE_LIB} ${QRENCODE_LIB} Mnemonics)
-target_link_libraries(${PROJECT_NAME} Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Network)
+target_link_libraries(${PROJECT_NAME} Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Network Qt6::Svg)
 if (UNIX AND NOT APPLE)
   target_link_libraries(${PROJECT_NAME} Qt6::DBus)
 endif()

@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <QIcon>
+
 #include "DrawableTransfersModel.h"
 #include "Settings/Settings.h"
 #include "IAddressBookManager.h"
@@ -156,7 +158,7 @@ QVariant DrawableTransfersModel::getDecorationRole(const QModelIndex& _index) co
   if (_index.column() == TransfersModel::COLUMN_ADDRESS) {
     bool isDonationTransfer = _index.data(TransfersModel::ROLE_IS_DONATION_TRANSFER).toBool();
     if (isDonationTransfer) {
-      return QPixmap(":icons/donation_small");
+      return QIcon(":icons/donation_small").pixmap(18, 18);
     }
 
     return QAbstractProxyModel::data(_index, Qt::DecorationRole);

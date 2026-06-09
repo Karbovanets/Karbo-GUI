@@ -67,6 +67,7 @@ private:
   QLabel* m_syncStatusLabel;
   QLabel* m_syncStatusIconLabel;
   QLabel* m_encryptionStatusIconLabel;
+  QLabel* m_hdWalletIconLabel;
   QLabel* m_remoteModeIconLabel;
   QLabel* m_connectionStateIconLabel;
   QLabel* m_peerCountLabel;
@@ -79,6 +80,7 @@ private:
   void updateStatusConnection();
   void updateSyncState(bool _isSynchronized);
   void updateEncryptedState(bool _isEncrypted);
+  void updateHdWalletState();
 };
 
 }

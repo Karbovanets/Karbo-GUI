@@ -17,6 +17,7 @@
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QLayout>
+#include <QIcon>
 #include <QPainter>
 #include <QPushButton>
 #include <QStyleOptionViewItem>
@@ -42,16 +43,16 @@ const char SHOW_TRANSFERS_BUTTON_STYLE_SHEET[] =
     "max-width: 30px;"
     "min-height: 30px;"
     "max-height: 30px;"
-    "image: url(:icons/arrow-circle);"
+    "image: url(:icons/big-down-arrow);"
   "}"
   "QPushButton:hover {"
-    "image: url(:icons/arrow-circle-hover);"
+    "image: url(:icons/big-down-arrow);"
   "}"
     "QPushButton:checked {"
-    "image: url(:icons/arrow-circle-up);"
+    "image: url(:icons/big-up-arrow);"
   "}"
   "QPushButton:checked:hover {"
-    "image: url(:icons/arrow-circle-up-hover);"
+    "image: url(:icons/big-up-arrow);"
   "}";
 
 }
@@ -174,11 +175,9 @@ void TransactionsDelegate::drawTransfers(QPainter* _painter, const QStyleOptionV
 
 void TransactionsDelegate::drawShowTransfersButton(QPainter* _painter, const QStyleOptionViewItem& _option, const QModelIndex& _index) const {
   bool transfersIsVisible = _index.data(TransactionsModel::ROLE_SHOW_TRANSFERS).toBool();
-  bool isHovered = (_option.state & QStyle::State_MouseOver);
-  QString pixmapFile = ":icons/arrow-circle";
-  pixmapFile.append(transfersIsVisible ? "-up" : "");
-  pixmapFile.append(isHovered ? "-hover" : "");
-  QPixmap pixmap(pixmapFile);
+  const QString pixmapFile = transfersIsVisible ? QStringLiteral(":icons/big-up-arrow") :
+    QStringLiteral(":icons/big-down-arrow");
+  QPixmap pixmap = QIcon(pixmapFile).pixmap(18, 18);
   _option.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &_option, _painter, _option.widget);
   if (_index.data(TransactionsModel::ROLE_TRANSFER_COUNT).toInt() < 2) {
     return;

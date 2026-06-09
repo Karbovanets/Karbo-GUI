@@ -20,6 +20,12 @@
 
 namespace WalletGui {
 
+namespace {
+QPixmap renderIcon(const QString& _path, int _size) {
+  return QIcon(_path).pixmap(_size, _size);
+}
+}
+
 DarkStyle::DarkStyle() : Style("dark", "Dark") {
 
 }
@@ -161,27 +167,31 @@ QPixmap DarkStyle::getLogoPixmap() const {
 }
 
 QPixmap DarkStyle::getBalanceIcon() const {
-  return QPixmap(QString(":icons/dark/balance"));
+  return renderIcon(QString(":icons/dark/balance"), 32);
 }
 
 QPixmap DarkStyle::getConnectedIcon() const {
-  return QPixmap(QString(":icons/dark/connected"));
+  return renderIcon(QString(":icons/dark/connected"), 20);
 }
 
 QPixmap DarkStyle::getDisconnectedIcon() const {
-  return QPixmap(QString(":icons/dark/disconnected"));
+  return renderIcon(QString(":icons/dark/disconnected"), 20);
 }
 
 QPixmap DarkStyle::getEncryptedIcon() const {
-  return QPixmap(QString(":icons/dark/encrypted"));
+  return renderIcon(QString(":icons/dark/encrypted"), 20);
 }
 
 QPixmap DarkStyle::getNotEncryptedIcon() const {
-  return QPixmap(QString(":icons/dark/decrypted"));
+  return renderIcon(QString(":icons/dark/decrypted"), 20);
+}
+
+QPixmap DarkStyle::getHdWalletIcon() const {
+  return renderIcon(QString(":icons/dark/hd-wallet"), 20);
 }
 
 QPixmap DarkStyle::getSyncedIcon() const {
-  return QPixmap(QString(":icons/dark/synced"));
+  return renderIcon(QString(":icons/dark/synced"), 20);
 }
 
 }

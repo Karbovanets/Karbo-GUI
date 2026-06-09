@@ -390,22 +390,18 @@ QCalendarWidget QMenu {
 }
 
 #m_addressBookMenuButton {
-  min-height: 46px;
   background-color: transparent;
   border: none;
-  image: url(:icons/big-down-arrow);
-}
-
-#m_addressBookMenuButton:hover {
-  image: url(:icons/big-down-arrow-black);
-}
-
-#m_addressBookMenuButton:!hover {
-  image: url(:icons/big-down-arrow);
+  min-width: 40px;
+  max-width: 40px;
+  min-height: 46px;
+  max-height: 46px;
+  padding: 0;
 }
 
 #m_addressBookMenuButton::menu-indicator {
   image: none;
+  width: 0;
 }
 
 #m_addressBookMenu {

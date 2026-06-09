@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+<title>pool stats</title>
+<path d="M5 19V5M5 19h14" stroke="#9FC4EE" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="12" width="2.8" height="5" rx=".8" fill="#9FC4EE"/><rect x="11" y="9" width="2.8" height="8" rx=".8" fill="#9FC4EE"/><rect x="15" y="6" width="2.8" height="11" rx=".8" fill="#9FC4EE"/>
+</svg>

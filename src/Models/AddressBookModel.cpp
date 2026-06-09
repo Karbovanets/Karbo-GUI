@@ -25,6 +25,8 @@
 #include <QPixmap>
 #include <QSize>
 
+#include <QIcon>
+
 #include "AddressBookModel.h"
 #include "Settings/Settings.h"
 #include "IAddressBookManager.h"
@@ -182,7 +184,7 @@ QVariant AddressBookModel::getDisplayRole(const QModelIndex& _index) const {
 
 QVariant AddressBookModel::getDecorationRole(const QModelIndex& _index) const {
   if (_index.column() == COLUMN_DONATION && _index.data(ROLE_IS_DONATION_ADDRESS).toBool()) {
-    return QPixmap(":icons/donation");
+    return QIcon(":icons/donation").pixmap(20, 20);
   }
 
   return QVariant();

@@ -18,8 +18,9 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QIcon>
 #include <QMenu>
-#include <QPushButton>
+#include <QToolButton>
 
 #include "AddressBookDelegate.h"
 #include "Models/AddressBookModel.h"
@@ -37,9 +38,12 @@ QWidget* AddressBookDelegate::createEditor(QWidget* _parent, const QStyleOptionV
     return QStyledItemDelegate::createEditor(_parent, _option, _index);
   }
 
-  QPushButton* editor = new QPushButton(_parent);
+  QToolButton* editor = new QToolButton(_parent);
   editor->setObjectName("m_addressBookMenuButton");
   editor->setFocusPolicy(Qt::NoFocus);
+  editor->setIcon(QIcon(":icons/big-down-arrow"));
+  editor->setIconSize(QSize(14, 14));
+  editor->setPopupMode(QToolButton::InstantPopup);
   QMenu* menu = new QMenu(editor);
   menu->setObjectName("m_addressBookMenu");
   QAction* sendAction = new QAction(tr("Send"), menu);

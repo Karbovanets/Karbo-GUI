@@ -18,9 +18,12 @@
 
 #include <QClipboard>
 #include <QCompleter>
+#include <QMetaObject>
+#include <QPointer>
 #include <QWheelEvent>
 
 #include "TransferFrame.h"
+#include "CryptoNoteCore/AccountNumber.h"
 #include "Settings/Settings.h"
 #include "Gui/Common/AddressBookDialog.h"
 #include "ICryptoNoteAdapter.h"
@@ -34,6 +37,12 @@ namespace WalletGui {
 namespace {
 
 Q_DECL_CONSTEXPR quint32 ADDRESS_INPUT_INTERVAL = 1500;
+
+bool isAccountNumberString(const QString& _text) {
+  CryptoNote::AccountNumber accountNumber;
+  return CryptoNote::AccountNumber::fromString(_text.trimmed().toStdString(), accountNumber);
+}
+
 const char TRANSFER_FRAME_STYLE_SHEET_TEMPLATE[] =
   "WalletGui--TransferFrame {"
     "background-color: %backgroundColorGray%;"
@@ -283,15 +292,15 @@ void TransferFrame::sendAllClicked() {
 }
 
 void TransferFrame::addressChanged(const QString& _address) {
+  const QString address = getAddress();
+  const bool isValidAddress = m_cryptoNoteAdapter != nullptr && m_cryptoNoteAdapter->isValidAddress(address);
+  const bool isAccountNumber = isAccountNumberString(address);
   setAddressError(m_addressCompleter->currentCompletion().isEmpty() && !_address.isEmpty() &&
-    !m_cryptoNoteAdapter->isValidAddress(getAddress()));
+    !isValidAddress && !isAccountNumber);
   Q_EMIT addressChangedSignal(_address);
 
-  if(!_address.isEmpty() && _address.contains('.')) {
-    if (m_addressInputTimer != -1) {
-      killTimer(m_addressInputTimer);
-    }
-    m_addressInputTimer = startTimer(ADDRESS_INPUT_INTERVAL);
+  if (!_address.isEmpty() && !_address.contains('<') && (_address.contains('.') || isAccountNumber)) {
+    restartAddressInputTimer();
   }
 }
 
@@ -322,11 +331,65 @@ void TransferFrame::amountStringChanged(const QString& _amountString) {
 
 void TransferFrame::timerEvent(QTimerEvent* _event) {
   if (_event->timerId() == m_addressInputTimer) {
-    m_aliasProvider->getAddresses(m_ui->m_sendAddressEdit->text().trimmed());
+    killTimer(m_addressInputTimer);
+    m_addressInputTimer = -1;
+
+    const QString input = m_ui->m_sendAddressEdit->text().trimmed();
+    const QString address = getAddress();
+    if (input.contains('.')) {
+      m_aliasProvider->getAddresses(input);
+    } else if (isAccountNumberString(address)) {
+      resolveAccountNumber(address.toUpper());
+    }
+
     return;
   }
 
   QFrame::timerEvent(_event);
+}
+
+void TransferFrame::restartAddressInputTimer() {
+  if (m_addressInputTimer != -1) {
+    killTimer(m_addressInputTimer);
+  }
+
+  m_addressInputTimer = startTimer(ADDRESS_INPUT_INTERVAL);
+}
+
+void TransferFrame::resolveAccountNumber(const QString& _accountNumber) {
+  if (m_cryptoNoteAdapter == nullptr || m_cryptoNoteAdapter->getNodeAdapter() == nullptr) {
+    return;
+  }
+
+  m_pendingAccountNumber = _accountNumber;
+  QPointer<TransferFrame> guard(this);
+  m_cryptoNoteAdapter->getNodeAdapter()->resolveAccountNumber(_accountNumber, [guard, _accountNumber](std::error_code _error, const QString& _address) {
+    if (guard.isNull()) {
+      return;
+    }
+
+    QMetaObject::invokeMethod(guard.data(), [guard, _accountNumber, _error, _address]() {
+      if (guard.isNull()) {
+        return;
+      }
+
+      TransferFrame* self = guard.data();
+      if (self->m_pendingAccountNumber.compare(_accountNumber, Qt::CaseInsensitive) != 0 ||
+          self->getAddress().compare(_accountNumber, Qt::CaseInsensitive) != 0) {
+        return;
+      }
+
+      self->m_pendingAccountNumber.clear();
+      const QString resolvedAddress = _address.trimmed();
+      if (!_error && self->m_cryptoNoteAdapter != nullptr && self->m_cryptoNoteAdapter->isValidAddress(resolvedAddress)) {
+        self->m_ui->m_sendAddressEdit->setText(QString("%1 <%2>").arg(_accountNumber, resolvedAddress));
+        self->setAddressError(false);
+      } else {
+        self->setAddressError(true);
+        Q_EMIT self->addressChangedSignal(_accountNumber);
+      }
+    }, Qt::QueuedConnection);
+  });
 }
 
 void TransferFrame::onAliasFound(const QString& _name, const QString& _address) {

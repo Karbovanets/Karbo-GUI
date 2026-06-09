@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <QIcon>
 #include <QMetaEnum>
 #include <QPixmap>
 #include <QPainter>
@@ -37,12 +38,12 @@ namespace {
 
 QPixmap getTransferPixmap(const CryptoNote::WalletTransfer& _transfer) {
   if (_transfer.type == CryptoNote::WalletTransferType::DONATION) {
-    return QPixmap(":icons/donation_confirmed");
+    return QIcon(":icons/donation_confirmed").pixmap(20, 20);
   } else if (_transfer.amount < 0) {
-    return QPixmap(":icons/out_confirmed");
+    return QIcon(":icons/out_confirmed").pixmap(20, 20);
   }
 
-  return QPixmap(":icons/inp_confirmed");
+  return QIcon(":icons/inp_confirmed").pixmap(20, 20);
 }
 
 }

@@ -32,6 +32,7 @@
 #include <QCloseEvent>
 #include <QContextMenuEvent>
 #include <QDesktopServices>
+#include <QDialog>
 #include <QFileDialog>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -42,6 +43,7 @@
 #include <QMetaMethod>
 #include <QSessionManager>
 #include <QSystemTrayIcon>
+#include <QTextEdit>
 #include <QToolBar>
 #include <QUrlQuery>
 #include <QVBoxLayout>
@@ -785,6 +787,7 @@ void MainWindow::updateThemedWidgets() {
   updateChildrenOfType<WalletTableView>(this);
   updateChildrenOfType<WalletTextLabel>(this);
   updateChildrenOfType<WalletTreeView>(this);
+  updateNavigationIcons();
 }
 
 // Creates a wallet whose additional addresses have independent random spend keys.
@@ -1329,7 +1332,7 @@ void MainWindow::buildTopNavToolBar() {
   m_mainToolBar->setFloatable(false);
   m_mainToolBar->setContextMenuPolicy(Qt::PreventContextMenu);
   m_mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  m_mainToolBar->setIconSize(QSize(20, 20));
+  m_mainToolBar->setIconSize(QSize(24, 24));
   addToolBar(Qt::TopToolBarArea, m_mainToolBar);
 
   m_navActionGroup = new QActionGroup(this);
@@ -1343,21 +1346,20 @@ void MainWindow::buildTopNavToolBar() {
     QFrame* frame;
     QString objectName;
     QString text;
-    QString iconPath;
+    QString iconName;
   };
   const NavSpec specs[] = {
-    { &m_overviewNavAction, m_ui->m_overviewFrame,      "m_overviewNavAction", tr("Overview"), ":icons/overview" },
-    { &m_sendNavAction,     m_ui->m_sendFrame,          "m_sendNavAction",     tr("Send"),     ":icons/send" },
-    { &m_receiveNavAction,  m_ui->m_receiveFrame,       "m_receiveNavAction",  tr("Receive"),  ":icons/receive" },
-    { &m_historyNavAction,  m_ui->m_transactionsFrame,  "m_historyNavAction",  tr("History"),  ":icons/transactions" },
-    { &m_contactsNavAction, m_ui->m_addressBookFrame,   "m_contactsNavAction", tr("Contacts"), ":icons/address_book" },
-    { &m_explorerNavAction, m_ui->m_blockExplorerFrame, "m_explorerNavAction", tr("Explorer"), ":icons/explorer" },
+    { &m_overviewNavAction, m_ui->m_overviewFrame,      "m_overviewNavAction", tr("Overview"), "overview" },
+    { &m_sendNavAction,     m_ui->m_sendFrame,          "m_sendNavAction",     tr("Send"),     "send" },
+    { &m_receiveNavAction,  m_ui->m_receiveFrame,       "m_receiveNavAction",  tr("Receive"),  "receive" },
+    { &m_historyNavAction,  m_ui->m_transactionsFrame,  "m_historyNavAction",  tr("History"),  "transactions" },
+    { &m_contactsNavAction, m_ui->m_addressBookFrame,   "m_contactsNavAction", tr("Contacts"), "address_book" },
+    { &m_explorerNavAction, m_ui->m_blockExplorerFrame, "m_explorerNavAction", tr("Explorer"), "explorer" },
   };
   for (const NavSpec& spec : specs) {
     QAction* action = new QAction(spec.text, this);
     action->setObjectName(spec.objectName);
     action->setCheckable(true);
-    action->setIcon(QIcon(spec.iconPath));
     m_navActionGroup->addAction(action);
     m_mainToolBar->addAction(action);
     QFrame* frame = spec.frame;
@@ -1365,6 +1367,7 @@ void MainWindow::buildTopNavToolBar() {
     action->setEnabled(false);
     *spec.outAction = action;
   }
+  updateNavigationIcons();
 
   // Route the Payment menu's "Create payment request" straight to the Receive tab.
   if (m_receiveNavAction != nullptr && m_ui->m_createPaymentRequestAction != nullptr) {
@@ -1405,6 +1408,17 @@ void MainWindow::buildTopNavToolBar() {
   bl->addWidget(m_sidebarTotalLabel);
 
   m_mainToolBar->addWidget(balanceFrame);
+}
+
+void MainWindow::updateNavigationIcons() {
+  const QString themePrefix = Settings::instance().getCurrentStyle().getStyleId() == QStringLiteral("light") ?
+    QStringLiteral(":icons/light/nav/") : QStringLiteral(":icons/dark/nav/");
+  if (m_overviewNavAction != nullptr) m_overviewNavAction->setIcon(QIcon(themePrefix + QStringLiteral("overview")));
+  if (m_sendNavAction != nullptr) m_sendNavAction->setIcon(QIcon(themePrefix + QStringLiteral("send")));
+  if (m_receiveNavAction != nullptr) m_receiveNavAction->setIcon(QIcon(themePrefix + QStringLiteral("receive")));
+  if (m_historyNavAction != nullptr) m_historyNavAction->setIcon(QIcon(themePrefix + QStringLiteral("transactions")));
+  if (m_contactsNavAction != nullptr) m_contactsNavAction->setIcon(QIcon(themePrefix + QStringLiteral("address_book")));
+  if (m_explorerNavAction != nullptr) m_explorerNavAction->setIcon(QIcon(themePrefix + QStringLiteral("explorer")));
 }
 
 void MainWindow::buildAddressSidebar() {
@@ -1545,17 +1559,44 @@ void MainWindow::importAddressRequested() {
     return;
   }
 
-  bool ok = false;
   const QString prompt = tr(
     "Paste one of the following to import an address into this wallet:\n"
     "  \u2022 a spend secret key (64 hex characters)\n"
     "  \u2022 a spend public key (64 hex characters, watch-only)\n"
     "  \u2022 an encoded address/keys blob produced by \"Save keys\"\n\n"
     "The view key is shared across all addresses in this wallet, so it is reused automatically.");
-  const QString input = QInputDialog::getMultiLineText(this, tr("Import address"), prompt, QString(), &ok);
-  if (!ok) {
+  QDialog dialog(this, static_cast<Qt::WindowFlags>(Qt::WindowCloseButtonHint));
+  dialog.setWindowTitle(tr("Import address"));
+  dialog.resize(620, 430);
+
+  QVBoxLayout* layout = new QVBoxLayout(&dialog);
+  QLabel* promptLabel = new QLabel(prompt, &dialog);
+  promptLabel->setWordWrap(true);
+  layout->addWidget(promptLabel);
+
+  QTextEdit* inputEdit = new QTextEdit(&dialog);
+  inputEdit->setAcceptRichText(false);
+  inputEdit->setMinimumHeight(240);
+  layout->addWidget(inputEdit);
+
+  QHBoxLayout* buttonLayout = new QHBoxLayout();
+  buttonLayout->addStretch();
+  WalletOkButton* okButton = new WalletOkButton(&dialog);
+  okButton->setText(tr("OK"));
+  okButton->setDefault(true);
+  WalletCancelButton* cancelButton = new WalletCancelButton(&dialog);
+  cancelButton->setText(tr("Cancel"));
+  buttonLayout->addWidget(okButton);
+  buttonLayout->addWidget(cancelButton);
+  layout->addLayout(buttonLayout);
+
+  connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+  connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+  if (dialog.exec() != QDialog::Accepted) {
     return;
   }
+  const QString input = inputEdit->toPlainText();
   const QString trimmed = input.trimmed();
   if (trimmed.isEmpty()) {
     return;

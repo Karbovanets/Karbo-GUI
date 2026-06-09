@@ -121,6 +121,7 @@ private:
   QAction* m_importAddressAction;
 
   void buildTopNavToolBar();
+  void updateNavigationIcons();
   void buildAddressSidebar();
   void installSidebarBalance();
   void rearrangeWalletMenu();

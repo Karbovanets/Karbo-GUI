@@ -286,15 +286,12 @@ void AddressCard::buildUi() {
   // surfaced via right-click anywhere on the card body (see
   // contextMenuEvent), so this button is just a visible hint that the
   // card has actions — it shouldn't steal vertical space. We use the
-  // shared :icons/down-arrow resource (also used by Qt combo-boxes
-  // throughout the app) for a familiar dropdown-arrow look, and size
-  // both the icon and the button down to feel like a chrome accent
-  // rather than a primary control.
+  // shared :icons/big-down-arrow resource for a familiar dropdown-arrow look.
   m_advancedButton = new QToolButton(this);
   m_advancedButton->setObjectName("m_addressCardAdvancedButton");
-  m_advancedButton->setIcon(QIcon(QStringLiteral(":icons/down-arrow")));
-  m_advancedButton->setIconSize(QSize(10, 10));
-  m_advancedButton->setFixedSize(20, 20);
+  m_advancedButton->setIcon(QIcon(QStringLiteral(":icons/big-down-arrow")));
+  m_advancedButton->setIconSize(QSize(16, 16));
+  m_advancedButton->setFixedSize(24, 24);
   m_advancedButton->setToolTip(tr("Address actions"));
   m_advancedButton->setAutoRaise(true);
   m_advancedButton->setPopupMode(QToolButton::InstantPopup);

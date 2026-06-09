@@ -18,6 +18,7 @@
 
 #include <QDateTime>
 #include <QFont>
+#include <QIcon>
 #include <QLocale>
 #include <QMetaEnum>
 #include <QPixmap>
@@ -429,7 +430,7 @@ QVariant TransactionsModel::getDecorationRoleData(const QModelIndex &_index) con
 
     QPixmap pixmap;
     if (!QPixmapCache::find(file, &pixmap)) {
-      pixmap.load(file);
+      pixmap = QIcon(file).pixmap(20, 20);
       QPixmapCache::insert(file, pixmap);
     }
 

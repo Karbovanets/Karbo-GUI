@@ -83,7 +83,10 @@ private:
   QCompleter* m_addressCompleter;
   DnsManager* m_aliasProvider;
   int m_addressInputTimer;
+  QString m_pendingAccountNumber;
 
+  void restartAddressInputTimer();
+  void resolveAccountNumber(const QString& _accountNumber);
   void onAliasFound(const QString& _name, const QString& _address);
   void validateAmount(double _amount);
 
