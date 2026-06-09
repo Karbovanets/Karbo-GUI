@@ -43,6 +43,17 @@ IWalletAdapter::WalletInitStatus WalletGreenAdapter::create(const QString& _wall
   return status;
 }
 
+IWalletAdapter::WalletInitStatus WalletGreenAdapter::createHd(const QString& _walletPath, const QString& _password,
+  const AccountKeys& _accountKeys, quint32 _addressCount, bool _scanFromBeginning) {
+  createWorker();
+  WalletInitStatus status = m_worker->createHd(_walletPath, _password, _accountKeys, _addressCount, _scanFromBeginning);
+  if (status != INIT_SUCCESS) {
+    deleteWorker();
+  }
+
+  return status;
+}
+
 IWalletAdapter::WalletInitStatus WalletGreenAdapter::load(const QString& _walletPath, const QString& _password) {
   createWorker();
   WalletInitStatus status = m_worker->load(_walletPath, _password);
@@ -116,6 +127,11 @@ bool WalletGreenAdapter::isEncrypted() const {
 bool WalletGreenAdapter::isTrackingWallet() const {
   Q_ASSERT(m_worker != nullptr);
   return m_worker->isTrackingWallet();
+}
+
+CryptoNote::AddressGenerationMode WalletGreenAdapter::getAddressGenerationMode() const {
+  Q_ASSERT(m_worker != nullptr);
+  return m_worker->getAddressGenerationMode();
 }
 
 QString WalletGreenAdapter::getAddress(quintptr _addressIndex) const {

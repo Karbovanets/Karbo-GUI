@@ -150,6 +150,57 @@ IWalletAdapter::WalletInitStatus WalletGreenWorker::create(const QString& _walle
   return getInitStatus(result);
 }
 
+IWalletAdapter::WalletInitStatus WalletGreenWorker::createHd(const QString& _walletPath, const QString& _password,
+  const AccountKeys& _accountKeys, quint32 _addressCount, bool _scanFromBeginning) {
+  Q_ASSERT(m_wallet.isNull());
+  SemaphoreLocker locker(m_walletSemaphore);
+  init();
+  QEventLoop waitLoop;
+  WalletLogger::info(tr("[Wallet] Generating new HD wallet..."));
+  m_dispatcher->remoteSpawn([this, &_walletPath, &_password, &_accountKeys, _addressCount, _scanFromBeginning, &waitLoop]() {
+    SemaphoreUnlocker unlocker(m_walletSemaphore);
+    int errorCode = 0;
+    try {
+      if (_scanFromBeginning) {
+        m_wallet->initializeWithViewKey(std::string(_walletPath.toLocal8Bit().data()), _password.toStdString(),
+          _accountKeys.viewKeys.secretKey, static_cast<uint64_t>(0));
+      } else {
+        m_wallet->initializeWithViewKey(std::string(_walletPath.toLocal8Bit().data()), _password.toStdString(),
+          _accountKeys.viewKeys.secretKey);
+      }
+
+      m_wallet->setAddressGenerationMode(CryptoNote::AddressGenerationMode::HD_DETERMINISTIC, _accountKeys.spendKeys.secretKey);
+      const quint32 addressCount = _addressCount == 0 ? 1 : _addressCount;
+      for (quint32 i = 0; i < addressCount; ++i) {
+        if (_scanFromBeginning) {
+          m_wallet->createAddress(static_cast<uint32_t>(0));
+        } else {
+          m_wallet->createAddress();
+        }
+      }
+    } catch (const std::system_error& _error) {
+      WalletLogger::critical(tr("[Wallet] Generate HD wallet error: %1").arg(_error.code().message().data()));
+      errorCode = _error.code().value();
+    } catch (const std::exception& _error) {
+      WalletLogger::critical(tr("[Wallet] Generate HD wallet runtime error: %1").arg(_error.what()));
+      errorCode = CryptoNote::error::INTERNAL_WALLET_ERROR;
+    }
+
+    waitLoop.exit(errorCode);
+  });
+
+  int result = waitLoop.exec();
+  locker.wait();
+  WalletLogger::info(tr("[Wallet] HD wallet generate status: %1").arg(result));
+  if (result == 0) {
+    startEventLoop();
+    m_isOpen.store(true);
+    Q_EMIT walletOpenedSignal();
+  }
+
+  return getInitStatus(result);
+}
+
 IWalletAdapter::WalletInitStatus WalletGreenWorker::load(const QString& _walletPath, const QString& _password) {
   Q_ASSERT(m_wallet.isNull());
   SemaphoreLocker locker(m_walletSemaphore);
@@ -457,6 +508,23 @@ bool WalletGreenWorker::isTrackingWallet() const {
   QByteArray spendPrivateKey(reinterpret_cast<char*>(&accountKeys.spendKeys.secretKey), sizeof(accountKeys.spendKeys.secretKey));
   QByteArray zeroKey(sizeof(accountKeys.spendKeys.secretKey), 0);
   return spendPrivateKey == zeroKey;
+}
+
+CryptoNote::AddressGenerationMode WalletGreenWorker::getAddressGenerationMode() const {
+  Q_ASSERT(!m_wallet.isNull());
+  SemaphoreLocker locker(m_walletSemaphore);
+  CryptoNote::AddressGenerationMode result = CryptoNote::AddressGenerationMode::INDEPENDENT_SPEND_KEYS;
+  m_dispatcher->remoteSpawn([this, &result]() {
+    SemaphoreUnlocker unlocker(m_walletSemaphore);
+    try {
+      result = m_wallet->getAddressGenerationMode();
+    } catch (const std::exception& _error) {
+      WalletLogger::critical(tr("[Wallet] Get address generation mode error: %1").arg(_error.what()));
+    }
+  });
+
+  locker.wait();
+  return result;
 }
 
 QString WalletGreenWorker::getAddress(quintptr _addressIndex) const {

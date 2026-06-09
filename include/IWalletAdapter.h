@@ -78,6 +78,8 @@ public:
   virtual ~IWalletAdapter() {}
 
   virtual WalletInitStatus create(const QString& _walletPath, const QString& _password) = 0;
+  virtual WalletInitStatus createHd(const QString& _walletPath, const QString& _password, const AccountKeys& _accountKeys,
+    quint32 _addressCount, bool _scanFromBeginning) = 0;
   virtual WalletInitStatus load(const QString& _walletPath, const QString& _password) = 0;
   virtual WalletInitStatus loadLegacyKeys(const QString& _legacyKeysFile, const QString& _walletPath, const QString& _password) = 0;
   virtual WalletInitStatus createWithKeys(const QString& _walletPath, const AccountKeys& _accountKeys) = 0;
@@ -90,6 +92,7 @@ public:
   virtual bool isOpen() const = 0;
   virtual bool isEncrypted() const = 0;
   virtual bool isTrackingWallet() const = 0;
+  virtual CryptoNote::AddressGenerationMode getAddressGenerationMode() const = 0;
   virtual QString getAddress(quintptr _addressIndex) const = 0;
   virtual quintptr getAddressCount() const = 0;
   virtual QString createAddress() = 0;

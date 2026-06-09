@@ -45,7 +45,6 @@
 #include <QToolBar>
 #include <QUrlQuery>
 #include <QVBoxLayout>
-#include <ctime>
 
 #include <Common/Base58.h>
 #include "MainWindow.h"
@@ -82,12 +81,8 @@
 #include "Gui/Common/RestoreFromMnemonicSeedDialog.h"
 #include "Mnemonics/electrum-words.h"
 #include "CryptoNote.h"
+#include "CryptoNoteCore/Account.h"
 #include "crypto/crypto.h"
-extern "C"
-{
-#include "crypto/keccak.h"
-#include "crypto/crypto-ops.h"
-}
 #include "../include/IDonationManager.h"
 #include "Application/IWalletUiItem.h"
 #include "Application/WalletApplication.h"
@@ -458,8 +453,9 @@ void MainWindow::walletOpened() {
     m_ui->m_openPaymentRequestAction->setEnabled(false);
     m_ui->m_exportKeyAction->setEnabled(false);
   }
-  AccountKeys accountKeys = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter()->getAccountKeys(0);
-  if (!m_deterministicAdapter.isDeterministic(accountKeys)) {
+  AccountKeys accountKeys = walletAdapter->getAccountKeys(0);
+  const bool hasHdSeed = walletAdapter->getAddressGenerationMode() == CryptoNote::AddressGenerationMode::HD_DETERMINISTIC;
+  if (!hasHdSeed && !m_deterministicAdapter.isDeterministic(accountKeys)) {
     m_ui->m_showSeedAction->setEnabled(false);
   }
 
@@ -791,7 +787,7 @@ void MainWindow::updateThemedWidgets() {
   updateChildrenOfType<WalletTreeView>(this);
 }
 
-// This is original createWallet() function renamed and used to create nondeterminisctic wallets
+// Creates a wallet whose additional addresses have independent random spend keys.
 void MainWindow::createNonDeterministicWallet() {
   QString filePath = QFileDialog::getSaveFileName(this, tr("New wallet file"),
 #ifdef Q_OS_WIN
@@ -862,8 +858,7 @@ void MainWindow::createWallet() {
     QString oldWalletFile = Settings::instance().getWalletFile();
     Settings::instance().setWalletFile(filePath);
     AccountKeys accountKeys = m_deterministicAdapter.generateDeterministicKeys();
-    uint64_t creationTimestamp = static_cast<uint64_t>(time(nullptr));
-    if (walletAdapter->createWithKeysAndTimestamp(filePath, accountKeys, creationTimestamp) == IWalletAdapter::INIT_SUCCESS) {
+    if (walletAdapter->createHd(filePath, "", accountKeys, 1, false) == IWalletAdapter::INIT_SUCCESS) {
       walletAdapter->save(CryptoNote::WalletSaveLevel::SAVE_ALL, true);
       Q_ASSERT(walletAdapter->isOpen());
       QString fileName = Settings::instance().getWalletFile();
@@ -1133,27 +1128,34 @@ void MainWindow::importKey() {
 }
 
 void MainWindow::restoreFromMnemonicSeed() {
-    RestoreFromMnemonicSeedDialog dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-      QString mnemonicString = dlg.getSeedString().trimmed();
-      if (mnemonicString.isEmpty()) {
-        return;
-      }
+  RestoreFromMnemonicSeedDialog dlg(this);
+  if (dlg.exec() == QDialog::Accepted) {
+    QString mnemonicString = dlg.getSeedString().trimmed();
+    if (mnemonicString.isEmpty()) {
+      return;
+    }
 
-      QString filePath = QFileDialog::getSaveFileName(this, tr("Save wallet to..."),
-  #ifdef Q_OS_WIN
-      QApplication::applicationDirPath(),
-  #else
-      QDir::homePath(),
-  #endif
-      tr("Wallets (*.wallet)"));
-      if (filePath.isEmpty()) {
-        return;
-      }
+    bool addressCountAccepted = false;
+    const int restoreAddressCount = QInputDialog::getInt(this, tr("Restore HD addresses"),
+      tr("Number of HD addresses to restore:"), 1, 1, 1000000, 1, &addressCountAccepted);
+    if (!addressCountAccepted) {
+      return;
+    }
 
-      if (!filePath.endsWith(".wallet")) {
-        filePath.append(".wallet");
-      }
+    QString filePath = QFileDialog::getSaveFileName(this, tr("Save wallet to..."),
+#ifdef Q_OS_WIN
+    QApplication::applicationDirPath(),
+#else
+    QDir::homePath(),
+#endif
+    tr("Wallets (*.wallet)"));
+    if (filePath.isEmpty()) {
+      return;
+    }
+
+    if (!filePath.endsWith(".wallet")) {
+      filePath.append(".wallet");
+    }
 
     if (QFile::exists(filePath)) {
       QMessageBox::warning(this, tr("Warning"),
@@ -1175,9 +1177,7 @@ void MainWindow::restoreFromMnemonicSeed() {
     }
 
     Crypto::secret_key_to_public_key(_keys.spendKeys.secretKey, _keys.spendKeys.publicKey);
-    Crypto::SecretKey second;
-    keccak((uint8_t *)&_keys.spendKeys.secretKey, sizeof(Crypto::SecretKey), (uint8_t *)&second, sizeof(Crypto::SecretKey));
-    Crypto::generate_deterministic_keys(_keys.viewKeys.publicKey, _keys.viewKeys.secretKey, second);
+    CryptoNote::AccountBase::generateViewFromSpend(_keys.spendKeys.secretKey, _keys.viewKeys.secretKey, _keys.viewKeys.publicKey);
 
     IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
     if (walletAdapter->isOpen()) {
@@ -1187,7 +1187,7 @@ void MainWindow::restoreFromMnemonicSeed() {
     }
 
     Settings::instance().setWalletFile(filePath);
-    if (walletAdapter->createWithKeys(filePath, _keys) == IWalletAdapter::INIT_SUCCESS) {
+    if (walletAdapter->createHd(filePath, "", _keys, static_cast<quint32>(restoreAddressCount), true) == IWalletAdapter::INIT_SUCCESS) {
       walletAdapter->save(CryptoNote::WalletSaveLevel::SAVE_ALL, true);
     } else {
       Settings::instance().setWalletFile(oldWalletFile);
@@ -1264,9 +1264,9 @@ void MainWindow::showMnemonicSeed() {
     return;
   }
   if(!m_deterministicAdapter.isDeterministic(accountKeys)) {
-    WalletLogger::info(tr("[Deterministic Wallet Adapter] Wallet is non-deterministic and has no seed."));
-    QMessageBox::critical(nullptr, tr("This is non-deterministic wallet"),
-                          tr("Wallet is non-deterministic and has no seed."), QMessageBox::Ok);
+    WalletLogger::info(tr("[Deterministic Wallet Adapter] Wallet uses independent address keys and has no seed."));
+    QMessageBox::critical(nullptr, tr("This wallet has independent address keys"),
+                          tr("This wallet has independent address keys and has no mnemonic seed."), QMessageBox::Ok);
     return;
   }
 
@@ -1276,14 +1276,19 @@ void MainWindow::showMnemonicSeed() {
 
 void MainWindow::showSeedFromCard(quintptr _index, const QString& _address) {
   Q_UNUSED(_address);
-  // Mnemonic seeds only exist for the primary address: the wallet seed derives
-  // the index-0 spend key pair deterministically. Sub-addresses (index > 0) are
-  // generated with random keys and cannot be recovered from any mnemonic.
+  IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
+  if (walletAdapter != nullptr && walletAdapter->isOpen() &&
+      walletAdapter->getAddressGenerationMode() == CryptoNote::AddressGenerationMode::HD_DETERMINISTIC) {
+    showMnemonicSeed();
+    return;
+  }
+
+  // Older deterministic containers only have a seed for address 0. Independent
+  // address containers require backing up each address's spend key separately.
   if (_index != 0) {
     QMessageBox::information(this, tr("Mnemonic seed unavailable"),
-                             tr("Mnemonic seed is only available for the primary address.\n\n"
-                                "Additional addresses use random keys and are not recoverable from a seed phrase. "
-                                "Back them up via \"Show keys...\" on the address card."),
+                             tr("This wallet uses independent address keys, so additional addresses are not recoverable "
+                                "from one seed phrase.\n\nBack them up via \"Show keys...\" on the address card."),
                              QMessageBox::Ok);
     return;
   }

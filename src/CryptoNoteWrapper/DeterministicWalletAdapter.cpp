@@ -15,16 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Karbovanets.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <QDebug>
-#include <QMessageBox>
+#include <cstring>
+#include <system_error>
+
 #include "WalletLogger/WalletLogger.h"
 #include "CryptoNoteWrapper/DeterministicWalletAdapter.h"
+#include "CryptoNoteCore/Account.h"
 #include "crypto/crypto.h"
-extern "C"
-{
-#include "crypto/keccak.h"
-#include "crypto/crypto-ops.h"
-}
 
 namespace WalletGui {
 
@@ -38,12 +35,10 @@ DeterministicWalletAdapter::~DeterministicWalletAdapter() {
 
 AccountKeys DeterministicWalletAdapter::generateDeterministicKeys() {
   AccountKeys keys;
-  Crypto::SecretKey second;
   WalletLogger::info(tr("[Deterministic Wallet Adapter] Generating deterministic keys..."));
   try {
     Crypto::generate_keys(keys.spendKeys.publicKey, keys.spendKeys.secretKey);
-    keccak((uint8_t *)&keys.spendKeys.secretKey, sizeof(Crypto::SecretKey), (uint8_t *)&second, sizeof(Crypto::SecretKey));
-    Crypto::generate_deterministic_keys(keys.viewKeys.publicKey, keys.viewKeys.secretKey, second);
+    CryptoNote::AccountBase::generateViewFromSpend(keys.spendKeys.secretKey, keys.viewKeys.secretKey, keys.viewKeys.publicKey);
   } catch (std::system_error&) {
 
   }
@@ -51,11 +46,13 @@ AccountKeys DeterministicWalletAdapter::generateDeterministicKeys() {
 }
 
 bool DeterministicWalletAdapter::isDeterministic(AccountKeys& _keys) const {
-  Crypto::SecretKey second;
-  keccak((uint8_t *)&_keys.spendKeys.secretKey, sizeof(Crypto::SecretKey), (uint8_t *)&second, sizeof(Crypto::SecretKey));
-  sc_reduce32((uint8_t *)&second);
-  bool keys_deterministic = memcmp(second.data,_keys.viewKeys.secretKey.data, sizeof(Crypto::SecretKey)) == 0;
-  return keys_deterministic;
+  if (_keys.spendKeys.secretKey == CryptoNote::NULL_SECRET_KEY) {
+    return false;
+  }
+
+  Crypto::SecretKey deterministicViewSecretKey;
+  CryptoNote::AccountBase::generateViewFromSpend(_keys.spendKeys.secretKey, deterministicViewSecretKey);
+  return std::memcmp(deterministicViewSecretKey.data, _keys.viewKeys.secretKey.data, sizeof(Crypto::SecretKey)) == 0;
 }
 
 }
