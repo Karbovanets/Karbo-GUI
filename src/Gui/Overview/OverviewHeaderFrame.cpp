@@ -22,11 +22,13 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLocale>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include "OverviewHeaderFrame.h"
 #include "Gui/Common/WalletTextLabel.h"
+#include "IWalletAdapter.h"
 #include "Models/NodeStateModel.h"
 #include "Settings/Settings.h"
 #include "Style/Style.h"
@@ -49,11 +51,12 @@ const char OVERVIEW_HEADER_STYLE_SHEET_TEMPLATE[] =
     "border: none;"
     "border-bottom: 1px solid %borderColor%;"
     "background-color: %panelBackgroundColor%;"
-    "min-height: 140px;"
-    "max-height: 150px;"
+    "min-height: 155px;"
+    "max-height: 170px;"
   "}"
 
-  "WalletGui--OverviewHeaderFrame #m_overviewNetworkColumn {"
+  "WalletGui--OverviewHeaderFrame #m_overviewNetworkColumn,"
+  "WalletGui--OverviewHeaderFrame #m_overviewChainColumn {"
     "border: none;"
     "border-right: 1px solid %borderColor%;"
   "}"
@@ -96,6 +99,14 @@ QString formatAge(qint64 _secondsAgo) {
   return QObject::tr("%n day(s) ago", nullptr, static_cast<int>(_secondsAgo / 86400));
 }
 
+QString emptyValue() {
+  return QString::fromUtf8("\xE2\x80\x94");
+}
+
+QString formatNumber(quint64 _value) {
+  return QLocale(QLocale::English).toString(_value);
+}
+
 // Build a single captioned row: caption on the left, value on the right, stretched.
 void addStatRow(QGridLayout* _grid, int _row, const QString& _caption, QLabel* _valueLabel) {
   QLabel* captionLabel = new QLabel(_caption, _valueLabel->parentWidget());
@@ -109,11 +120,11 @@ void addStatRow(QGridLayout* _grid, int _row, const QString& _caption, QLabel* _
 }
 
 OverviewHeaderFrame::OverviewHeaderFrame(QWidget* _parent) : QFrame(_parent), m_ui(new Ui::OverviewHeaderFrame),
-  m_cryptoNoteAdapter(nullptr), m_mainWindow(nullptr), m_nodeStateModel(nullptr),
+  m_cryptoNoteAdapter(nullptr), m_mainWindow(nullptr), m_nodeStateModel(nullptr), m_addressListModel(nullptr),
   m_lastBlockAgeTimer(new QTimer(this)),
   m_connectionStateLabel(nullptr), m_nodeTypeLabel(nullptr), m_peerCountLabel(nullptr),
-  m_networkHashrateLabel(nullptr), m_heightLabel(nullptr), m_lastBlockAgeLabel(nullptr),
-  m_difficultyLabel(nullptr) {
+  m_networkHashrateLabel(nullptr), m_difficultyLabel(nullptr), m_heightLabel(nullptr), m_lastBlockAgeLabel(nullptr),
+  m_addressCountLabel(nullptr), m_walletModeLabel(nullptr), m_trackingWalletLabel(nullptr) {
   m_ui->setupUi(this);
   buildUi();
   setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(OVERVIEW_HEADER_STYLE_SHEET_TEMPLATE));
@@ -165,11 +176,11 @@ void OverviewHeaderFrame::buildUi() {
   m_connectionStateLabel = new QLabel(networkColumn);
   m_nodeTypeLabel = new QLabel(networkColumn);
   m_peerCountLabel = new QLabel(networkColumn);
+  m_difficultyLabel = new QLabel(networkColumn);
   m_networkHashrateLabel = new QLabel(networkColumn);
   addStatRow(networkGrid, 0, tr("Status:"), m_connectionStateLabel);
   addStatRow(networkGrid, 1, tr("Node:"), m_nodeTypeLabel);
   addStatRow(networkGrid, 2, tr("Peers:"), m_peerCountLabel);
-  addStatRow(networkGrid, 3, tr("Hashrate:"), m_networkHashrateLabel);
 
   QGridLayout* chainGrid = nullptr;
   QFrame* chainColumn = makeColumn(tr("Blockchain"), &chainGrid);
@@ -177,13 +188,25 @@ void OverviewHeaderFrame::buildUi() {
 
   m_heightLabel = new QLabel(chainColumn);
   m_lastBlockAgeLabel = new QLabel(chainColumn);
-  m_difficultyLabel = new QLabel(chainColumn);
   addStatRow(chainGrid, 0, tr("Height:"), m_heightLabel);
   addStatRow(chainGrid, 1, tr("Last block:"), m_lastBlockAgeLabel);
   addStatRow(chainGrid, 2, tr("Difficulty:"), m_difficultyLabel);
+  addStatRow(chainGrid, 3, tr("Hashrate:"), m_networkHashrateLabel);
+
+  QGridLayout* walletGrid = nullptr;
+  QFrame* walletColumn = makeColumn(tr("Wallet"), &walletGrid);
+  walletColumn->setObjectName("m_overviewWalletColumn");
+
+  m_addressCountLabel = new QLabel(walletColumn);
+  m_walletModeLabel = new QLabel(walletColumn);
+  m_trackingWalletLabel = new QLabel(walletColumn);
+  addStatRow(walletGrid, 0, tr("Addresses:"), m_addressCountLabel);
+  addStatRow(walletGrid, 1, tr("Mode:"), m_walletModeLabel);
+  addStatRow(walletGrid, 2, tr("Tracking:"), m_trackingWalletLabel);
 
   m_ui->m_rootLayout->addWidget(networkColumn, 1);
   m_ui->m_rootLayout->addWidget(chainColumn, 1);
+  m_ui->m_rootLayout->addWidget(walletColumn, 1);
 }
 
 void OverviewHeaderFrame::updateStyle() {
@@ -211,6 +234,23 @@ void OverviewHeaderFrame::setNodeStateModel(QAbstractItemModel* _model) {
   if (m_nodeStateModel != nullptr) {
     connect(m_nodeStateModel, &QAbstractItemModel::dataChanged,
             this, &OverviewHeaderFrame::nodeStateModelDataChanged);
+  }
+  refreshFromModel();
+}
+
+void OverviewHeaderFrame::setAddressListModel(QAbstractItemModel* _model) {
+  if (m_addressListModel == _model) {
+    return;
+  }
+  if (m_addressListModel != nullptr) {
+    disconnect(m_addressListModel, nullptr, this, nullptr);
+  }
+  m_addressListModel = _model;
+  if (m_addressListModel != nullptr) {
+    connect(m_addressListModel, &QAbstractItemModel::rowsInserted, this, &OverviewHeaderFrame::addressListModelChanged);
+    connect(m_addressListModel, &QAbstractItemModel::rowsRemoved, this, &OverviewHeaderFrame::addressListModelChanged);
+    connect(m_addressListModel, &QAbstractItemModel::modelReset, this, &OverviewHeaderFrame::addressListModelChanged);
+    connect(m_addressListModel, &QAbstractItemModel::dataChanged, this, &OverviewHeaderFrame::addressListModelChanged);
   }
   refreshFromModel();
 }
@@ -266,7 +306,7 @@ void OverviewHeaderFrame::refreshFromModel() {
 
   const quint64 peers = m_nodeStateModel->index(0, NodeStateModel::COLUMN_PEER_COUNT)
                             .data(NodeStateModel::ROLE_PEER_COUNT).toULongLong();
-  m_peerCountLabel->setText(QString::number(peers));
+  m_peerCountLabel->setText(formatNumber(peers));
 
   // --- Blockchain ---
   // Pull the last block info straight from the adapter rather than the model.
@@ -285,19 +325,33 @@ void OverviewHeaderFrame::refreshFromModel() {
   // knownCount is count (genesis-inclusive); top index is count - 1.
   const quint64 networkTop = knownCount > 0 ? knownCount - 1 : 0;
   if (networkTop > localTop && knownCount > 0) {
-    m_heightLabel->setText(tr("%1 / %2 (syncing)").arg(localTop).arg(networkTop));
+    m_heightLabel->setText(tr("%1 / %2 (syncing)").arg(formatNumber(localTop), formatNumber(networkTop)));
   } else {
-    m_heightLabel->setText(QString::number(localTop));
+    m_heightLabel->setText(formatNumber(localTop));
   }
 
   const quint64 difficulty = static_cast<quint64>(lastBlock.difficulty);
-  m_difficultyLabel->setText(difficulty == 0 ? tr("—") : QString::number(difficulty));
+  m_difficultyLabel->setText(difficulty == 0 ? emptyValue() : formatNumber(difficulty));
 
   // Hashrate = difficulty / blockTimeTargetSeconds. Format with SI prefix.
   const quint64 targetSeconds = m_cryptoNoteAdapter != nullptr
       ? qMax<quint64>(1, m_cryptoNoteAdapter->getTargetTime()) : 1;
   const quint64 hashrate = difficulty / targetSeconds;
-  m_networkHashrateLabel->setText(hashrate == 0 ? tr("—") : NodeStateModel::formatHashRate(hashrate));
+  m_networkHashrateLabel->setText(hashrate == 0 ? emptyValue() : NodeStateModel::formatHashRate(hashrate));
+
+  IWalletAdapter* walletAdapter = nodeAdapter != nullptr ? nodeAdapter->getWalletAdapter() : nullptr;
+  if (walletAdapter != nullptr && walletAdapter->isOpen()) {
+    const quintptr addressCount = walletAdapter->getAddressCount();
+    m_addressCountLabel->setText(formatNumber(static_cast<quint64>(addressCount)));
+    m_walletModeLabel->setText(walletAdapter->getAddressGenerationMode() == CryptoNote::AddressGenerationMode::HD_DETERMINISTIC ?
+      tr("HD") : tr("Independent keys"));
+    m_trackingWalletLabel->setText(walletAdapter->isTrackingWallet() ? tr("Yes") : tr("No"));
+  } else {
+    const int modelAddressCount = m_addressListModel != nullptr ? m_addressListModel->rowCount() : 0;
+    m_addressCountLabel->setText(modelAddressCount > 0 ? formatNumber(static_cast<quint64>(modelAddressCount)) : emptyValue());
+    m_walletModeLabel->setText(emptyValue());
+    m_trackingWalletLabel->setText(emptyValue());
+  }
 
   refreshLastBlockAge();
 }
@@ -328,6 +382,10 @@ void OverviewHeaderFrame::nodeStateModelDataChanged(const QModelIndex& _topLeft,
   Q_UNUSED(_topLeft);
   Q_UNUSED(_bottomRight);
   Q_UNUSED(_roles);
+  refreshFromModel();
+}
+
+void OverviewHeaderFrame::addressListModelChanged() {
   refreshFromModel();
 }
 

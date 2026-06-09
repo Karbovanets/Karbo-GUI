@@ -512,7 +512,7 @@
   </connection>
   <connection>
    <sender>m_connectionButtonGroup</sender>
-   <signal>buttonClicked(int)</signal>
+   <signal>idClicked(int)</signal>
    <receiver>ConnectionOptionsFrame</receiver>
    <slot>connectionButtonClicked(int)</slot>
    <hints>

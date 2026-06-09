@@ -33,17 +33,21 @@ const char WALLET_CANCEL_BUTTON_STYLE_SHEET_TEMPLATE[] =
     "min-height: 30px;"
     "max-height: 30px;"
     "font-size: %fontSizeNormal%;"
-    "color: %selectionTextColor%;"
-    "background-color: %backgroundColorGrayNormal%;"
-    "border: 1px solid %backgroundColorGrayNormal%;"
+    "color: %fontColorBlueNormal%;"
+    "background-color: %inputBackgroundColor%;"
+    "border: 1px solid %borderColorDark%;"
   "}"
 
   "WalletGui--WalletCancelButton:hover {"
-    "background-color: %backgroundColorGrayHover%;"
+    "color: %fontColorBlueHover%;"
+    "background-color: %hoverBackgroundColor%;"
+    "border-color: %fontColorBlueHover%;"
   "}"
 
   "WalletGui--WalletCancelButton:pressed {"
-    "background-color: %backgroundColorGrayPressed%;"
+    "color: %selectionTextColor%;"
+    "background-color: %selectionColor%;"
+    "border-color: %selectionColor%;"
   "}";
 
 WalletCancelButton::WalletCancelButton(QWidget* _parent) : QPushButton(_parent) {

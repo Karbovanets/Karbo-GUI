@@ -139,6 +139,10 @@ void OverviewFrame::setWalletStateModel(QAbstractItemModel* _model) {
   // Balance moved to the sidebar/toolbar; overview header no longer needs it.
 }
 
+void OverviewFrame::setAddressListModel(QAbstractItemModel* _model) {
+  m_ui->m_overviewHeaderFrame->setAddressListModel(_model);
+}
+
 void OverviewFrame::settingsUpdated() {
   m_ui->m_newsFrame->setVisible(Settings::instance().isNewsEnabled());
 }

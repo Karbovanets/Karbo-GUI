@@ -33,7 +33,7 @@ namespace Ui {
 
 namespace WalletGui {
 
-// Overview status band: two-column snapshot of node and blockchain state.
+// Overview status band: compact snapshot of node, blockchain, and wallet state.
 // Replaces the old balance/pool header — the sidebar + toolbar already show
 // balance, and pool volume is niche info that doesn't belong on a dashboard.
 class OverviewHeaderFrame : public QFrame, public IWalletUiItem,
@@ -49,6 +49,7 @@ public:
   virtual void setCryptoNoteAdapter(ICryptoNoteAdapter* _cryptoNoteAdapter) override;
   virtual void setMainWindow(QWidget *_mainWindow) override;
   virtual void setNodeStateModel(QAbstractItemModel* _model) override;
+  virtual void setAddressListModel(QAbstractItemModel* _model) override;
   virtual void updateStyle() override;
 
   // ICryptoNoteAdapterObserver
@@ -60,18 +61,24 @@ private:
   ICryptoNoteAdapter* m_cryptoNoteAdapter;
   QWidget* m_mainWindow;
   QAbstractItemModel* m_nodeStateModel;
+  QAbstractItemModel* m_addressListModel;
   QTimer* m_lastBlockAgeTimer;
 
   // Network column
   QLabel* m_connectionStateLabel;
   QLabel* m_nodeTypeLabel;
   QLabel* m_peerCountLabel;
+  QLabel* m_difficultyLabel;
   QLabel* m_networkHashrateLabel;
 
   // Blockchain column
   QLabel* m_heightLabel;
   QLabel* m_lastBlockAgeLabel;
-  QLabel* m_difficultyLabel;
+
+  // Wallet column
+  QLabel* m_addressCountLabel;
+  QLabel* m_walletModeLabel;
+  QLabel* m_trackingWalletLabel;
 
   void buildUi();
   void refreshFromModel();
@@ -79,6 +86,7 @@ private:
 
   Q_SLOT void nodeStateModelDataChanged(const QModelIndex& _topLeft, const QModelIndex& _bottomRight,
                                         const QVector<int>& _roles);
+  Q_SLOT void addressListModelChanged();
 };
 
 }

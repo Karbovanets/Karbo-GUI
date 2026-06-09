@@ -278,7 +278,7 @@ public:
 
         retranslateUi(ConnectionOptionsFrame);
         QObject::connect(m_remoteHostEdit, SIGNAL(textChanged(QString)), ConnectionOptionsFrame, SLOT(remoteHostNameChanged(QString)));
-        QObject::connect(m_connectionButtonGroup, SIGNAL(buttonClicked(int)), ConnectionOptionsFrame, SLOT(connectionButtonClicked(int)));
+        QObject::connect(m_connectionButtonGroup, SIGNAL(idClicked(int)), ConnectionOptionsFrame, SLOT(connectionButtonClicked(int)));
         QObject::connect(m_remoteRadio, SIGNAL(toggled(bool)), m_remoteHostEdit, SLOT(setEnabled(bool)));
         QObject::connect(m_remoteRadio, SIGNAL(toggled(bool)), m_remotePortSpin, SLOT(setEnabled(bool)));
         QObject::connect(m_localRadio, SIGNAL(toggled(bool)), m_localPortSpin, SLOT(setEnabled(bool)));
