@@ -186,10 +186,6 @@ QPixmap DarkStyle::getNotEncryptedIcon() const {
   return renderIcon(QString(":icons/dark/decrypted"), 20);
 }
 
-QPixmap DarkStyle::getHdWalletIcon() const {
-  return renderIcon(QString(":icons/dark/hd-wallet"), 20);
-}
-
 QPixmap DarkStyle::getSyncedIcon() const {
   return renderIcon(QString(":icons/dark/synced"), 20);
 }

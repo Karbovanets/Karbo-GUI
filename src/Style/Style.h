@@ -76,7 +76,6 @@ public:
   virtual QPixmap getDisconnectedIcon() const = 0;
   virtual QPixmap getEncryptedIcon() const = 0;
   virtual QPixmap getNotEncryptedIcon() const = 0;
-  virtual QPixmap getHdWalletIcon() const = 0;
   virtual QPixmap getSyncedIcon() const = 0;
   virtual QString makeStyleSheet(const QString& _styleSheetTemplate) const;
 

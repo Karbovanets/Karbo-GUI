@@ -67,7 +67,7 @@ private:
   QLabel* m_syncStatusLabel;
   QLabel* m_syncStatusIconLabel;
   QLabel* m_encryptionStatusIconLabel;
-  QLabel* m_hdWalletIconLabel;
+  QLabel* m_hdWalletLabel;
   QLabel* m_remoteModeIconLabel;
   QLabel* m_connectionStateIconLabel;
   QLabel* m_peerCountLabel;

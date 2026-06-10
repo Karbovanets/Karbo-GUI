@@ -46,6 +46,11 @@ const char STATUS_BAR_STYLE_SHEET_TEMPLATE[] =
     "background-color: %statusBarBackgroundColor%;"
     "color: %statusBarFontColor%;"
     "font-size: %fontSizeTiny%;"
+  "}"
+
+  "WalletGui--WalletStatusBar QLabel#m_hdWalletLabel {"
+    "font-size: %fontSizeSmall%;"
+    "font-weight: bold;"
   "}";
 
 QString formatTimeDiff(quint64 _timeDiff) {
@@ -87,25 +92,29 @@ QString formatTimeDiff(quint64 _timeDiff) {
 }
 
 WalletStatusBar::WalletStatusBar(QWidget* _parent) : QStatusBar(_parent), m_cryptoNoteAdapter(nullptr), m_nodeStateModel(nullptr), m_syncStatusLabel(new QLabel(this)), m_connectionStateIconLabel(new QLabel(this)),
-  m_syncStatusIconLabel(new QLabel(this)), m_encryptionStatusIconLabel(new QLabel(this)), m_hdWalletIconLabel(new QLabel(this)), m_remoteModeIconLabel(new QLabel(this)),
+  m_syncStatusIconLabel(new QLabel(this)), m_encryptionStatusIconLabel(new QLabel(this)), m_hdWalletLabel(new QLabel(this)), m_remoteModeIconLabel(new QLabel(this)),
   m_peerCountLabel(new QLabel(this)), m_syncMovie(new QMovie(this)), m_walletIsSynchronized(false), m_checkSyncStateTimerId(-1) {
   m_syncStatusLabel->setObjectName("m_syncStatusLabel");
   m_syncStatusIconLabel->setObjectName("m_syncStatusIconLabel");
   m_remoteModeIconLabel->setObjectName("m_remoteModeIconLabel");
   m_connectionStateIconLabel->setObjectName("m_connectionStateIconLabel");
   m_encryptionStatusIconLabel->setObjectName("m_encryptionStatusIconLabel");
-  m_hdWalletIconLabel->setObjectName("m_hdWalletIconLabel");
+  m_hdWalletLabel->setObjectName("m_hdWalletLabel");
+  m_hdWalletLabel->setAlignment(Qt::AlignCenter);
+  m_hdWalletLabel->setText("HD");
+  m_hdWalletLabel->setToolTip(tr("HD wallet"));
+  m_hdWalletLabel->setFixedWidth(24);
   m_peerCountLabel->setObjectName("m_peerCountLabel");
   m_syncMovie->setFileName(Settings::instance().getCurrentStyle().getWalletSyncGifFile());
   m_syncMovie->setScaledSize(QSize(16, 16));
   addWidget(m_syncStatusLabel);
   addPermanentWidget(m_peerCountLabel);
   addPermanentWidget(m_encryptionStatusIconLabel);
-  addPermanentWidget(m_hdWalletIconLabel);
+  addPermanentWidget(m_hdWalletLabel);
   addPermanentWidget(m_syncStatusIconLabel);
   addPermanentWidget(m_remoteModeIconLabel);
   addPermanentWidget(m_connectionStateIconLabel);
-  m_hdWalletIconLabel->hide();
+  m_hdWalletLabel->hide();
 
   setStyleSheet(Settings::instance().getCurrentStyle().makeStyleSheet(STATUS_BAR_STYLE_SHEET_TEMPLATE));
 }
@@ -171,7 +180,7 @@ void WalletStatusBar::walletClosed() {
 
   m_syncMovie->stop();
   m_encryptionStatusIconLabel->hide();
-  m_hdWalletIconLabel->hide();
+  m_hdWalletLabel->hide();
   m_syncStatusIconLabel->hide();
   showMessage(tr("Wallet closed"));
 }
@@ -320,13 +329,11 @@ void WalletStatusBar::updateHdWalletState() {
   IWalletAdapter* walletAdapter = m_cryptoNoteAdapter->getNodeAdapter()->getWalletAdapter();
   if (!walletAdapter->isOpen() ||
       walletAdapter->getAddressGenerationMode() != CryptoNote::AddressGenerationMode::HD_DETERMINISTIC) {
-    m_hdWalletIconLabel->hide();
+    m_hdWalletLabel->hide();
     return;
   }
 
-  m_hdWalletIconLabel->setPixmap(Settings::instance().getCurrentStyle().getHdWalletIcon());
-  m_hdWalletIconLabel->setToolTip(tr("HD wallet"));
-  m_hdWalletIconLabel->show();
+  m_hdWalletLabel->show();
 }
 
 }

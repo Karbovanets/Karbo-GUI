@@ -46,7 +46,6 @@ public:
   virtual QPixmap getDisconnectedIcon() const override;
   virtual QPixmap getEncryptedIcon() const override;
   virtual QPixmap getNotEncryptedIcon() const override;
-  virtual QPixmap getHdWalletIcon() const override;
   virtual QPixmap getSyncedIcon() const override;
 };
 

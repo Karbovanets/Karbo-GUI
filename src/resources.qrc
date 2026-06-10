@@ -4,8 +4,6 @@
         <file alias="light/encrypted">icons/svg/lock_closed_bl.svg</file>
         <file alias="dark/decrypted">icons/svg/lock_open.svg</file>
         <file alias="light/decrypted">icons/svg/lock_open_bl.svg</file>
-        <file alias="dark/hd-wallet">icons/svg/hd_wallet.svg</file>
-        <file alias="light/hd-wallet">icons/svg/hd_wallet_bl.svg</file>
         <file alias="dark/connected">icons/svg/connected.svg</file>
         <file alias="light/connected">icons/svg/connected_bl.svg</file>
         <file alias="dark/disconnected">icons/svg/disconnected.svg</file>

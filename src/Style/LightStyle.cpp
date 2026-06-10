@@ -106,10 +106,6 @@ QPixmap LightStyle::getNotEncryptedIcon() const {
   return renderIcon(QString(":icons/light/decrypted"), 20);
 }
 
-QPixmap LightStyle::getHdWalletIcon() const {
-  return renderIcon(QString(":icons/light/hd-wallet"), 20);
-}
-
 QPixmap LightStyle::getSyncedIcon() const {
   return renderIcon(QString(":icons/light/synced"), 20);
 }
