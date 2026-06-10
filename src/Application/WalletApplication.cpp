@@ -479,18 +479,28 @@ void WalletApplication::trayActivated(QSystemTrayIcon::ActivationReason _reason)
 }
 
 void WalletApplication::prepareToQuit() {
+  if (m_isAboutToQuit) {
+    return;
+  }
+
   WalletLogger::debug(tr("[Application] Prepare to quit..."));
 
   Settings::instance().removeObserver(this);
   m_isAboutToQuit = true;
-  m_systemTrayIcon->hide();
-  m_mainWindow->close();
+  if (m_systemTrayIcon != nullptr) {
+    m_systemTrayIcon->hide();
+  }
+  if (m_mainWindow != nullptr) {
+    m_mainWindow->hide();
+  }
   ExitWidget* exitWidget = new ExitWidget(nullptr);
   exitWidget->setAttribute(Qt::WA_DeleteOnClose);
   exitWidget->show();
   deinitCryptoNoteAdapter();
   exitWidget->close();
-  m_mainWindow->deleteLater();
+  if (m_mainWindow != nullptr) {
+    m_mainWindow->deleteLater();
+  }
   WalletLogger::info(tr("[Application] Quit"));
   processEvents();
   WalletLogger::deinit();

@@ -22,12 +22,13 @@
 #include <QGuiApplication>
 #include <QActionGroup>
 #include <QEnterEvent>
-#include <QInputDialog>
 #include <QLinearGradient>
+#include <QLineEdit>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QPen>
 #include <QPushButton>
+#include <QSpinBox>
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QContextMenuEvent>
@@ -296,6 +297,87 @@ void updateChildrenOfType(QWidget* _root) {
   for (Widget* child : children) {
     child->updateStyle();
   }
+}
+
+bool getWalletInt(QWidget* _parent, const QString& _title, const QString& _label, int _value, int _min, int _max, int _step, int& _result) {
+  QDialog dialog(_parent, static_cast<Qt::WindowFlags>(Qt::WindowCloseButtonHint));
+  dialog.setWindowTitle(_title);
+  dialog.resize(360, 130);
+
+  QVBoxLayout* layout = new QVBoxLayout(&dialog);
+  QLabel* label = new QLabel(_label, &dialog);
+  label->setWordWrap(true);
+  layout->addWidget(label);
+
+  QSpinBox* spinBox = new QSpinBox(&dialog);
+  spinBox->setRange(_min, _max);
+  spinBox->setSingleStep(_step);
+  spinBox->setValue(_value);
+  spinBox->selectAll();
+  layout->addWidget(spinBox);
+
+  QHBoxLayout* buttonLayout = new QHBoxLayout();
+  buttonLayout->addStretch();
+  WalletOkButton* okButton = new WalletOkButton(&dialog);
+  okButton->setObjectName(QStringLiteral("m_okButton"));
+  okButton->setText(QObject::tr("OK"));
+  okButton->setDefault(true);
+  WalletCancelButton* cancelButton = new WalletCancelButton(&dialog);
+  cancelButton->setObjectName(QStringLiteral("m_cancelButton"));
+  cancelButton->setText(QObject::tr("Cancel"));
+  buttonLayout->addWidget(okButton);
+  buttonLayout->addWidget(cancelButton);
+  layout->addLayout(buttonLayout);
+
+  QObject::connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+  QObject::connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+  if (dialog.exec() != QDialog::Accepted) {
+    return false;
+  }
+
+  _result = spinBox->value();
+  return true;
+}
+
+bool getWalletText(QWidget* _parent, const QString& _title, const QString& _label, const QString& _value, QString& _result) {
+  QDialog dialog(_parent, static_cast<Qt::WindowFlags>(Qt::WindowCloseButtonHint));
+  dialog.setWindowTitle(_title);
+  dialog.resize(420, 130);
+
+  QVBoxLayout* layout = new QVBoxLayout(&dialog);
+  QLabel* label = new QLabel(_label, &dialog);
+  label->setWordWrap(true);
+  layout->addWidget(label);
+
+  QLineEdit* lineEdit = new QLineEdit(&dialog);
+  lineEdit->setText(_value);
+  lineEdit->selectAll();
+  layout->addWidget(lineEdit);
+
+  QHBoxLayout* buttonLayout = new QHBoxLayout();
+  buttonLayout->addStretch();
+  WalletOkButton* okButton = new WalletOkButton(&dialog);
+  okButton->setObjectName(QStringLiteral("m_okButton"));
+  okButton->setText(QObject::tr("OK"));
+  okButton->setDefault(true);
+  WalletCancelButton* cancelButton = new WalletCancelButton(&dialog);
+  cancelButton->setObjectName(QStringLiteral("m_cancelButton"));
+  cancelButton->setText(QObject::tr("Cancel"));
+  buttonLayout->addWidget(okButton);
+  buttonLayout->addWidget(cancelButton);
+  layout->addLayout(buttonLayout);
+
+  QObject::connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+  QObject::connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+  QObject::connect(lineEdit, &QLineEdit::returnPressed, okButton, &QPushButton::click);
+
+  if (dialog.exec() != QDialog::Accepted) {
+    return false;
+  }
+
+  _result = lineEdit->text();
+  return true;
 }
 
 }
@@ -1138,10 +1220,9 @@ void MainWindow::restoreFromMnemonicSeed() {
       return;
     }
 
-    bool addressCountAccepted = false;
-    const int restoreAddressCount = QInputDialog::getInt(this, tr("Restore HD addresses"),
-      tr("Number of HD addresses to restore:"), 1, 1, 1000000, 1, &addressCountAccepted);
-    if (!addressCountAccepted) {
+    int restoreAddressCount = 1;
+    if (!getWalletInt(this, tr("Restore HD addresses"), tr("Number of HD addresses to restore:"), 1, 1, 1000000, 1,
+      restoreAddressCount)) {
       return;
     }
 
@@ -1789,11 +1870,9 @@ void MainWindow::renameAddressFromCard(quintptr _index, const QString& _address)
     existingLabel = model->data(model->index(row, AddressListModel::COLUMN_LABEL),
                                 AddressListModel::ROLE_LABEL).toString();
   }
-  bool ok = false;
-  const QString newLabel = QInputDialog::getText(this, tr("Rename address"),
-    tr("Label for this address (leave empty to clear):"),
-    QLineEdit::Normal, existingLabel, &ok);
-  if (!ok) {
+  QString newLabel;
+  if (!getWalletText(this, tr("Rename address"), tr("Label for this address (leave empty to clear):"), existingLabel,
+    newLabel)) {
     return;
   }
   model->setLabelForAddress(_address, newLabel.trimmed());
